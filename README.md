@@ -1,12 +1,22 @@
 ✅ Full datepicker components
+
 ✅ Headless calendar hook
+
 ✅ UI calendar
+
 ✅ DateInput wrapper
+
 ✅ Storybook 8
+
 ✅ Vite React starter
+
 ✅ TailwindCSS
+
 ✅ TypeScript
+
 ✅ Everything wired together and runnable out-of-the-box
+
+
 
 ✅ Quick Start Instructions
 
@@ -44,22 +54,23 @@ npm run build
 npm run preview
 
 📂 What’s Included in the ZIP
-react-datepicker-full/
-├─ package.json
-├─ vite.config.ts
-├─ tsconfig.json
-├─ postcss.config.js
-├─ tailwind.config.js
-├─ .storybook/
-│   ├─ main.ts
-│   └─ preview.ts
-├─ src/
-│   ├─ main.tsx
-│   ├─ App.tsx
-│   ├─ index.css
-│   ├─ headless/
-│   │    └─ useCalendar.ts
-│   └─ components/
-│        ├─ Calendar.tsx
-│        ├─ DateInput.tsx
-│        └─ Calendar.stories.tsx
+```
+react-datepicker-full/<br>
+├─ package.json<br>
+├─ vite.config.ts<br>
+├─ tsconfig.json<br>
+├─ postcss.config.js<br>
+├─ tailwind.config.js<br>
+├─ .storybook/<br>
+│   ├─ main.ts<br>
+│   └─ preview.ts<br>
+├─ src/<br>
+│   ├─ main.tsx<br>
+│   ├─ App.tsx<br>
+│   ├─ index.css<br>
+│   ├─ headless/<br>
+│   │    └─ useCalendar.ts<br>
+│   └─ components/<br>
+│        ├─ Calendar.tsx<br>
+│        ├─ DateInput.tsx<br>
+│        └─ Calendar.stories.tsx<br>
