@@ -1,0 +1,87 @@
+1. Add Real UI Polish
+
+Tailwind-styled buttons
+
+Hover/focus states
+
+Animations (Framer Motion)
+
+Better popover positioning (Floating UI)
+
+2. Build the Range Picker
+
+Fully functional range selection:
+
+start + end selection
+
+drag-hover preselection
+
+quick presets (Last 7 days, This month, etc.)
+
+3. Add a Multi-Month View (like Airbnb)
+
+2–3 months visible at once
+
+animated transitions
+
+keyboard-accessible month switching
+
+4. Accessibility Upgrade
+
+WAI-ARIA patterns:
+
+grid roles
+
+roving tabindex
+
+Arrow key navigation
+
+Screen reader labels
+
+Escape-to-close
+
+5. Make It “Headless UI Compatible”
+
+Allow integration with:
+
+Shadcn UI
+
+MUI
+
+Chakra
+
+Tailwind UI
+
+Radix primitives
+
+6. Build and publish the package
+
+I can generate:
+
+NPM-ready package.json
+
+Build config for ESM + CJS
+
+README with installation & usage
+
+Example sandbox
+
+GitHub Actions CI pipeline
+
+7. Automatically generate comprehensive documentation
+
+MDX docs for Storybook
+
+Live examples
+
+API tables
+
+Design guidelines
+
+Props lists
+
+8. Create a demo site
+
+Publish Storybook to GitHub Pages
+
+Or build a standalone landing page
