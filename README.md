@@ -16,6 +16,8 @@
 
 ✅ Everything wired together and runnable out-of-the-box
 
+📘 Developer documentation lives in `docs/DEVELOPER_GUIDE.md` (architecture, state model, extension ideas).
+
 
 
 ✅ Quick Start Instructions
