@@ -3,8 +3,20 @@ import React from 'react'
 import { useCalendar } from '../headless/useCalendar'
 import { format } from 'date-fns'
 
-export default function Calendar() {
-  const cal = useCalendar()
+type CalendarProps = {
+  selectedDate?: Date | null
+  selectDate?: (date: Date) => void
+}
+
+export default function Calendar({ selectedDate: controlledSelectedDate, selectDate: controlledSelectDate }: CalendarProps) {
+  const normalizedSelected =
+    controlledSelectedDate instanceof Date && !Number.isNaN(controlledSelectedDate.getTime())
+      ? controlledSelectedDate
+      : null
+
+  const cal = useCalendar(normalizedSelected ?? undefined)
+  const selectedDate = normalizedSelected ?? cal.selectedDate
+  const selectDate = controlledSelectDate ?? cal.selectDate
 
   return (
     <div className="p-4 border rounded-lg shadow bg-white w-72">
@@ -21,13 +33,13 @@ export default function Calendar() {
       <div className="grid grid-cols-7 gap-1">
         {cal.weeks.map((week, wi) =>
           week.map((day, di) => {
-            const selected = cal.selectedDate && cal.isSameDay(day, cal.selectedDate)
+            const selected = selectedDate && cal.isSameDay(day, selectedDate)
             const faded = !cal.isSameMonth(day, cal.currentMonth)
 
             return (
               <button
                 key={wi + '-' + di}
-                onClick={() => cal.selectDate(day)}
+                onClick={() => selectDate(day)}
                 className={
                   'rounded p-1 ' +
                   (selected ? 'bg-blue-600 text-white ' : '') +
