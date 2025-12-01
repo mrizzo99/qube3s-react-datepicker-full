@@ -1,13 +1,21 @@
 
-import { useState, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   startOfMonth, endOfMonth, startOfWeek, endOfWeek,
   addDays, addMonths, isSameDay, isSameMonth
 } from 'date-fns'
 
-export function useCalendar(initial: Date = new Date()) {
-  const [currentMonth, setCurrentMonth] = useState(initial)
+export function useCalendar(initial?: Date) {
+  const baseDate = useMemo(() => {
+    if (initial instanceof Date && !Number.isNaN(initial.getTime())) return initial
+    return new Date()
+  }, [initial])
+  const [currentMonth, setCurrentMonth] = useState(baseDate)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+
+  useEffect(() => {
+    setCurrentMonth(baseDate)
+  }, [baseDate])
 
   const weeks = useMemo(() => {
     const start = startOfWeek(startOfMonth(currentMonth))
