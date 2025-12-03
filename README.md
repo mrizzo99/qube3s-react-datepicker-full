@@ -38,6 +38,13 @@ Runs your main demo app at:
 
 npm run dev
 
+🟩 Run Vitest for component test and results
+
+npm run test
+
+If want to see details about failed tests run:
+npm run test --Vitest
+
 🟩 Run Storybook (Storybook 8)
 
 Runs your component explorer at:
@@ -55,24 +62,4 @@ npm run build
 🟨 Preview production build (optional)
 npm run preview
 
-📂 What’s Included in the ZIP
-```
-react-datepicker-full/<br>
-├─ package.json<br>
-├─ vite.config.ts<br>
-├─ tsconfig.json<br>
-├─ postcss.config.js<br>
-├─ tailwind.config.js<br>
-├─ .storybook/<br>
-│   ├─ main.ts<br>
-│   └─ preview.ts<br>
-├─ src/<br>
-│   ├─ main.tsx<br>
-│   ├─ App.tsx<br>
-│   ├─ index.css<br>
-│   ├─ headless/<br>
-│   │    └─ useCalendar.ts<br>
-│   └─ components/<br>
-│        ├─ Calendar.tsx<br>
-│        ├─ DateInput.tsx<br>
-│        └─ Calendar.stories.tsx<br>
+
