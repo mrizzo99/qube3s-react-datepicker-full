@@ -10,6 +10,7 @@ const expectDayGrid = () =>
   screen.getAllByRole('button', { name: /^[0-9]+$/ }) // excludes the nav arrows
 const getCurrentMonthDay = (dayLabel: string) =>
   screen.getAllByRole('button', { name: dayLabel }).find(btn => !btn.classList.contains('text-gray-300'))
+const expectHasClass = (el: HTMLElement, className: string) => expect(el.className.split(' ')).toContain(className)
 
 describe('Calendar', () => {
   beforeEach(() => vi.setSystemTime(jan102024))
@@ -47,6 +48,57 @@ describe('Calendar', () => {
     const day6 = getCurrentMonthDay('6')!
     await userEvent.click(day6)
     expect(onSelect).toHaveBeenCalledWith(expect.any(Date))
+  })
+
+  it('selects a range when in range mode', async () => {
+    render(<Calendar mode="range" />)
+    const day5 = getCurrentMonthDay('5')!
+    const day7 = getCurrentMonthDay('7')!
+    const day6 = getCurrentMonthDay('6')!
+
+    await userEvent.click(day5)
+    await userEvent.click(day7)
+
+    expectHasClass(day5, 'bg-blue-600')
+    expectHasClass(day7, 'bg-blue-600')
+    expectHasClass(day6, 'bg-blue-100')
+  })
+
+  it('restarts range on third click', async () => {
+    render(<Calendar mode="range" />)
+    const day5 = getCurrentMonthDay('5')!
+    const day7 = getCurrentMonthDay('7')!
+    const day10 = getCurrentMonthDay('10')!
+
+    await userEvent.click(day5)
+    await userEvent.click(day7)
+    await userEvent.click(day10)
+
+    expectHasClass(day10, 'bg-blue-600')
+    expect(day5.className).not.toContain('bg-blue-600')
+  })
+
+  it('supports controlled range', async () => {
+    const onSelectRange = vi.fn()
+    render(
+      <Calendar
+        mode="range"
+        selectedRange={{ start: new Date(2024, 0, 5), end: new Date(2024, 0, 7) }}
+        selectRange={onSelectRange}
+      />
+    )
+
+    const day5 = getCurrentMonthDay('5')!
+    const day6 = getCurrentMonthDay('6')!
+    const day7 = getCurrentMonthDay('7')!
+    const day10 = getCurrentMonthDay('10')!
+
+    expectHasClass(day5, 'bg-blue-600')
+    expectHasClass(day7, 'bg-blue-600')
+    expectHasClass(day6, 'bg-blue-100')
+
+    await userEvent.click(day10)
+    expect(onSelectRange).toHaveBeenCalledWith({ start: new Date(2024, 0, 10), end: null })
   })
 
   it('fades days outside the current month', () => {
