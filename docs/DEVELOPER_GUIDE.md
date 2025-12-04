@@ -5,9 +5,11 @@ This repo is a minimal, headless-first datepicker built with Vite, React, TypeSc
 ## Project layout
 - `src/main.tsx` – React entry that mounts `App`.
 - `src/App.tsx` – Demo shell that renders the `DateInput` component.
-- `src/components/DateInput.tsx` – Popover-style input wrapper that toggles the calendar.
-- `src/components/Calendar.tsx` – Visual calendar that consumes the headless hook.
 - `src/components/Calendar.stories.tsx` – Storybook story for the calendar.
+- `src/components/Calendar.tsx` – Visual calendar that consumes the headless hook.
+- `src/components/DateInput.tsx` – Popover-style input wrapper that toggles the calendar.
+- `src/components/DateRangeInput.stories.tsx` – Storybook story for the Date Range Input.
+- `src/components/DateRangeInput.tsx` - Popover-style input wrapper that toggles the calendar and supports selection of a date range; both a start date and an end date.
 - `src/headless/useCalendar.ts` – Headless calendar state and derived values.
 - `.storybook/*` – Storybook 10 config (React + Vite, Docs addon).
 - `tailwind.config.js`, `src/index.css` – Tailwind wiring (base/components/utilities only).
@@ -41,17 +43,39 @@ This repo is a minimal, headless-first datepicker built with Vite, React, TypeSc
   - `faded` styling for days outside the current month via `isSameMonth`.
 - Layout uses Tailwind utility classes for sizing, spacing, and hover/selection cues.
 
+## Controlled / Uncontrolled concepts
+- Controlled: Parent owns the value and passes it in with a change handler. The component reflects whatever value the parent gives and only updates via the handler. Example: `<DateRangeInput value={range} onChange={setRange} />`—the parent state is the single source of truth.
+- Uncontrolled: Component manages its own internal state; parent can read via refs/events but doesn’t pass a value prop. Example: `<DateRangeInput />`—it tracks the range internally and just calls `onChange` optionally.
+- Key difference: controlled = external state, predictable and sync’d; uncontrolled = internal state, simpler wiring but less centralized control.
+
 ## Date input wrapper (`src/components/DateInput.tsx`)
 - Maintains `open` popover state with `useState`.
 - Supports controlled (`value`/`onChange`) or uncontrolled selection; shows a formatted date string in the input and closes the popover on selection.
 - Renders a read-only text input; clicking toggles the calendar container.
 - Positions the calendar below the input with simple absolute positioning.
 
-## Storybook (`src/components/Calendar.stories.tsx`, `.storybook/*`)
+## Date Range input wrapper (`src/components/DateRangeInput.tsx`)
+- Maintains `open` popover state with `useState`.
+- Supports controlled (`value`/`onChange`) or uncontrolled selection; shows formatted date strings in the input fields and closes the popover on selection of both a start date and an end date for the date range. 
+- Renders a read-only text input; clicking in either the start date input field or the end date input field toggles the calendar container.
+- Positions the calendar below the date inputs with simple absolute positioning.
+
+## Storybook (`src/components/Calendar.stories.tsx`, `src/components/DateInput.stories.tsx`, `src/components/DateRangeInput.stories.tsx`, `.storybook/*`)
 - Storybook 10 with the React Vite framework and Docs addon.
 - Stories are auto-discovered from `src/**/*.stories.tsx`.
 - `tags = ["autodocs"]` enables generated docs; add more stories to demonstrate variations (range selection, multiple months, disabled dates, etc.).
-- Current stories: `Uncontrolled` renders the plain calendar; `Controlled` wires local state and displays a formatted selection. Controls for `selectedDate`/`selectDate` are disabled to avoid invalid arg values.
+- Current Stories:
+  - **Calendar**
+    - `Uncontrolled` renders the plain calendar.
+    - `Controlled` wires local state and displays a formatted selection; controls for `selectedDate`/`selectDate` are disabled to avoid invalid arg values.
+    - `Range` renders a calendar with date range support enabled.
+  - **DateInput**
+    - `Uncontrolled` renders a date input calendar for date selection.
+    - `Controlled` wires local state and allows for population of the input field via a popover calendar selection.
+  - **DateRangeInput**
+    - `Uncontrolled` renders two date inputs with a popover calendar for selecting start/end.
+    - `Controlled` wires local state and allows range selection via the popover calendar.
+
 
 ## Styling
 - Tailwind is the only styling layer; `src/index.css` pulls in base/component/utility layers.

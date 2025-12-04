@@ -47,6 +47,9 @@ npm run test
 If want to see details about failed tests run:
 npm run test --Vitest
 
+If want to see vitest run in browser run
+npm run test:browser
+
 🟩 Run Storybook (Storybook 8)
 
 Runs your component explorer at:
