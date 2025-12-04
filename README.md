@@ -16,6 +16,8 @@
 
 ✅ Everything wired together and runnable out-of-the-box
 
+✅ Range selection for the calendar (pass `mode="range"` or `selectedRange`/`selectRange`)
+
 📘 Developer documentation lives in [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) (architecture, state model, extension ideas).
 
 
@@ -62,4 +64,11 @@ npm run build
 🟨 Preview production build (optional)
 npm run preview
 
+Range mode usage:
+
+```tsx
+const [range, setRange] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null })
+
+<Calendar mode="range" selectedRange={range} selectRange={setRange} />
+```
 

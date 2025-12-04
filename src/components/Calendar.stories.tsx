@@ -34,3 +34,23 @@ export const Controlled: Story = {
     )
   }
 }
+
+export const Range: Story = {
+  render: () => {
+    const [range, setRange] = useState<{ start: Date | null; end: Date | null }>({
+      start: null,
+      end: null
+    })
+
+    return (
+      <div className="space-y-2">
+        <Calendar mode="range" selectedRange={range} selectRange={setRange} />
+        <div className="text-sm text-gray-600">
+          {range.start ? `Start: ${format(range.start, 'PPP')}` : 'Start: —'}
+          {'  '}
+          {range.end ? `End: ${format(range.end, 'PPP')}` : 'End: —'}
+        </div>
+      </div>
+    )
+  }
+}

@@ -20,19 +20,24 @@ This repo is a minimal, headless-first datepicker built with Vite, React, TypeSc
 5) User actions: month navigation triggers `cal.prev`/`cal.next`; clicking a day calls `selectDate(day)` which either updates internal hook state or bubbles through the controlled prop handler.
 
 ## Calendar state model (`src/headless/useCalendar.ts`)
-- **State**: `currentMonth` (`Date` of the visible month) and `selectedDate` (`Date | null`). The `initial?: Date` argument seeds `currentMonth` (with invalid dates normalized to `new Date()`).
+- **State**: `currentMonth` (`Date` of the visible month) and selection. Selection can be:
+  - single-date (`selectedDate: Date | null`) when you pass a `Date` or nothing,
+  - or range (`selectedRange: { start: Date | null; end: Date | null }`) when you pass a range or opt into range mode.
+  The `initial?: Date | DateRange` argument seeds `currentMonth` and initial selection; invalid dates normalize to `new Date()`.
 - **Derived grid**: `weeks` is a 2D array of `Date`s representing the visible grid. It:
   - anchors on `startOfWeek(startOfMonth(currentMonth))`,
   - ends at `endOfWeek(endOfMonth(currentMonth))`,
   - iterates day-by-day with `addDays` to build a flat list, then slices into 7-day rows.
 - **Actions**: `prev`/`next` shift `currentMonth` with `addMonths`. `selectDate` sets `selectedDate`. Helpers `isSameDay` and `isSameMonth` are re-exported for UI checks.
+- **Range helpers**: `selectRange` sets `{start,end}`, `nextRange(day)` applies click-to-select rules (start -> end, start swap, restart on third click), and `isInRange`/`isRangeEdge` help style the grid.
 - **Why headless**: The hook contains calendar math only, enabling multiple visual presentations (simple grid, range picker, multi-month layouts) without rewriting date logic. Components can opt into controlled selection by passing the hook outputs/inputs through props.
 
 ## Calendar UI (`src/components/Calendar.tsx`)
 - Uses `useCalendar` to render a 7xN grid; accepts optional `selectedDate`/`selectDate` for controlled usage (otherwise defaults to internal hook state). Incoming dates are normalized before formatting to avoid invalid-date errors.
 - Header shows the formatted month via `date-fns/format` and prev/next buttons.
 - Day cells show dates with:
-  - `selected` styling when `isSameDay(day, selectedDate)` is true.
+  - single-date selection styling when `isSameDay(day, selectedDate)` is true,
+  - range styling when `mode="range"` or `selectedRange`/`selectRange` are provided (edges get solid highlight, in-range days get a lighter fill),
   - `faded` styling for days outside the current month via `isSameMonth`.
 - Layout uses Tailwind utility classes for sizing, spacing, and hover/selection cues.
 
@@ -63,6 +68,6 @@ This repo is a minimal, headless-first datepicker built with Vite, React, TypeSc
 - These are optional backlog ideas for project contributors; they are not shipped features and not instructions for consumers.
 - **Min/max or disabled dates**: Add constraints to block selection and visually indicate out-of-range days.
 - **Accessibility**: Apply grid roles, roving tab index, keyboard arrow navigation, focus management, and Escape-to-close on the popover.
-- **Range support**: Expand `useCalendar` to track `start`/`end` dates, hover previews, and shortcuts.
+- **Hover previews for ranges**: Show a temporary range as the user hovers between start and end.
 - **Multi-month view**: Generate multiple month grids from the same hook output, or extend the hook to return adjacent months.
 - **UI polish**: Add focus/hover states, motion, and improved popover positioning (e.g., Floating UI) as hinted in `todo.txt`.
