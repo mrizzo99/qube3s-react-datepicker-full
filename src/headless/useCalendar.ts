@@ -35,18 +35,23 @@ const normalizeRange = (value: UseCalendarInitial): DateRange => {
 
 export function useCalendar(initial?: UseCalendarInitial) {
   const initialRange = useMemo(() => normalizeRange(initial), [initial])
-  const baseDate = useMemo(() => {
+
+  const [currentMonth, setCurrentMonth] = useState(() => {
     if (initialRange.start) return initialRange.start
     if (initialRange.end) return initialRange.end
     return new Date()
-  }, [initialRange])
-
-  const [currentMonth, setCurrentMonth] = useState(baseDate)
+  })
   const [selectedRange, setSelectedRange] = useState<DateRange>(initialRange)
 
   useEffect(() => {
-    setCurrentMonth(baseDate)
-  }, [baseDate])
+    if (initialRange.start) {
+      setCurrentMonth(initialRange.start)
+      return
+    }
+    if (initialRange.end) {
+      setCurrentMonth(initialRange.end)
+    }
+  }, [initialRange.start, initialRange.end])
 
 
   /**

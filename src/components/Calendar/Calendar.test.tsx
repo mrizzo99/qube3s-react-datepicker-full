@@ -64,6 +64,13 @@ describe('Calendar', () => {
     expectHasClass(day6, 'bg-blue-100')
   })
 
+  it('navigates months in range mode before selection', async () => {
+    render(<Calendar mode="range" />)
+    expect(screen.getByText('January 2024')).toBeInTheDocument()
+    await userEvent.click(screen.getAllByRole('button', { name: '→' })[0])
+    expect(screen.getByText('February 2024')).toBeInTheDocument()
+  })
+
   it('restarts range on third click', async () => {
     render(<Calendar mode="range" />)
     const day5 = getCurrentMonthDay('5')!
