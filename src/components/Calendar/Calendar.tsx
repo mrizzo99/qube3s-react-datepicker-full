@@ -3,7 +3,7 @@ import React from 'react'
 import { useCalendar, type DateRange } from '../../headless/useCalendar'
 import { format } from 'date-fns'
 
-type CalendarProps = {
+export type CalendarProps = {
   selectedDate?: Date | null
   selectDate?: (date: Date) => void
   selectedRange?: DateRange | null

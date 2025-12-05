@@ -3,7 +3,7 @@ import Calendar from '../Calendar'
 import { format } from 'date-fns'
 import type { DateRange } from '../../headless/useCalendar'
 
-type DateRangeInputProps = {
+export type DateRangeInputProps = {
   value?: DateRange | null
   onChange?: (range: DateRange) => void
   placeholderStart?: string

@@ -6,13 +6,15 @@
 
 ✅ DateInput wrapper
 
-✅ Storybook 8
+✅ Storybook 10
 
 ✅ Vite React starter
 
 ✅ TailwindCSS
 
 ✅ TypeScript
+
+✅ TypeDoc
 
 ✅ Everything wired together and runnable out-of-the-box
 
