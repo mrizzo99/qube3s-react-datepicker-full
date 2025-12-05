@@ -2,6 +2,7 @@ debug-storybook.log
 doctor-storybook.log
 package-lock.json
 dist/
+docs/api/
 node_modules/
 storybook-static/
 

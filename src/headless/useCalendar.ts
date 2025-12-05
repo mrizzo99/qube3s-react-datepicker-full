@@ -10,7 +10,7 @@ export type DateRange = {
   end: Date | null
 }
 
-type UseCalendarInitial = Date | DateRange | undefined
+export type UseCalendarInitial = Date | DateRange | undefined
 
 const normalizeDate = (value: unknown): Date | null => {
   if (value instanceof Date && !Number.isNaN(value.getTime())) return value

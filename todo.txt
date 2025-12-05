@@ -2,6 +2,10 @@ A. Add Vitetest and baseline test to support component testing - DONE
 
 npm install --save-dev vitest @testing-library/react @testing-library/user-event @testing-library/jest-dom jsdom
 
+B. TypeDoc added to be able to generate JSDoc API documentation
+
+   use npm run docs to generate documentation in /docs/api
+
 1. Add Real UI Polish
 
 Tailwind-styled buttons
@@ -12,13 +16,13 @@ Animations (Framer Motion)
 
 Better popover positioning (Floating UI)
 
-2. Build the Range Picker
+2. Build the Range Picker 
 
-Fully functional range selection:
+Fully functional range selection: -DONE
 
-start + end selection
+start + end selection -DONE
 
-drag-hover preselection
+drag-hover preselection -DONE
 
 quick presets (Last 7 days, This month, etc.)
 
@@ -44,7 +48,7 @@ Screen reader labels
 
 Escape-to-close
 
-5. Make It “Headless UI Compatible”
+5. Make It “Headless UI Compatible” - DONE
 
 Allow integration with:
 
@@ -66,7 +70,7 @@ NPM-ready package.json
 
 Build config for ESM + CJS
 
-README with installation & usage
+README with installation & usage - DONE
 
 Example sandbox
 
