@@ -1,6 +1,6 @@
 
 import React from 'react'
-import { useCalendar, type DateRange } from '../headless/useCalendar'
+import { useCalendar, type DateRange } from '../../headless/useCalendar'
 import { format } from 'date-fns'
 
 type CalendarProps = {

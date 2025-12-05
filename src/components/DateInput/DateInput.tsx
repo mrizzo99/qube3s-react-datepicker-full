@@ -1,6 +1,6 @@
 
 import React, { useEffect, useMemo, useState } from 'react'
-import Calendar from './Calendar'
+import Calendar from '../Calendar'
 import { format } from 'date-fns'
 
 type DateInputProps = {

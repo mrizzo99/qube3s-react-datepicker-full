@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import Calendar from './Calendar'
+import Calendar from '../Calendar'
 import { format } from 'date-fns'
-import type { DateRange } from '../headless/useCalendar'
+import type { DateRange } from '../../headless/useCalendar'
 
 type DateRangeInputProps = {
   value?: DateRange | null
