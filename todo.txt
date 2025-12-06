@@ -6,7 +6,8 @@ B. TypeDoc added to be able to generate JSDoc API documentation
 
    use npm run docs to generate documentation in /docs/api
 
-1. Add Real UI Polish
+1. Look into installing react devtools for better experience with Chrome Developer Tools.
+1b. Add Real UI Polish
 
 Tailwind-styled buttons
 
