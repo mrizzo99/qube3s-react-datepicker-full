@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import Calendar from '../Calendar'
+import RangeCalendar from '../RangeCalendar'
 import { format } from 'date-fns'
-import type { DateRange } from '../../headless/useCalendar'
+import type { DateRange } from '@core/headless/useCalendar'
 
 export type DateRangeInputProps = {
   value?: DateRange | null
@@ -62,7 +62,7 @@ export default function DateRangeInput({
       </div>
       {open && (
         <div className="absolute top-full left-0 mt-2 z-10 bg-white shadow rounded">
-          <Calendar mode="range" selectedRange={selectedRange} selectRange={handleSelectRange} />
+          <RangeCalendar selectedRange={selectedRange} selectRange={handleSelectRange} />
         </div>
       )}
     </div>

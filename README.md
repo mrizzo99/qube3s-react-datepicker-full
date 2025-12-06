@@ -1,10 +1,12 @@
 ✅ Full datepicker components
 
-✅ Headless calendar hook
+✅ Headless calendar hook (core)
 
-✅ UI calendar
+✅ UI calendar (core)
 
-✅ DateInput wrapper
+✅ DateInput wrapper (core)
+
+✅ Range calendar + DateRangeInput (plus)
 
 ✅ Storybook 10
 
@@ -18,13 +20,15 @@
 
 ✅ Everything wired together and runnable out-of-the-box
 
-✅ Range selection for the calendar (pass `mode="range"` or `selectedRange`/`selectRange`)
-
 📘 Developer documentation lives in [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) (architecture, state model, extension ideas).
 
 
 
 ✅ Quick Start Instructions
+
+Packages
+- `packages/core`: single-date calendar UI (`Calendar`), popover input (`DateInput`), headless hook (`useCalendar`).
+- `packages/plus`: range-only components/hooks (`RangeCalendar`, `DateRangeInput`, `useRangeCalendar`), built on core.
 
 After downloading and extracting the ZIP:
 
@@ -36,7 +40,7 @@ npm install
 
 🟦 Run the dev environment (Vite)
 
-Runs your main demo app at:
+Demo app lives at `apps/demo` and renders both core and plus examples:
 
 📍 http://localhost:5173
 
@@ -52,9 +56,9 @@ npm run test --Vitest
 If want to see vitest run in browser run
 npm run test:browser
 
-🟩 Run Storybook (Storybook 8)
+🟩 Run Storybook (Storybook 10)
 
-Runs your component explorer at:
+Renders stories from core and plus packages:
 
 📍 http://localhost:6006
 
@@ -69,11 +73,21 @@ npm run build
 🟨 Preview production build (optional)
 npm run preview
 
-Range mode usage:
-
+Core usage (single date):
 ```tsx
-const [range, setRange] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null })
+import Calendar from '@core/components/Calendar'
 
-<Calendar mode="range" selectedRange={range} selectRange={setRange} />
+<Calendar />
 ```
 
+Plus usage (range):
+```tsx
+import DateRangeInput from '@plus/components/DateRangeInput'
+import RangeCalendar from '@plus/components/RangeCalendar'
+
+// Popover
+<DateRangeInput />
+
+// Inline
+<RangeCalendar />
+```

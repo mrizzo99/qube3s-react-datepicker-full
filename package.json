@@ -6,8 +6,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build",
+    "storybook": "storybook dev -p 6006 -c apps/storybook/.storybook",
+    "build-storybook": "storybook build -c apps/storybook/.storybook",
     "test": "vitest",
     "test:browser": "vitest --config=vitest.browser.config.ts",
     "docs": "typedoc"
