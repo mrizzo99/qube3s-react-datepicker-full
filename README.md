@@ -77,6 +77,10 @@ Core usage (single date):
 ```tsx
 import Calendar from '@core/components/Calendar'
 
+//Popover - single date selection
+<DateInput />
+
+// InLine
 <Calendar />
 ```
 
@@ -85,9 +89,22 @@ Plus usage (range):
 import DateRangeInput from '@plus/components/DateRangeInput'
 import RangeCalendar from '@plus/components/RangeCalendar'
 
-// Popover
+// Popover - date range selection (start and end date)
 <DateRangeInput />
 
 // Inline
 <RangeCalendar />
 ```
+
+Keyboard navigation
+- To set focus within the calendar (click within the calendar grid or Tab to the grid).
+  Focus Navigation:
+  - Windows/Linux: Arrow keys move focus; Home/End jump to start/end of week; PageUp/PageDown change the month.
+  - macOS: Arrow keys move focus; Fn+ArrowLeft/Fn+ArrowRight for Home/End; Fn+ArrowUp/Fn+ArrowDown for PageUp/PageDown.
+- Press Space or Enter to select the focused day (range picks start/end in sequence).
+- Press Escape to close the calendar popover and return focus to the input.
+- Mobile virtual keyboards typically don’t expose these keys; keyboard nav requires a hardware keyboard.
+
+References:
+date-fns https://date-fns.org/docs
+
