@@ -31,6 +31,7 @@ export default function DateInput({
   const [open, setOpen] = useState(false)
   const [internalDate, setInternalDate] = useState<Date | null>(value ?? null)
   const inputRef = useRef<HTMLInputElement>(null)
+  // unique ID for the hidden date format hint; avoids collisions across instances
   const describedById = useId()
 
   useEffect(() => {

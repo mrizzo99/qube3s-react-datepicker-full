@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState, useId } from 'react'
 import RangeCalendar from '../RangeCalendar'
 import { format } from 'date-fns'
-import type { DateRange } from '@core/headless/useCalendar'
+import type { DateRange } from '../../headless/useRangeCalendar'
 
 export type DateRangeInputProps = {
   value?: DateRange | null
@@ -34,6 +34,7 @@ export default function DateRangeInput({
   const [open, setOpen] = useState(false)
   const [internalRange, setInternalRange] = useState<DateRange>(value ?? emptyRange)
   const startRef = useRef<HTMLInputElement>(null)
+  // unique ID for the hidden date format hint; avoids collisions across instances
   const describedById = useId()
 
   useEffect(() => {
