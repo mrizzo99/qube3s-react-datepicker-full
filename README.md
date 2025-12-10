@@ -106,5 +106,5 @@ Keyboard navigation
 - Mobile virtual keyboards typically don’t expose these keys; keyboard nav requires a hardware keyboard.
 
 References:
-date-fns https://date-fns.org/docs
+date-fns https://date-fns.org/docs/
 
