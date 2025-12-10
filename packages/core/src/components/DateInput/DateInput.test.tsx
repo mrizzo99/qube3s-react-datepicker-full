@@ -7,7 +7,7 @@ import { format } from 'date-fns'
 const jan102024 = new Date('2024-01-10T12:00:00Z')
 
 const getCurrentMonthDay = (label: string) =>
-  screen.getAllByRole('button', { name: label }).find(btn => !btn.classList.contains('text-gray-300'))
+  screen.getAllByRole('gridcell').find(btn => btn.textContent === label && !btn.classList.contains('text-gray-300'))
 
 describe('DateInput', () => {
   beforeEach(() => vi.setSystemTime(jan102024))

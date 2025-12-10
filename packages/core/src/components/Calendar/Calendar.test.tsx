@@ -7,9 +7,9 @@ import Calendar from "./Calendar";
 
 const jan102024 = new Date('2024-01-10T12:00:00Z') // stable base date
 const expectDayGrid = () =>
-  screen.getAllByRole('button', { name: /^[0-9]+$/ }) // excludes the nav arrows
+  screen.getAllByRole('gridcell')
 const getCurrentMonthDay = (dayLabel: string) =>
-  screen.getAllByRole('button', { name: dayLabel }).find(btn => !btn.classList.contains('text-gray-300'))
+  screen.getAllByRole('gridcell').find(btn => btn.textContent === dayLabel && !btn.classList.contains('text-gray-300'))
 const expectHasClass = (el: HTMLElement, className: string) => expect(el.className.split(' ')).toContain(className)
 
 describe('Calendar', () => {
@@ -31,6 +31,15 @@ describe('Calendar', () => {
     expect(screen.getByText('February 2024')).toBeInTheDocument()
     await userEvent.click(screen.getAllByRole('button', { name: '←' })[0])
     expect(screen.getByText('January 2024')).toBeInTheDocument()
+  })
+
+  it('supports keyboard navigation', async () => {
+    render(<Calendar />)
+    const grid = screen.getByRole('grid')
+    grid.focus()
+    await userEvent.keyboard('{ArrowRight}')
+    await userEvent.keyboard(' ')
+    expect(await screen.findByRole('gridcell', { selected: true })).toBeInTheDocument()
   })
 
   it('highlights uncontrolled selection on click', async () => {

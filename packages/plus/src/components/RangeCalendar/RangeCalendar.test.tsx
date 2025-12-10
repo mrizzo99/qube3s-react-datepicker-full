@@ -7,9 +7,9 @@ import RangeCalendar from "./RangeCalendar";
 
 const jan102024 = new Date('2024-01-10T12:00:00Z') // stable base date
 const expectDayGrid = () =>
-  screen.getAllByRole('button', { name: /^[0-9]+$/ }) // excludes the nav arrows
+  screen.getAllByRole('gridcell')
 const getCurrentMonthDay = (dayLabel: string) =>
-  screen.getAllByRole('button', { name: dayLabel }).find(btn => !btn.classList.contains('text-gray-300'))
+  screen.getAllByRole('gridcell').find(btn => btn.textContent === dayLabel && !btn.classList.contains('text-gray-300'))
 const expectHasClass = (el: HTMLElement, className: string) => expect(el.className.split(' ')).toContain(className)
 
 describe('RangeCalendar', () => {
@@ -80,5 +80,15 @@ describe('RangeCalendar', () => {
 
     await userEvent.click(day10)
     expect(onSelectRange).toHaveBeenCalledWith({ start: new Date(2024, 0, 10), end: null })
+  })
+
+  it('supports keyboard navigation', async () => {
+    render(<RangeCalendar />)
+    const grid = screen.getByRole('grid')
+    grid.focus()
+    await userEvent.keyboard('{ArrowRight}')
+    await userEvent.keyboard(' ')
+    const selectedCells = await screen.findAllByRole('gridcell', { selected: true })
+    expect(selectedCells.length).toBeGreaterThanOrEqual(1)
   })
 })
