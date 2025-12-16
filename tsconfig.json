@@ -9,6 +9,7 @@
       "@core/*": ["packages/core/src/*"],
       "@plus/*": ["packages/plus/src/*"]
     },
+    "types": ["vitest/globals", "@testing-library/jest-dom"],
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true
