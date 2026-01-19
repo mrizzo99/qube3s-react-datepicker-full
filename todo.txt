@@ -2,7 +2,7 @@ A. Add Vitetest and baseline test to support component testing - DONE
 
 npm install --save-dev vitest @testing-library/react @testing-library/user-event @testing-library/jest-dom jsdom
 
-B. TypeDoc added to be able to generate JSDoc API documentation
+B. TypeDoc added to be able to generate JSDoc API documentation - DONE
 
    use npm run docs to generate documentation in /docs/api
 

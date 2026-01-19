@@ -45,21 +45,58 @@ This core repo is a headless-first datepicker built with Vite, React, TypeScript
 - Layout uses Tailwind utility classes for sizing, spacing, and hover/selection cues.
 
 ## Controlled / Uncontrolled concepts
-- Controlled: Parent owns the value and passes it in with a change handler. The component reflects whatever value the parent gives and only updates via the handler. Example: `<DateRangeInput value={range} onChange={setRange} />`—the parent state is the single source of truth.
-- Uncontrolled: Component manages its own internal state; parent can read via refs/events but doesn’t pass a value prop. Example: `<DateRangeInput />`—it tracks the range internally and just calls `onChange` optionally.
+- Controlled: Parent owns the value and passes it in with a change handler. The component reflects whatever value the parent gives and only updates via the handler. 
+Example: `<DateRangeInput value={range} onChange={setRange} />` — the parent state is the single source of truth.
+- Uncontrolled: Component manages its own internal state; parent can read via refs/events but doesn’t pass a value prop. Example: `<DateRangeInput />` — it tracks the range internally and just calls `onChange` optionally.
 - Key difference: controlled = external state, predictable and sync’d; uncontrolled = internal state, simpler wiring but less centralized control.
 
 ## Date input wrapper (core `packages/core/src/components/DateInput.tsx`)
 - Maintains `open` popover state with `useState`.
 - Supports controlled (`value`/`onChange`) or uncontrolled selection; shows a formatted date string in the input and closes the popover on selection.
 - Renders a read-only text input; clicking toggles the calendar container.
+- Optional icon support: `icon` (ReactNode), `iconPosition` (`left`/`right`), `iconAriaLabel`; defaults to a built-in calendar icon if none provided. `inputClassName`/`triggerClassName` allow theming.
 - Positions the calendar below the input with simple absolute positioning.
+
+Example: using PNG/JPG/GIF images for the icon
+```tsx
+import CalendarPng from './calendar.png'
+import CalendarGif from './calendar.gif'
+import CalendarJpg from './calendar.jpg'
+
+<DateInput
+  icon={<img src={CalendarPng} alt="" className="h-4 w-4" />}
+  iconAriaLabel="Choose date"
+/>
+
+<DateInput
+  icon={<img src={CalendarGif} alt="" className="h-4 w-4" />}
+  iconAriaLabel="Choose date"
+/>
+
+<DateInput
+  icon={<img src={CalendarJpg} alt="" className="h-4 w-4" />}
+  iconAriaLabel="Choose date"
+/>
+```
+Note: you can also pass `icon={<img src="/calendar.png" ... />}` for assets in `public/`, or use external URLs if your build allows them.
 
 ## Range input wrapper (plus `packages/plus/src/components/DateRangeInput.tsx`)
 - Maintains `open` popover state with `useState`.
 - Supports controlled (`value`/`onChange`) or uncontrolled selection; shows formatted date strings in the input fields and closes the popover on selection of both a start date and an end date for the date range. 
-- Renders a read-only text input; clicking in either the start date input field or the end date input field toggles the calendar container.
+- Renders two read-only text inputs; clicking in either the start date input field or the end date input field toggles the calendar container.
+- Optional icon support: `icon`, `iconPosition`, `iconAriaLabel` with the same defaults/overrides as `DateInput`; `inputClassName`/`triggerClassName` for theming.
 - Positions the calendar below the date inputs with simple absolute positioning.
+
+Example: image icon with range input
+```tsx
+import CalendarPng from './calendar.png'
+
+<DateRangeInput
+  icon={<img src={CalendarPng} alt="" className="h-4 w-4" />}
+  iconPosition="left"
+  iconAriaLabel="Choose date range"
+/>
+```
 
 ## Storybook (`apps/storybook/.storybook`)
 - Storybook 10 with the React Vite framework and Docs addon.

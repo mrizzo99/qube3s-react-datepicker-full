@@ -76,12 +76,16 @@ npm run preview
 Core usage (single date):
 ```tsx
 import Calendar from '@core/components/Calendar'
+import DateInput from '@core/components/DateInput'
 
 //Popover - single date selection
 <DateInput />
 
 // InLine
 <Calendar />
+
+// Custom icon on the input trigger (defaults to built-in calendar icon)
+<DateInput icon={<MyIcon />} iconPosition="left" iconAriaLabel="Choose date" />
 ```
 
 Plus usage (range):
@@ -107,4 +111,3 @@ Keyboard navigation
 
 References:
 date-fns https://date-fns.org/docs/
-
