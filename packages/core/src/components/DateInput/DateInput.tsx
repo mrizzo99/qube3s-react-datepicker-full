@@ -117,7 +117,7 @@ export default function DateInput({
       )}
       <input
         readOnly
-        className={`border border-gray-300 p-2 rounded w-48 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${inputClassName}`}
+        className={`w-48 rounded border border-gray-300 bg-white p-2 text-gray-900 placeholder:text-gray-500 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${inputClassName}`}
         placeholder={placeholderText}
         onClick={() => setOpen(o => !o)}
         value={formatted}

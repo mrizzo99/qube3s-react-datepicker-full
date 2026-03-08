@@ -118,7 +118,7 @@ export default function RangeCalendar({
 
   return (
     <div
-      className="p-4 border rounded-lg shadow bg-white w-72"
+      className="w-72 rounded-lg border bg-white p-4 text-gray-900 shadow"
       role="grid"
       aria-labelledby={monthLabelId}
       onKeyDown={handleKeyDown}
@@ -127,13 +127,13 @@ export default function RangeCalendar({
     >
       <header className="flex justify-between mb-2">
         <button onClick={cal.prev} aria-label={resolvedI18n.labels.prevMonth}>←</button>
-        <div id={monthLabelId}>
+        <div id={monthLabelId} className="font-semibold text-gray-900">
           {format(cal.currentMonth, resolvedI18n.format.monthLabel, formatOptions)}
         </div>
         <button onClick={cal.next} aria-label={resolvedI18n.labels.nextMonth}>→</button>
       </header>
 
-      <div className="grid grid-cols-7 text-gray-500 text-sm mb-1" aria-hidden="true">
+      <div className="mb-1 grid grid-cols-7 text-sm text-gray-600" aria-hidden="true">
         {weekdayLabels.map((label, index) => (
           <div key={index} className="text-center">
             {label}
@@ -145,7 +145,7 @@ export default function RangeCalendar({
         {cal.weeks.map((week, wi) =>
           week.map((day, di) => {
             const faded = !cal.isSameMonth(day, cal.currentMonth)
-            const isRangeEdge = selectedRange ? cal.isRangeEdge(day, selectedRange) : false
+            const isRangeEdge = !!(selectedRange && cal.isRangeEdge(day, selectedRange))
             const inRange = selectedRange ? cal.isInRange(day, selectedRange) : false
             const isFocused = cal.isSameDay(day, focusDate)
 
@@ -164,7 +164,7 @@ export default function RangeCalendar({
                 data-date={day.getTime()}
                 onClick={handleClick}
                 className={
-                  'rounded p-1 border border-transparent hover:border-blue-400 focus-visible:border-blue-500 focus-visible:outline-none ' +
+                  'rounded border border-transparent p-1 text-gray-900 hover:border-blue-400 focus-visible:border-blue-500 focus-visible:outline-none ' +
                   (isRangeEdge ? 'bg-blue-600 text-white ' : inRange ? 'bg-blue-100 text-blue-800 ' : '') +
                   (faded ? 'text-gray-300 ' : 'hover:bg-blue-100 ')
                 }
