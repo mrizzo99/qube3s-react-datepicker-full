@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useRef, useState, useId } from 'react'
-import { createPortal } from 'react-dom'
 import RangeCalendar from '../RangeCalendar'
 import { format } from 'date-fns'
 import type { DateRange } from '../../headless/useRangeCalendar'
@@ -45,8 +44,6 @@ export default function DateRangeInput({
   triggerClassName = '',
   i18n
 }: DateRangeInputProps) {
-  const POPOVER_WIDTH = 288
-  const POPOVER_GUTTER = 8
   const resolvedI18n = useMemo(() => resolveCalendarI18n(i18n), [i18n])
   const formatOptions = useMemo(
     () => ({ locale: resolvedI18n.locale }),
@@ -54,7 +51,6 @@ export default function DateRangeInput({
   )
   const [open, setOpen] = useState(false)
   const [internalRange, setInternalRange] = useState<DateRange>(value ?? emptyRange)
-  const [popoverPosition, setPopoverPosition] = useState<{ top: number; left: number } | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const startRef = useRef<HTMLInputElement>(null)
   // unique ID for the hidden date format hint; avoids collisions across instances
@@ -94,28 +90,27 @@ export default function DateRangeInput({
   useEffect(() => {
     if (!open) return
 
-    const updatePosition = () => {
-      const anchor = containerRef.current
-      if (!anchor) return
-      const rect = anchor.getBoundingClientRect()
-      const maxLeft = Math.max(POPOVER_GUTTER, window.innerWidth - POPOVER_WIDTH - POPOVER_GUTTER)
-      setPopoverPosition({
-        top: rect.bottom + POPOVER_GUTTER,
-        left: Math.min(Math.max(POPOVER_GUTTER, rect.left), maxLeft)
-      })
+    const handlePointerDown = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node | null
+      if (!target) return
+      if (containerRef.current?.contains(target)) return
+      setOpen(false)
     }
 
-    updatePosition()
-    window.addEventListener('resize', updatePosition)
-    window.addEventListener('scroll', updatePosition, true)
+    document.addEventListener('mousedown', handlePointerDown)
+    document.addEventListener('touchstart', handlePointerDown)
     return () => {
-      window.removeEventListener('resize', updatePosition)
-      window.removeEventListener('scroll', updatePosition, true)
+      document.removeEventListener('mousedown', handlePointerDown)
+      document.removeEventListener('touchstart', handlePointerDown)
     }
   }, [open])
 
   return (
-    <div ref={containerRef} className="inline-flex flex-col gap-2">
+    <div
+      ref={containerRef}
+      className="relative inline-flex flex-col gap-2"
+      style={open ? { zIndex: 'var(--rdp-z-popover, 1000)' } : undefined}
+    >
       <div className="flex gap-2">
         <div className="inline-flex items-center gap-1">
           {iconPosition === 'left' && (
@@ -184,15 +179,10 @@ export default function DateRangeInput({
       <span id={describedById} style={visuallyHidden}>
         {formatDescriptionText}
       </span>
-      {open && popoverPosition && typeof document !== 'undefined' && createPortal(
+      {open && (
         <div
-          className="rounded bg-white shadow"
-          style={{
-            position: 'fixed',
-            top: popoverPosition.top,
-            left: popoverPosition.left,
-            zIndex: 'var(--rdp-z-popover, 1000)'
-          }}
+          className="absolute top-full left-0 mt-2 rounded bg-white shadow"
+          style={{ zIndex: 'var(--rdp-z-popover, 1000)' }}
           role="dialog"
           aria-label={resolvedI18n.labels.rangeCalendar}
         >
@@ -205,8 +195,7 @@ export default function DateRangeInput({
               startRef.current?.focus()
             }}
           />
-        </div>,
-        document.body
+        </div>
       )}
     </div>
   )
