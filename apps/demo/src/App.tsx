@@ -4,57 +4,161 @@ import Calendar from '@core/components/Calendar'
 import { format } from 'date-fns'
 import DateRangeInput from '@plus/components/DateRangeInput'
 import RangeCalendar from '@plus/components/RangeCalendar'
+import { esI18n } from '@core/i18n-presets'
+import qube3sLogoPng from '../public/brand/qube3s-logo.png'
+import qube3sCubePng from '../public/brand/qube3s-cube.png'
+
+const panelClass =
+  'rounded-xl border border-[var(--q3-border)] bg-[color:rgb(17_24_39_/_0.85)] p-5 shadow-[0_8px_24px_rgba(2,6,23,0.35)] backdrop-blur'
 
 export default function App() {
   const [inlineSelectedDate, setInlineSelectedDate] = useState<Date | null>(null)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
-  const [range, setRange] = useState<{ start: Date | null; end: Date | null }>({ 
-    start: null, 
-    end: null 
+  const [selectedDateEs, setSelectedDateEs] = useState<Date | null>(null)
+  const [range, setRange] = useState<{ start: Date | null; end: Date | null }>({
+    start: null,
+    end: null
   })
   const [rangeInput, setRangeInput] = useState<{ start: Date | null; end: Date | null }>({
     start: null,
     end: null
   })
+  const [rangeInputEs, setRangeInputEs] = useState<{ start: Date | null; end: Date | null }>({
+    start: null,
+    end: null
+  })
 
   return (
-    <div className="p-8 space-y-6">
-      <h1 className="text-xl mb-4">React Datepicker Starter</h1>
+    <div className="min-h-screen bg-[var(--q3-bg)] text-[var(--q3-text-primary)]">
+      <header className="sticky top-0 z-30 border-b border-[var(--q3-border)] bg-[color:rgb(11_18_32_/_0.92)] backdrop-blur">
+        <div className="mx-auto flex h-16 max-w-screen-2xl items-center justify-between px-4 sm:px-6">
+          <div className="flex items-center gap-3">
+            <img src={qube3sLogoPng} alt="Qube3s" className="h-12 w-auto object-contain" />
+            <span className="hidden rounded-full border border-[var(--q3-primary-soft)] px-2 py-0.5 text-xs text-[var(--q3-primary-soft)] sm:inline">
+              Demo Console
+            </span>
+          </div>
 
-      <section className="space-y-2">
-        <h2 className="text-lg font-semibold">Single date selection - (inline - Calendar component)</h2>
-        <Calendar selectedDate={inlineSelectedDate} selectDate={setInlineSelectedDate} />
-        <p className="text-gray-600">
-          {inlineSelectedDate ? `Selected: ${format(inlineSelectedDate, 'PPP')}` : 'Choose a date'}
-        </p>
-      </section>
+          <div className="flex items-center gap-2">
+            {/* Placeholder: wire this to the generated docs site when docs publishing is in place. */}
+            <button className="rounded-md border border-[var(--q3-border)] px-3 py-1.5 text-sm text-[var(--q3-text-primary)] hover:border-[var(--q3-primary-soft)]">
+              Docs
+            </button>
+            <button className="rounded-md bg-[var(--q3-primary)] px-3 py-1.5 text-sm font-medium text-white hover:bg-[var(--q3-primary-hover)]">
+              Try Components
+            </button>
+          </div>
+        </div>
+      </header>
 
-      <section className="space-y-2">
-        <h2 className="text-lg font-semibold">Single date (popover) - DateInput Component</h2>
-        <DateInput value={selectedDate} onChange={setSelectedDate} />
-        <p className="text-gray-600">
-          {selectedDate ? `Selected: ${format(selectedDate, 'PPP')}` : 'Choose a date'}
-        </p>
-      </section>
+      <div className="mx-auto flex max-w-screen-2xl">
+        <aside className="hidden w-72 shrink-0 border-r border-[var(--q3-border)] bg-[var(--q3-surface)] md:block">
+          <div className="p-5">
+            <p className="text-xs uppercase tracking-[0.18em] text-[var(--q3-text-disabled)]">Navigation</p>
+            <nav className="mt-4 space-y-2">
+              <a className="block rounded-md bg-[color:rgb(76_95_213_/_0.18)] px-3 py-2 text-sm text-[var(--q3-text-primary)]" href="#single-inline">
+                Single Date Inline
+              </a>
+              <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#single-popover">
+                Single Date Popover
+              </a>
+              <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#single-es">
+                Single Date ES Locale
+              </a>
+              <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#range-inline">
+                Range Inline
+              </a>
+              <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#range-popover">
+                Range Popover
+              </a>
+              <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#range-es">
+                Range ES Locale
+              </a>
+            </nav>
+            <div className="mb-5 flex items-center gap-3 rounded-lg border border-[var(--q3-border)] bg-[color:rgb(11_18_32_/_0.35)] px-3 py-2">
+              <img src={qube3sCubePng} alt="Qube3s cube" className="h-8 w-8 rounded-md object-cover" />
+              <div>
+                <p className="text-sm font-medium text-[var(--q3-text-primary)]">Qube3s</p>
+                <p className="text-xs text-[var(--q3-text-disabled)]">Component Lab</p>
+              </div>
+            </div>
+          </div>
+        </aside>
 
-      <section className="space-y-2">
-        <h2 className="text-lg font-semibold">Range selection (inline - RangeCalendar componet)</h2>
-        <RangeCalendar selectedRange={range} selectRange={setRange} />
-        <p className="text-gray-600">
-          {range.start ? `Start: ${format(range.start, 'PPP')}` : 'Start: —'}{' '}
-          {range.end ? `End: ${format(range.end, 'PPP')}` : 'End: —'}
-        </p>
-      </section>
+        <main className="w-full p-4 sm:p-6 lg:p-8">
+          <section className="mb-6 rounded-2xl border border-[var(--q3-border)] bg-[linear-gradient(120deg,rgba(76,95,213,0.2),rgba(17,24,39,0.2))] p-6">
+            <h1 className="text-2xl font-semibold">Datepicker System Playground</h1>
+            <p className="mt-2 max-w-2xl text-sm text-[var(--q3-text-disabled)]">
+              Explore single-date and range-picker behavior across inline and popover surfaces.
+            </p>
+          </section>
 
-      <section className="space-y-2">
-        <h2 className="text-lg font-semibold">Range selection (popover - DateRangeInput Component)</h2>
-        <DateRangeInput value={rangeInput} onChange={setRangeInput} />
-        <p className="text-gray-600">
-          {rangeInput.start ? `Start: ${format(rangeInput.start, 'PPP')}` : 'Start: —'}{' '}
-          {rangeInput.end ? `End: ${format(rangeInput.end, 'PPP')}` : 'End: —'}
-        </p>
-      </section>
+          <div className="space-y-5">
+            <section id="single-inline" className={panelClass}>
+              <h2 className="text-lg font-semibold">Single date selection (inline)</h2>
+              <p className="mt-1 mb-3 text-sm text-[var(--q3-text-disabled)]">Calendar component</p>
+              <Calendar selectedDate={inlineSelectedDate} selectDate={setInlineSelectedDate} />
+              <p className="mt-3 text-sm text-[var(--q3-text-disabled)]">
+                {inlineSelectedDate ? `Selected: ${format(inlineSelectedDate, 'PPP')}` : 'Choose a date'}
+              </p>
+            </section>
 
+            <section id="single-popover" className={panelClass}>
+              <h2 className="text-lg font-semibold">Single date (popover)</h2>
+              <p className="mt-1 mb-3 text-sm text-[var(--q3-text-disabled)]">DateInput component</p>
+              <DateInput value={selectedDate} onChange={setSelectedDate} />
+              <p className="mt-3 text-sm text-[var(--q3-text-disabled)]">
+                {selectedDate ? `Selected: ${format(selectedDate, 'PPP')}` : 'Choose a date'}
+              </p>
+            </section>
+
+            <section id="single-es" className={panelClass}>
+              <h2 className="text-lg font-semibold">Single date (popover, es locale)</h2>
+              <p className="mt-1 mb-3 text-sm text-[var(--q3-text-disabled)]">DateInput + esI18n preset</p>
+              <DateInput value={selectedDateEs} onChange={setSelectedDateEs} i18n={esI18n} />
+              <p className="mt-3 text-sm text-[var(--q3-text-disabled)]">
+                {selectedDateEs
+                  ? `Selected: ${format(selectedDateEs, 'PPP', { locale: esI18n.locale })}`
+                  : 'Choose a date'}
+              </p>
+            </section>
+
+            <section id="range-inline" className={panelClass}>
+              <h2 className="text-lg font-semibold">Range selection (inline)</h2>
+              <p className="mt-1 mb-3 text-sm text-[var(--q3-text-disabled)]">RangeCalendar component</p>
+              <RangeCalendar selectedRange={range} selectRange={setRange} />
+              <p className="mt-3 text-sm text-[var(--q3-text-disabled)]">
+                {range.start ? `Start: ${format(range.start, 'PPP')}` : 'Start: —'}{' '}
+                {range.end ? `End: ${format(range.end, 'PPP')}` : 'End: —'}
+              </p>
+            </section>
+
+            <section id="range-popover" className={panelClass}>
+              <h2 className="text-lg font-semibold">Range selection (popover)</h2>
+              <p className="mt-1 mb-3 text-sm text-[var(--q3-text-disabled)]">DateRangeInput component</p>
+              <DateRangeInput value={rangeInput} onChange={setRangeInput} />
+              <p className="mt-3 text-sm text-[var(--q3-text-disabled)]">
+                {rangeInput.start ? `Start: ${format(rangeInput.start, 'PPP')}` : 'Start: —'}{' '}
+                {rangeInput.end ? `End: ${format(rangeInput.end, 'PPP')}` : 'End: —'}
+              </p>
+            </section>
+
+            <section id="range-es" className={panelClass}>
+              <h2 className="text-lg font-semibold">Range selection (popover, es locale)</h2>
+              <p className="mt-1 mb-3 text-sm text-[var(--q3-text-disabled)]">DateRangeInput + esI18n preset</p>
+              <DateRangeInput value={rangeInputEs} onChange={setRangeInputEs} i18n={esI18n} />
+              <p className="mt-3 text-sm text-[var(--q3-text-disabled)]">
+                {rangeInputEs.start
+                  ? `Start: ${format(rangeInputEs.start, 'PPP', { locale: esI18n.locale })}`
+                  : 'Start: —'}{' '}
+                {rangeInputEs.end
+                  ? `End: ${format(rangeInputEs.end, 'PPP', { locale: esI18n.locale })}`
+                  : 'End: —'}
+              </p>
+            </section>
+          </div>
+        </main>
+      </div>
     </div>
   )
 }
