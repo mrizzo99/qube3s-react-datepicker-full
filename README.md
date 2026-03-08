@@ -100,6 +100,39 @@ import RangeCalendar from '@plus/components/RangeCalendar'
 <RangeCalendar />
 ```
 
+Internationalization (i18n)
+```tsx
+import { frI18n } from '@core/i18n-presets'
+import Calendar from '@core/components/Calendar'
+import DateInput from '@core/components/DateInput'
+import DateRangeInput from '@plus/components/DateRangeInput'
+
+const i18n = frI18n
+
+<Calendar i18n={i18n} />
+<DateInput i18n={i18n} />
+<DateRangeInput i18n={i18n} />
+```
+Presets are available from `@core/i18n-presets` (`enUSI18n`, `frI18n`, `esI18n`), or pass a custom `i18n` object to override defaults.
+Placeholders and the format hint text use `i18n.labels` when you don't supply explicit props.
+
+Extend a preset
+```tsx
+import { frI18n } from '@core/i18n-presets'
+
+const i18n = {
+  ...frI18n,
+  labels: {
+    ...frI18n.labels,
+    calendar: 'Calendrier (compact)'
+  }
+}
+```
+One-liner for format overrides:
+```tsx
+const i18n = { ...frI18n, format: { ...frI18n.format, inputValue: 'Pp' } }
+```
+
 Keyboard navigation
 - To set focus within the calendar (click within the calendar grid or Tab to the grid).
   Focus Navigation:

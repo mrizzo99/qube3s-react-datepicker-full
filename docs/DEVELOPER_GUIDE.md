@@ -98,6 +98,44 @@ import CalendarPng from './calendar.png'
 />
 ```
 
+## Internationalization (i18n)
+- UI components accept an `i18n` prop to localize month/day labels, aria labels, and input formatting.
+- Headless hooks accept locale/week-start options (`useCalendar(initial, { locale, weekStartsOn })` and `useRangeCalendar(initial, { locale, weekStartsOn })`).
+- `CalendarI18n` lives in `packages/core/src/i18n.ts` and is re-exported from `packages/core/src/index.ts`.
+- Placeholders and the format hint text default to `i18n.labels` unless overridden via props.
+
+Example: shared i18n object
+```tsx
+import { frI18n } from '@core/i18n-presets'
+import Calendar from '@core/components/Calendar'
+import DateInput from '@core/components/DateInput'
+import DateRangeInput from '@plus/components/DateRangeInput'
+
+const i18n = frI18n
+
+<Calendar i18n={i18n} />
+<DateInput i18n={i18n} />
+<DateRangeInput i18n={i18n} />
+```
+Presets are exported from `packages/core/src/i18n-presets.ts` (`enUSI18n`, `frI18n`, `esI18n`) and can be used directly or extended.
+
+Extend a preset
+```tsx
+import { frI18n } from '@core/i18n-presets'
+
+const i18n = {
+  ...frI18n,
+  labels: {
+    ...frI18n.labels,
+    calendar: 'Calendrier (compact)'
+  }
+}
+```
+One-liner for format overrides:
+```tsx
+const i18n = { ...frI18n, format: { ...frI18n.format, inputValue: 'Pp' } }
+```
+
 ## Storybook (`apps/storybook/.storybook`)
 - Storybook 10 with the React Vite framework and Docs addon.
 - Stories live under `packages/core/**` and `packages/plus/**` and are auto-discovered by the configured globs.

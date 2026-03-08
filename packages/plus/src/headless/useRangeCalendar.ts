@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useCalendar } from '@core/headless/useCalendar'
+import { useCalendar, type UseCalendarOptions } from '@core/headless/useCalendar'
 import { isSameDay } from 'date-fns'
 
 export type DateRange = {
@@ -30,11 +30,11 @@ const normalizeRange = (value: UseRangeInitial): DateRange => {
   return { start, end }
 }
 
-export function useRangeCalendar(initial?: UseRangeInitial) {
+export function useRangeCalendar(initial?: UseRangeInitial, options?: UseCalendarOptions) {
   const initialRange = useMemo(() => normalizeRange(initial), [initial])
   const anchorDate = initialRange.start ?? initialRange.end
 
-  const core = useCalendar(anchorDate ?? undefined)
+  const core = useCalendar(anchorDate ?? undefined, options)
   const [selectedRange, setSelectedRange] = useState<DateRange>(initialRange)
 
   const nextRange = (day: Date, range: DateRange = selectedRange): DateRange => {

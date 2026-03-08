@@ -1,0 +1,12 @@
+:root {
+  --q3-bg: #0B1220;
+  --q3-surface: #111827;
+  --q3-border: #1E293B;
+
+  --q3-primary: #4C5FD5;
+  --q3-primary-hover: #6366F1;
+  --q3-primary-soft: #818CF8;
+
+  --q3-text-primary: #E5E7EB;
+  --q3-text-disabled: #6B7280;
+}
