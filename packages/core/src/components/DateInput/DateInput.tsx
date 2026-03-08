@@ -1,6 +1,5 @@
 
 import React, { useEffect, useMemo, useRef, useState, useId } from 'react'
-import { createPortal } from 'react-dom'
 import Calendar from '../Calendar'
 import { format } from 'date-fns'
 import { resolveCalendarI18n, type CalendarI18n } from '../../i18n'
@@ -42,8 +41,6 @@ export default function DateInput({
   triggerClassName = '',
   i18n
 }: DateInputProps) {
-  const POPOVER_WIDTH = 288
-  const POPOVER_GUTTER = 8
   const resolvedI18n = useMemo(() => resolveCalendarI18n(i18n), [i18n])
   const formatOptions = useMemo(
     () => ({ locale: resolvedI18n.locale }),
@@ -51,7 +48,6 @@ export default function DateInput({
   )
   const [open, setOpen] = useState(false)
   const [internalDate, setInternalDate] = useState<Date | null>(value ?? null)
-  const [popoverPosition, setPopoverPosition] = useState<{ top: number; left: number } | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   // unique ID for the hidden date format hint; avoids collisions across instances
@@ -83,28 +79,27 @@ export default function DateInput({
   useEffect(() => {
     if (!open) return
 
-    const updatePosition = () => {
-      const anchor = containerRef.current
-      if (!anchor) return
-      const rect = anchor.getBoundingClientRect()
-      const maxLeft = Math.max(POPOVER_GUTTER, window.innerWidth - POPOVER_WIDTH - POPOVER_GUTTER)
-      setPopoverPosition({
-        top: rect.bottom + POPOVER_GUTTER,
-        left: Math.min(Math.max(POPOVER_GUTTER, rect.left), maxLeft)
-      })
+    const handlePointerDown = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node | null
+      if (!target) return
+      if (containerRef.current?.contains(target)) return
+      setOpen(false)
     }
 
-    updatePosition()
-    window.addEventListener('resize', updatePosition)
-    window.addEventListener('scroll', updatePosition, true)
+    document.addEventListener('mousedown', handlePointerDown)
+    document.addEventListener('touchstart', handlePointerDown)
     return () => {
-      window.removeEventListener('resize', updatePosition)
-      window.removeEventListener('scroll', updatePosition, true)
+      document.removeEventListener('mousedown', handlePointerDown)
+      document.removeEventListener('touchstart', handlePointerDown)
     }
   }, [open])
 
   return (
-    <div ref={containerRef} className="inline-flex items-center gap-1">
+    <div
+      ref={containerRef}
+      className="relative inline-flex items-center gap-1"
+      style={open ? { zIndex: 'var(--rdp-z-popover, 1000)' } : undefined}
+    >
       {iconPosition === 'left' && (
         <button
           type="button"
@@ -139,15 +134,10 @@ export default function DateInput({
       <span id={describedById} style={visuallyHidden}>
         {formatDescriptionText}
       </span>
-      {open && popoverPosition && typeof document !== 'undefined' && createPortal(
+      {open && (
         <div
-          className="rounded bg-white shadow"
-          style={{
-            position: 'fixed',
-            top: popoverPosition.top,
-            left: popoverPosition.left,
-            zIndex: 'var(--rdp-z-popover, 1000)'
-          }}
+          className="absolute top-full left-0 mt-2 rounded bg-white shadow"
+          style={{ zIndex: 'var(--rdp-z-popover, 1000)' }}
           role="dialog"
           aria-label={resolvedI18n.labels.calendar}
         >
@@ -160,8 +150,7 @@ export default function DateInput({
               inputRef.current?.focus()
             }}
           />
-        </div>,
-        document.body
+        </div>
       )}
     </div>
   )
