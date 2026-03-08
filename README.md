@@ -142,5 +142,36 @@ Keyboard navigation
 - Press Escape to close the calendar popover and return focus to the input.
 - Mobile virtual keyboards typically don’t expose these keys; keyboard nav requires a hardware keyboard.
 
+Layering / popovers
+- `DateInput` and `DateRangeInput` popovers render through a portal to `document.body`.
+- Popover z-layer is controlled by CSS variable `--rdp-z-popover` (default: `1000`).
+- Override globally:
+```css
+:root {
+  --rdp-z-popover: 1400;
+}
+```
+- Override in a scoped container (for example inside a modal shell):
+```css
+.my-modal-theme {
+  --rdp-z-popover: 2200;
+}
+```
+- Example usage with scoped layering:
+```tsx
+import DateInput from '@core/components/DateInput'
+import DateRangeInput from '@plus/components/DateRangeInput'
+
+export function BookingModalBody() {
+  return (
+    <div className="my-modal-theme">
+      <DateInput />
+      <DateRangeInput />
+    </div>
+  )
+}
+```
+- Choose a value above your app's regular content/dropdowns, and below top-most system layers if needed.
+
 References:
 date-fns https://date-fns.org/docs/
