@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 170" role="img" aria-label="Qube3s cube mark">
+  <!-- bottom-left cube -->
+  <polygon points="20,78 60,58 100,78 60,98" fill="#4C5FD5"></polygon>
+  <polygon points="20,78 60,98 60,138 20,118" fill="#3730A3"></polygon>
+  <polygon points="100,78 60,98 60,138 100,118" fill="#334155"></polygon>
+
+  <!-- bottom-right cube -->
+  <polygon points="100,78 140,58 180,78 140,98" fill="#4C5FD5"></polygon>
+  <polygon points="100,78 140,98 140,138 100,118" fill="#3730A3"></polygon>
+  <polygon points="180,78 140,98 140,138 180,118" fill="#334155"></polygon>
+
+  <!-- top cube -->
+  <polygon points="60,38 100,18 140,38 100,58" fill="#4C5FD5"></polygon>
+  <polygon points="60,38 100,58 100,98 60,78" fill="#3730A3"></polygon>
+  <polygon points="140,38 100,58 100,98 140,78" fill="#334155"></polygon>
+</svg>

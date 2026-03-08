@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 200">
+
+<defs>
+
+<linearGradient id="cubeTopGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+<stop offset="0%" stop-color="#7B79FF"></stop>
+<stop offset="100%" stop-color="#3C36D6"></stop>
+</linearGradient>
+
+</defs>
+
+<!-- TOP CUBE -->
+
+<polygon points="120,45 170,20 220,45 170,70" fill="url(#cubeTopGrad)"></polygon>
+
+<polygon points="120,45 170,70 170,115 120,90" fill="#4238C8"></polygon>
+
+<polygon points="220,45 170,70 170,115 220,90" fill="#2C2AA0"></polygon>
+
+<!-- LEFT CUBE -->
+
+<polygon points="70,105 120,80 170,105 120,130" fill="#3E4B8A"></polygon>
+
+<polygon points="70,105 120,130 120,175 70,150" fill="#1E2853"></polygon>
+
+<polygon points="170,105 120,130 120,175 170,150" fill="#151F45"></polygon>
+
+<!-- SMALL CUBE -->
+
+<polygon points="180,115 215,98 250,115 215,132" fill="#414B73"></polygon>
+
+<polygon points="180,115 215,132 215,165 180,148" fill="#20274C"></polygon>
+
+<polygon points="250,115 215,132 215,165 250,148" fill="#161B36"></polygon>
+
+</svg>

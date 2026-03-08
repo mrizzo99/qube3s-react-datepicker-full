@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { useState } from 'react'
 import DateInput from './DateInput'
+import { esI18n } from '@core/i18n-presets'
 
 const meta: Meta<typeof DateInput> = {
   title: 'DateInput',
@@ -17,4 +18,8 @@ export const Controlled: Story = {
     const [date, setDate] = useState<Date | null>(null)
     return <DateInput value={date ?? undefined} onChange={d => setDate(d)} />
   },
+}
+
+export const SpanishI18n: Story = {
+  render: () => <DateInput i18n={esI18n} />
 }

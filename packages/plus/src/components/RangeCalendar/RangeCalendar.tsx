@@ -1,20 +1,31 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { format } from 'date-fns'
+import { addMonths, format } from 'date-fns'
+import { resolveCalendarI18n, type CalendarI18n } from '@core/i18n'
 import { useRangeCalendar, type DateRange } from '../../headless/useRangeCalendar'
 
 export type RangeCalendarProps = {
   selectedRange?: DateRange | null
   selectRange?: (range: DateRange) => void
   onEscape?: () => void
+  i18n?: CalendarI18n
 }
 
 export default function RangeCalendar({
   selectedRange: controlledSelectedRange,
   selectRange: controlledSelectRange,
-  onEscape
+  onEscape,
+  i18n
 }: RangeCalendarProps) {
   const normalizedRange = controlledSelectedRange ?? null
-  const cal = useRangeCalendar(normalizedRange ?? undefined)
+  const resolvedI18n = useMemo(() => resolveCalendarI18n(i18n), [i18n])
+  const formatOptions = useMemo(
+    () => ({ locale: resolvedI18n.locale }),
+    [resolvedI18n.locale]
+  )
+  const cal = useRangeCalendar(normalizedRange ?? undefined, {
+    locale: resolvedI18n.locale,
+    weekStartsOn: resolvedI18n.weekStartsOn
+  })
   const selectedRange = normalizedRange ?? cal.selectedRange
   const selectRange = controlledSelectRange ?? cal.selectRange
   const monthLabelId = useMemo(
@@ -26,6 +37,13 @@ export default function RangeCalendar({
   const [focusDate, setFocusDate] = useState<Date>(anchorDate)
   const gridRef = useRef<HTMLDivElement>(null)
   const gridDays = useMemo(() => cal.weeks.flat(), [cal.weeks])
+  const weekdayLabels = useMemo(
+    () =>
+      (cal.weeks[0] ?? []).map(day =>
+        format(day, resolvedI18n.format.weekdayLabel, formatOptions)
+      ),
+    [cal.weeks, resolvedI18n.format.weekdayLabel, formatOptions]
+  )
 
   const findGridDate = (date: Date) => gridDays.find(d => cal.isSameDay(d, date)) ?? gridDays[0]
 
@@ -108,13 +126,19 @@ export default function RangeCalendar({
       ref={gridRef}
     >
       <header className="flex justify-between mb-2">
-        <button onClick={cal.prev}>←</button>
-        <div id={monthLabelId}>{format(cal.currentMonth, 'MMMM yyyy')}</div>
-        <button onClick={cal.next}>→</button>
+        <button onClick={cal.prev} aria-label={resolvedI18n.labels.prevMonth}>←</button>
+        <div id={monthLabelId}>
+          {format(cal.currentMonth, resolvedI18n.format.monthLabel, formatOptions)}
+        </div>
+        <button onClick={cal.next} aria-label={resolvedI18n.labels.nextMonth}>→</button>
       </header>
 
       <div className="grid grid-cols-7 text-gray-500 text-sm mb-1" aria-hidden="true">
-        {['Su','Mo','Tu','We','Th','Fr','Sa'].map(d => <div key={d} className="text-center">{d}</div>)}
+        {weekdayLabels.map((label, index) => (
+          <div key={index} className="text-center">
+            {label}
+          </div>
+        ))}
       </div>
 
       <div className="grid grid-cols-7 gap-1">
@@ -144,9 +168,9 @@ export default function RangeCalendar({
                   (isRangeEdge ? 'bg-blue-600 text-white ' : inRange ? 'bg-blue-100 text-blue-800 ' : '') +
                   (faded ? 'text-gray-300 ' : 'hover:bg-blue-100 ')
                 }
-                aria-label={format(day, 'EEEE, MMMM d, yyyy')}
+                aria-label={format(day, resolvedI18n.format.dayAriaLabel, formatOptions)}
               >
-                {format(day, 'd')}
+                {format(day, resolvedI18n.format.dayLabel, formatOptions)}
               </button>
             )
           })

@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useRef, useState, useId } from 'react'
 import Calendar from '../Calendar'
 import { format } from 'date-fns'
+import { resolveCalendarI18n, type CalendarI18n } from '../../i18n'
 
 export type DateInputProps = {
   value?: Date | null
@@ -13,6 +14,7 @@ export type DateInputProps = {
   iconAriaLabel?: string
   inputClassName?: string
   triggerClassName?: string
+  i18n?: CalendarI18n
 }
 
 const visuallyHidden = {
@@ -30,14 +32,20 @@ const visuallyHidden = {
 export default function DateInput({
   value,
   onChange,
-  placeholder = 'Select date',
-  formatDescription = 'Date format: MM/DD/YYYY',
+  placeholder,
+  formatDescription,
   icon,
   iconPosition = 'right',
   iconAriaLabel = 'Open calendar',
   inputClassName = '',
-  triggerClassName = ''
+  triggerClassName = '',
+  i18n
 }: DateInputProps) {
+  const resolvedI18n = useMemo(() => resolveCalendarI18n(i18n), [i18n])
+  const formatOptions = useMemo(
+    () => ({ locale: resolvedI18n.locale }),
+    [resolvedI18n.locale]
+  )
   const [open, setOpen] = useState(false)
   const [internalDate, setInternalDate] = useState<Date | null>(value ?? null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -51,9 +59,14 @@ export default function DateInput({
   const selectedDate = value ?? internalDate
 
   const formatted = useMemo(
-    () => (selectedDate ? format(selectedDate, 'PPP') : ''),
-    [selectedDate]
+    () =>
+      selectedDate
+        ? format(selectedDate, resolvedI18n.format.inputValue, formatOptions)
+        : '',
+    [selectedDate, resolvedI18n.format.inputValue, formatOptions]
   )
+  const placeholderText = placeholder ?? resolvedI18n.labels.selectDatePlaceholder
+  const formatDescriptionText = formatDescription ?? resolvedI18n.labels.formatDescription
 
   const handleSelectDate = (date: Date) => {
     if (value === undefined) setInternalDate(date)
@@ -77,7 +90,7 @@ export default function DateInput({
       <input
         readOnly
         className={`border border-gray-300 p-2 rounded w-48 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${inputClassName}`}
-        placeholder={placeholder}
+        placeholder={placeholderText}
         onClick={() => setOpen(o => !o)}
         value={formatted}
         ref={inputRef}
@@ -96,17 +109,18 @@ export default function DateInput({
         </button>
       )}
       <span id={describedById} style={visuallyHidden}>
-        {formatDescription}
+        {formatDescriptionText}
       </span>
       {open && (
         <div
           className="absolute top-full left-0 mt-2 z-10 bg-white shadow rounded"
           role="dialog"
-          aria-label="Calendar"
+          aria-label={resolvedI18n.labels.calendar}
         >
           <Calendar
             selectedDate={selectedDate}
             selectDate={handleSelectDate}
+            i18n={i18n}
             onEscape={() => {
               setOpen(false)
               inputRef.current?.focus()

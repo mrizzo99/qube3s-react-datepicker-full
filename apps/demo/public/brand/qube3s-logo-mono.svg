@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 200">
+
+<g fill="#FFFFFF">
+
+<polygon points="120,45 170,20 220,45 170,70"></polygon>
+<polygon points="120,45 170,70 170,115 120,90"></polygon>
+<polygon points="220,45 170,70 170,115 220,90"></polygon>
+
+<polygon points="70,105 120,80 170,105 120,130"></polygon>
+<polygon points="70,105 120,130 120,175 70,150"></polygon>
+<polygon points="170,105 120,130 120,175 170,150"></polygon>
+
+<polygon points="180,115 215,98 250,115 215,132"></polygon>
+<polygon points="180,115 215,132 215,165 180,148"></polygon>
+<polygon points="250,115 215,132 215,165 250,148"></polygon>
+
+</g>
+
+<text x="300" y="120" font-family="Inter, system-ui, sans-serif" font-weight="700" font-size="76" fill="#FFFFFF">
+Qube3s
+</text>
+
+</svg>

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState, useId } from 'react'
 import RangeCalendar from '../RangeCalendar'
 import { format } from 'date-fns'
 import type { DateRange } from '../../headless/useRangeCalendar'
+import { resolveCalendarI18n, type CalendarI18n } from '@core/i18n'
 
 export type DateRangeInputProps = {
   value?: DateRange | null
@@ -14,6 +15,7 @@ export type DateRangeInputProps = {
   iconAriaLabel?: string
   inputClassName?: string
   triggerClassName?: string
+  i18n?: CalendarI18n
 }
 
 const emptyRange: DateRange = { start: null, end: null }
@@ -32,15 +34,21 @@ const visuallyHidden = {
 export default function DateRangeInput({
   value,
   onChange,
-  placeholderStart = 'Start date',
-  placeholderEnd = 'End date',
-  formatDescription = 'Date format: MM/DD/YYYY',
+  placeholderStart,
+  placeholderEnd,
+  formatDescription,
   icon,
   iconPosition = 'right',
   iconAriaLabel = 'Open calendar',
   inputClassName = '',
-  triggerClassName = ''
+  triggerClassName = '',
+  i18n
 }: DateRangeInputProps) {
+  const resolvedI18n = useMemo(() => resolveCalendarI18n(i18n), [i18n])
+  const formatOptions = useMemo(
+    () => ({ locale: resolvedI18n.locale }),
+    [resolvedI18n.locale]
+  )
   const [open, setOpen] = useState(false)
   const [internalRange, setInternalRange] = useState<DateRange>(value ?? emptyRange)
   const startRef = useRef<HTMLInputElement>(null)
@@ -54,13 +62,22 @@ export default function DateRangeInput({
   const selectedRange = value ?? internalRange
 
   const formattedStart = useMemo(
-    () => (selectedRange.start ? format(selectedRange.start, 'PPP') : ''),
-    [selectedRange.start]
+    () =>
+      selectedRange.start
+        ? format(selectedRange.start, resolvedI18n.format.inputValue, formatOptions)
+        : '',
+    [selectedRange.start, resolvedI18n.format.inputValue, formatOptions]
   )
   const formattedEnd = useMemo(
-    () => (selectedRange.end ? format(selectedRange.end, 'PPP') : ''),
-    [selectedRange.end]
+    () =>
+      selectedRange.end
+        ? format(selectedRange.end, resolvedI18n.format.inputValue, formatOptions)
+        : '',
+    [selectedRange.end, resolvedI18n.format.inputValue, formatOptions]
   )
+  const placeholderStartText = placeholderStart ?? resolvedI18n.labels.startDatePlaceholder
+  const placeholderEndText = placeholderEnd ?? resolvedI18n.labels.endDatePlaceholder
+  const formatDescriptionText = formatDescription ?? resolvedI18n.labels.formatDescription
 
   const handleSelectRange = (range: DateRange) => {
     if (value === undefined) setInternalRange(range)
@@ -86,7 +103,7 @@ export default function DateRangeInput({
           <input
             readOnly
             className={`border border-gray-300 p-2 rounded w-40 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${inputClassName}`}
-            placeholder={placeholderStart}
+            placeholder={placeholderStartText}
             onClick={() => setOpen(o => !o)}
             value={formattedStart}
             ref={startRef}
@@ -119,7 +136,7 @@ export default function DateRangeInput({
           <input
             readOnly
             className={`border border-gray-300 p-2 rounded w-40 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${inputClassName}`}
-            placeholder={placeholderEnd}
+            placeholder={placeholderEndText}
             onClick={() => setOpen(o => !o)}
             value={formattedEnd}
             aria-describedby={describedById}
@@ -137,17 +154,18 @@ export default function DateRangeInput({
         </div>
       </div>
       <span id={describedById} style={visuallyHidden}>
-        {formatDescription}
+        {formatDescriptionText}
       </span>
       {open && (
         <div
           className="absolute top-full left-0 mt-2 z-10 bg-white shadow rounded"
           role="dialog"
-          aria-label="Range calendar"
+          aria-label={resolvedI18n.labels.rangeCalendar}
         >
           <RangeCalendar
             selectedRange={selectedRange}
             selectRange={handleSelectRange}
+            i18n={i18n}
             onEscape={() => {
               setOpen(false)
               startRef.current?.focus()

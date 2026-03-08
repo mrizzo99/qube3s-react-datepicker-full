@@ -2,24 +2,35 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useCalendar } from '../../headless/useCalendar'
 import { addMonths, format } from 'date-fns'
+import { resolveCalendarI18n, type CalendarI18n } from '../../i18n'
 
 export type CalendarProps = {
   selectedDate?: Date | null
   selectDate?: (date: Date) => void
   onEscape?: () => void
+  i18n?: CalendarI18n
 }
 
 export default function Calendar({
   selectedDate: controlledSelectedDate,
   selectDate: controlledSelectDate,
-  onEscape
+  onEscape,
+  i18n
 }: CalendarProps) {
   const normalizedSelected =
     controlledSelectedDate instanceof Date && !Number.isNaN(controlledSelectedDate.getTime())
       ? controlledSelectedDate
       : null
 
-  const cal = useCalendar(normalizedSelected ?? undefined)
+  const resolvedI18n = useMemo(() => resolveCalendarI18n(i18n), [i18n])
+  const formatOptions = useMemo(
+    () => ({ locale: resolvedI18n.locale }),
+    [resolvedI18n.locale]
+  )
+  const cal = useCalendar(normalizedSelected ?? undefined, {
+    locale: resolvedI18n.locale,
+    weekStartsOn: resolvedI18n.weekStartsOn
+  })
   const selectedDate = normalizedSelected ?? cal.selectedDate
   const selectDate = controlledSelectDate ?? cal.selectDate
   const monthLabelId = useMemo(
@@ -31,6 +42,13 @@ export default function Calendar({
   const [focusDate, setFocusDate] = useState<Date>(activeDate)
   const gridRef = useRef<HTMLDivElement>(null)
   const gridDays = useMemo(() => cal.weeks.flat(), [cal.weeks])
+  const weekdayLabels = useMemo(
+    () =>
+      (cal.weeks[0] ?? []).map(day =>
+        format(day, resolvedI18n.format.weekdayLabel, formatOptions)
+      ),
+    [cal.weeks, resolvedI18n.format.weekdayLabel, formatOptions]
+  )
 
   const findGridDate = (date: Date) => gridDays.find(d => cal.isSameDay(d, date)) ?? gridDays[0]
 
@@ -114,13 +132,19 @@ export default function Calendar({
       ref={gridRef}
     >
       <header className="flex justify-between mb-2">
-        <button onClick={cal.prev}>←</button>
-        <div id={monthLabelId}>{format(cal.currentMonth, 'MMMM yyyy')}</div>
-        <button onClick={cal.next}>→</button>
+        <button onClick={cal.prev} aria-label={resolvedI18n.labels.prevMonth}>←</button>
+        <div id={monthLabelId}>
+          {format(cal.currentMonth, resolvedI18n.format.monthLabel, formatOptions)}
+        </div>
+        <button onClick={cal.next} aria-label={resolvedI18n.labels.nextMonth}>→</button>
       </header>
 
       <div className="grid grid-cols-7 text-gray-500 text-sm mb-1" aria-hidden="true">
-        {['Su','Mo','Tu','We','Th','Fr','Sa'].map(d => <div key={d} className="text-center">{d}</div>)}
+        {weekdayLabels.map((label, index) => (
+          <div key={index} className="text-center">
+            {label}
+          </div>
+        ))}
       </div>
 
       <div className="grid grid-cols-7 gap-1">
@@ -148,9 +172,9 @@ export default function Calendar({
                   (isActive ? 'bg-blue-600 text-white ' : '') +
                   (faded ? 'text-gray-300 ' : 'hover:bg-blue-100 ')
                 }
-                aria-label={format(day, 'EEEE, MMMM d, yyyy')}
+                aria-label={format(day, resolvedI18n.format.dayAriaLabel, formatOptions)}
               >
-                {format(day, 'd')}
+                {format(day, resolvedI18n.format.dayLabel, formatOptions)}
               </button>
             )
           })

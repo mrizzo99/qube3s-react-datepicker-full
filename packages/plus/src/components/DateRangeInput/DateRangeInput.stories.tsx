@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { useState } from 'react'
 import DateRangeInput from './DateRangeInput'
+import { esI18n } from '@core/i18n-presets'
 
 const meta: Meta<typeof DateRangeInput> = {
   title: 'DateRangeInput',
@@ -23,4 +24,8 @@ export const Controlled: Story = {
     })
     return <DateRangeInput value={range} onChange={setRange} />
   }
+}
+
+export const SpanishI18n: Story = {
+  render: () => <DateRangeInput i18n={esI18n} />
 }
