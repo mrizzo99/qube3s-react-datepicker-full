@@ -1,5 +1,6 @@
 
 import React, { useEffect, useMemo, useRef, useState, useId } from 'react'
+import { createPortal } from 'react-dom'
 import Calendar from '../Calendar'
 import { format } from 'date-fns'
 import { resolveCalendarI18n, type CalendarI18n } from '../../i18n'
@@ -41,6 +42,8 @@ export default function DateInput({
   triggerClassName = '',
   i18n
 }: DateInputProps) {
+  const POPOVER_WIDTH = 288
+  const POPOVER_GUTTER = 8
   const resolvedI18n = useMemo(() => resolveCalendarI18n(i18n), [i18n])
   const formatOptions = useMemo(
     () => ({ locale: resolvedI18n.locale }),
@@ -48,6 +51,8 @@ export default function DateInput({
   )
   const [open, setOpen] = useState(false)
   const [internalDate, setInternalDate] = useState<Date | null>(value ?? null)
+  const [popoverPosition, setPopoverPosition] = useState<{ top: number; left: number } | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   // unique ID for the hidden date format hint; avoids collisions across instances
   const describedById = useId()
@@ -75,8 +80,31 @@ export default function DateInput({
     inputRef.current?.focus()
   }
 
+  useEffect(() => {
+    if (!open) return
+
+    const updatePosition = () => {
+      const anchor = containerRef.current
+      if (!anchor) return
+      const rect = anchor.getBoundingClientRect()
+      const maxLeft = Math.max(POPOVER_GUTTER, window.innerWidth - POPOVER_WIDTH - POPOVER_GUTTER)
+      setPopoverPosition({
+        top: rect.bottom + POPOVER_GUTTER,
+        left: Math.min(Math.max(POPOVER_GUTTER, rect.left), maxLeft)
+      })
+    }
+
+    updatePosition()
+    window.addEventListener('resize', updatePosition)
+    window.addEventListener('scroll', updatePosition, true)
+    return () => {
+      window.removeEventListener('resize', updatePosition)
+      window.removeEventListener('scroll', updatePosition, true)
+    }
+  }, [open])
+
   return (
-    <div className="relative inline-flex items-center gap-1">
+    <div ref={containerRef} className="inline-flex items-center gap-1">
       {iconPosition === 'left' && (
         <button
           type="button"
@@ -111,9 +139,15 @@ export default function DateInput({
       <span id={describedById} style={visuallyHidden}>
         {formatDescriptionText}
       </span>
-      {open && (
+      {open && popoverPosition && typeof document !== 'undefined' && createPortal(
         <div
-          className="absolute top-full left-0 mt-2 z-10 bg-white shadow rounded"
+          className="rounded bg-white shadow"
+          style={{
+            position: 'fixed',
+            top: popoverPosition.top,
+            left: popoverPosition.left,
+            zIndex: 'var(--rdp-z-popover, 1000)'
+          }}
           role="dialog"
           aria-label={resolvedI18n.labels.calendar}
         >
@@ -126,7 +160,8 @@ export default function DateInput({
               inputRef.current?.focus()
             }}
           />
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )
