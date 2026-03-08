@@ -9,7 +9,7 @@ import qube3sLogoPng from '../public/brand/qube3s-logo.png'
 import qube3sCubePng from '../public/brand/qube3s-cube.png'
 
 const panelClass =
-  'rounded-xl border border-[var(--q3-border)] bg-[color:rgb(17_24_39_/_0.85)] p-5 shadow-[0_8px_24px_rgba(2,6,23,0.35)] backdrop-blur'
+  'relative z-0 rounded-xl border border-[var(--q3-border)] bg-[color:rgb(17_24_39_/_0.85)] p-5 shadow-[0_8px_24px_rgba(2,6,23,0.35)] backdrop-blur focus-within:z-20'
 
 export default function App() {
   const [inlineSelectedDate, setInlineSelectedDate] = useState<Date | null>(null)
