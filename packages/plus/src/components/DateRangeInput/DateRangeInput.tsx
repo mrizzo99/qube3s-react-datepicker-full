@@ -102,7 +102,7 @@ export default function DateRangeInput({
           )}
           <input
             readOnly
-            className={`border border-gray-300 p-2 rounded w-40 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${inputClassName}`}
+            className={`w-40 rounded border border-gray-300 bg-white p-2 text-gray-900 placeholder:text-gray-500 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${inputClassName}`}
             placeholder={placeholderStartText}
             onClick={() => setOpen(o => !o)}
             value={formattedStart}
@@ -135,7 +135,7 @@ export default function DateRangeInput({
           )}
           <input
             readOnly
-            className={`border border-gray-300 p-2 rounded w-40 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${inputClassName}`}
+            className={`w-40 rounded border border-gray-300 bg-white p-2 text-gray-900 placeholder:text-gray-500 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${inputClassName}`}
             placeholder={placeholderEndText}
             onClick={() => setOpen(o => !o)}
             value={formattedEnd}
@@ -158,7 +158,7 @@ export default function DateRangeInput({
       </span>
       {open && (
         <div
-          className="absolute top-full left-0 mt-2 z-10 bg-white shadow rounded"
+          className="absolute top-full left-0 mt-2 z-50 bg-white shadow rounded"
           role="dialog"
           aria-label={resolvedI18n.labels.rangeCalendar}
         >
