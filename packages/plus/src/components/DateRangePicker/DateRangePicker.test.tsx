@@ -143,4 +143,15 @@ describe('DateRangePicker', () => {
     window.scrollBy = originalScrollBy
     Object.defineProperty(window, 'innerHeight', { value: originalInnerHeight, configurable: true })
   })
+
+  it('supports year navigation controls in popover header', async () => {
+    render(<DateRangePicker />)
+    await userEvent.click(screen.getByPlaceholderText('Start date'))
+
+    await userEvent.click(screen.getByRole('button', { name: 'Next year' }))
+    expect(screen.getByRole('grid', { name: 'January 2025' })).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Previous year' }))
+    expect(screen.getByRole('grid', { name: 'January 2024' })).toBeInTheDocument()
+  })
 })

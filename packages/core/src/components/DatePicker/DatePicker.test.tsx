@@ -120,4 +120,15 @@ describe('DatePicker', () => {
     window.scrollBy = originalScrollBy
     Object.defineProperty(window, 'innerHeight', { value: originalInnerHeight, configurable: true })
   })
+
+  it('supports year navigation controls in popover header', async () => {
+    render(<DatePicker />)
+    await userEvent.click(screen.getByRole('textbox'))
+
+    await userEvent.click(screen.getByRole('button', { name: 'Next year' }))
+    expect(screen.getByRole('grid', { name: 'January 2025' })).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Previous year' }))
+    expect(screen.getByRole('grid', { name: 'January 2024' })).toBeInTheDocument()
+  })
 })

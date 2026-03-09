@@ -11,8 +11,10 @@ export type CalendarI18n = {
     inputValue?: string
   }
   labels?: {
+    prevYear?: string
     prevMonth?: string
     nextMonth?: string
+    nextYear?: string
     calendar?: string
     rangeCalendar?: string
     selectDatePlaceholder?: string
@@ -33,8 +35,10 @@ export type ResolvedCalendarI18n = {
     inputValue: string
   }
   labels: {
+    prevYear: string
     prevMonth: string
     nextMonth: string
+    nextYear: string
     calendar: string
     rangeCalendar: string
     selectDatePlaceholder: string
@@ -55,8 +59,10 @@ const defaultI18n: ResolvedCalendarI18n = {
     inputValue: 'PPP'
   },
   labels: {
+    prevYear: 'Previous year',
     prevMonth: 'Previous month',
     nextMonth: 'Next month',
+    nextYear: 'Next year',
     calendar: 'Calendar',
     rangeCalendar: 'Range calendar',
     selectDatePlaceholder: 'Select date',

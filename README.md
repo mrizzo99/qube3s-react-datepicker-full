@@ -178,8 +178,8 @@ const i18n = { ...frI18n, format: { ...frI18n.format, inputValue: 'Pp' } }
 Keyboard navigation
 - To set focus within the calendar (click within the calendar grid or Tab to the grid).
   Focus Navigation:
-  - Windows/Linux: Arrow keys move focus; Home/End jump to start/end of week; PageUp/PageDown change the month.
-  - macOS: Arrow keys move focus; Fn+ArrowLeft/Fn+ArrowRight for Home/End; Fn+ArrowUp/Fn+ArrowDown for PageUp/PageDown.
+  - Windows/Linux: Arrow keys move focus; Home/End jump to start/end of week; PageUp/PageDown change the month; Shift+PageUp/Shift+PageDown change the year.
+  - macOS: Arrow keys move focus; Fn+ArrowLeft/Fn+ArrowRight for Home/End; Fn+ArrowUp/Fn+ArrowDown for PageUp/PageDown. Hold Shift with the same keys to move by year.
 - Press Space or Enter to select the focused day (range picks start/end in sequence).
 - Press Escape to close the calendar popover and return focus to the input.
 - Mobile virtual keyboards typically don’t expose these keys; keyboard nav requires a hardware keyboard.
