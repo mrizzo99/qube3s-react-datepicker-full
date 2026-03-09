@@ -19,6 +19,14 @@ export const Uncontrolled: Story = {
   render: () => <RangeCalendar />
 }
 
+export const TwoMonthView: Story = {
+  render: () => <RangeCalendar numberOfMonths={2} />
+}
+
+export const ThreeMonthView: Story = {
+  render: () => <RangeCalendar numberOfMonths={3} />
+}
+
 export const Controlled: Story = {
   render: () => {
     const [range, setRange] = useState<{ start: Date | null; end: Date | null }>({

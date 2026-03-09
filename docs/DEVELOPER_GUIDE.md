@@ -17,6 +17,7 @@ This core repo is a headless-first datepicker built with Vite, React, TypeScript
 1) `apps/demo/src/main.tsx` bootstraps React and renders `<App />` into `#root`.
 2) `App` renders core `<DatePicker />` and plus `<DateRangePicker />` as the popover surfaces.
 3) `DatePicker` manages `open` state for the popover. `DatePicker.Input` renders read-only input UI and toggles visibility of `DatePicker.Calendar`; it can run controlled via `value`/`onChange` or uncontrolled (internal date state).
+   Popovers render in a portal (`document.body`) by default; use `portal={false}` to render inline.
 4) `DatePicker.CalendarGrid` calls `useCalendar()` for month/grid state and keyboard navigation behavior.
 5) User actions: month navigation triggers `cal.prev`/`cal.next`; clicking a day calls `selectDate(day)` which either updates internal hook state or bubbles through the controlled prop handler.
 6) Plus components follow the same pattern with `DateRangePicker` + `useRangeCalendar`.
@@ -54,6 +55,7 @@ Example: `<DateRangePicker value={range} onChange={setRange} />` — the parent 
 - Exposes composable subcomponents: `DatePicker.Input`, `DatePicker.Calendar`, `DatePicker.CalendarHeader`, `DatePicker.CalendarGrid`.
 - Root owns controlled/uncontrolled state and context; subcomponents render UI using shared context.
 - Default usage `<DatePicker />` renders the full stack; custom composition can replace layout while keeping behavior logic.
+- Popover behavior: `portal` defaults to `true`; use `portalContainer` to customize mount target.
 
 Example:
 ```tsx
@@ -64,6 +66,11 @@ Example:
     <DatePicker.CalendarGrid />
   </DatePicker.Calendar>
 </DatePicker>
+```
+
+Example: inline (non-portal) popover rendering
+```tsx
+<DatePicker portal={false} />
 ```
 
 Example: using PNG/JPG/GIF images for the icon
@@ -93,6 +100,8 @@ Note: you can also pass `icon={<img src="/calendar.png" ... />}` for assets in `
 ## Date range picker compound API (plus `packages/plus/src/components/DateRangePicker/DateRangePicker.tsx`)
 - Exposes composable subcomponents: `DateRangePicker.Input`, `DateRangePicker.Calendar`, `DateRangePicker.CalendarHeader`, `DateRangePicker.CalendarGrid`.
 - Root owns controlled/uncontrolled state and context; subcomponents reuse range behavior without duplicating logic.
+- Multi-month range views are enabled with `numberOfMonths` (default `1`, max `3`).
+- Popover behavior: `portal` defaults to `true`; use `portalContainer` to customize mount target.
 
 Example:
 ```tsx
@@ -103,6 +112,37 @@ Example:
     <DateRangePicker.CalendarGrid />
   </DateRangePicker.Calendar>
 </DateRangePicker>
+```
+
+Example: 3-month range picker
+```tsx
+<DateRangePicker numberOfMonths={3}>
+  <DateRangePicker.Input />
+  <DateRangePicker.Calendar>
+    <DateRangePicker.CalendarHeader />
+    <DateRangePicker.CalendarGrid />
+  </DateRangePicker.Calendar>
+</DateRangePicker>
+```
+
+Example: 2-month range picker
+```tsx
+<DateRangePicker numberOfMonths={2} />
+```
+
+Example: inline (non-portal) popover rendering
+```tsx
+<DateRangePicker portal={false} />
+```
+
+Example: 2-month inline range calendar
+```tsx
+<RangeCalendar numberOfMonths={2} />
+```
+
+Example: 3-month inline range calendar
+```tsx
+<RangeCalendar numberOfMonths={3} />
 ```
 
 Example: image icon with range input
@@ -165,8 +205,8 @@ const i18n = { ...frI18n, format: { ...frI18n.format, inputValue: 'Pp' } }
     - Calendar: `Uncontrolled`, `Controlled`
     - DatePicker: `Uncontrolled`, `ControlledComposable`
   - **Plus**
-    - RangeCalendar: `Uncontrolled`, `Controlled`
-    - DateRangePicker: `Uncontrolled`, `ControlledComposable`
+    - RangeCalendar: `Uncontrolled`, `TwoMonthView`, `ThreeMonthView`, `Controlled`
+    - DateRangePicker: `Uncontrolled`, `TwoMonthView`, `ThreeMonthView`, `ControlledComposable`
 
 
 ## Styling

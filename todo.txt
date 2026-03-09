@@ -27,13 +27,13 @@ drag-hover preselection -DONE
 
 quick presets (Last 7 days, This month, etc.)
 
-3. Add a Multi-Month View (like Airbnb)
+3. Add a Multi-Month View (like Airbnb) -DONE
 
-2–3 months visible at once
+2–3 months visible at once -DONE
 
-animated transitions
+animated transitions -DONE
 
-keyboard-accessible month switching
+keyboard-accessible month switching - DONE please see Keyboard Navigation details in the README.md
 
 4. Accessibility Upgrade
 

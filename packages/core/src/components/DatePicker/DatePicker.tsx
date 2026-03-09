@@ -3,10 +3,12 @@ import React, {
   useContext,
   useEffect,
   useId,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from 'react'
+import { createPortal } from 'react-dom'
 import { addMonths, format } from 'date-fns'
 import { resolveCalendarI18n, type CalendarI18n } from '../../i18n'
 import { useCalendar } from '../../headless/useCalendar'
@@ -28,7 +30,10 @@ type DatePickerContextValue = {
   focusDate: Date
   setFocusDate: React.Dispatch<React.SetStateAction<Date>>
   gridRef: React.RefObject<HTMLDivElement | null>
+  popoverRef: React.RefObject<HTMLDivElement | null>
   monthLabelId: string
+  portal: boolean
+  portalContainer: HTMLElement | null
   onEscape: () => void
 }
 
@@ -46,6 +51,9 @@ const visuallyHidden = {
   border: 0,
 } satisfies React.CSSProperties
 
+const POPOVER_VIEWPORT_PADDING = 16
+const POPOVER_OFFSET = 8
+
 export type DatePickerProps = {
   children?: React.ReactNode
   value?: Date | null
@@ -53,6 +61,8 @@ export type DatePickerProps = {
   placeholder?: string
   formatDescription?: string
   i18n?: CalendarI18n
+  portal?: boolean
+  portalContainer?: HTMLElement | null
 }
 
 export type DatePickerInputProps = {
@@ -84,6 +94,8 @@ function DatePickerRoot({
   placeholder,
   formatDescription,
   i18n,
+  portal = true,
+  portalContainer = null,
 }: DatePickerProps) {
   const resolvedI18n = useMemo(() => resolveCalendarI18n(i18n), [i18n])
   const formatOptions = useMemo(
@@ -95,6 +107,7 @@ function DatePickerRoot({
   const containerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const gridRef = useRef<HTMLDivElement>(null)
+  const popoverRef = useRef<HTMLDivElement>(null)
   const describedById = useId()
 
   useEffect(() => {
@@ -123,6 +136,7 @@ function DatePickerRoot({
       const target = event.target as Node | null
       if (!target) return
       if (containerRef.current?.contains(target)) return
+      if (popoverRef.current?.contains(target)) return
       setOpen(false)
     }
 
@@ -133,6 +147,23 @@ function DatePickerRoot({
       document.removeEventListener('touchstart', handlePointerDown)
     }
   }, [open])
+
+  useEffect(() => {
+    if (!open || portal) return
+
+    const frame = window.requestAnimationFrame(() => {
+      const popover = popoverRef.current
+      if (!popover) return
+
+      const rect = popover.getBoundingClientRect()
+      const overflowBottom = rect.bottom + POPOVER_VIEWPORT_PADDING - window.innerHeight
+      if (overflowBottom > 0) {
+        window.scrollBy({ top: overflowBottom, behavior: 'smooth' })
+      }
+    })
+
+    return () => window.cancelAnimationFrame(frame)
+  }, [open, portal])
 
   const formatted = useMemo(
     () =>
@@ -174,7 +205,10 @@ function DatePickerRoot({
     focusDate,
     setFocusDate,
     gridRef,
+    popoverRef,
     monthLabelId,
+    portal,
+    portalContainer,
     onEscape,
   }
 
@@ -266,14 +300,102 @@ function DatePickerCalendar({
   className = '',
   popoverClassName = '',
 }: DatePickerCalendarProps) {
-  const { open, resolvedI18n } = useDatePickerContext()
+  const { open, resolvedI18n, containerRef, popoverRef, portal, portalContainer } = useDatePickerContext()
+  const [position, setPosition] = useState<{ left: number; top: number }>({ left: 0, top: 0 })
+  const [hasPosition, setHasPosition] = useState(!portal)
+  const bodyPaddingBaseRef = useRef<number | null>(null)
+  const bodyPaddingInlineRef = useRef<string | null>(null)
+  const bodyPaddingExtraRef = useRef(0)
+
+  useLayoutEffect(() => {
+    if (!open) {
+      setHasPosition(!portal)
+      return
+    }
+
+    if (!portal) {
+      setHasPosition(true)
+      return
+    }
+
+    const updatePosition = () => {
+      const anchor = containerRef.current
+      if (!anchor) return
+      const rect = anchor.getBoundingClientRect()
+      setPosition({
+        left: rect.left + window.scrollX,
+        top: rect.bottom + window.scrollY + POPOVER_OFFSET,
+      })
+      setHasPosition(true)
+    }
+
+    updatePosition()
+    window.addEventListener('resize', updatePosition)
+    window.addEventListener('scroll', updatePosition, true)
+    return () => {
+      window.removeEventListener('resize', updatePosition)
+      window.removeEventListener('scroll', updatePosition, true)
+    }
+  }, [open, portal, containerRef])
+
+  useEffect(() => {
+    const clearExtraBodyPadding = () => {
+      if (bodyPaddingInlineRef.current !== null) {
+        document.body.style.paddingBottom = bodyPaddingInlineRef.current
+      }
+      bodyPaddingInlineRef.current = null
+      bodyPaddingBaseRef.current = null
+      bodyPaddingExtraRef.current = 0
+    }
+
+    if (!open || !hasPosition) {
+      clearExtraBodyPadding()
+      return
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      const popover = popoverRef.current
+      if (!popover) return
+
+      const rect = popover.getBoundingClientRect()
+      const overflowBottom = rect.bottom + POPOVER_VIEWPORT_PADDING - window.innerHeight
+      if (overflowBottom > 0) {
+        if (portal) {
+          if (bodyPaddingInlineRef.current === null) {
+            bodyPaddingInlineRef.current = document.body.style.paddingBottom
+            bodyPaddingBaseRef.current = parseFloat(window.getComputedStyle(document.body).paddingBottom) || 0
+          }
+
+          const maxScrollable =
+            document.documentElement.scrollHeight - window.innerHeight - window.scrollY
+          const neededExtraSpace = overflowBottom - Math.max(0, maxScrollable)
+
+          if (neededExtraSpace > bodyPaddingExtraRef.current) {
+            const nextExtra = Math.ceil(neededExtraSpace + POPOVER_VIEWPORT_PADDING)
+            const basePadding = bodyPaddingBaseRef.current ?? 0
+            document.body.style.paddingBottom = `${basePadding + nextExtra}px`
+            bodyPaddingExtraRef.current = nextExtra
+          }
+        }
+
+        window.scrollBy({ top: overflowBottom, behavior: 'smooth' })
+      }
+    })
+
+    return () => {
+      window.cancelAnimationFrame(frame)
+      if (!open) clearExtraBodyPadding()
+    }
+  }, [open, hasPosition, position.left, position.top, popoverRef, portal])
 
   if (!open) return null
+  if (portal && !hasPosition) return null
 
-  return (
+  const content = (
     <div
-      className={`absolute left-0 top-full mt-2 rounded bg-white shadow ${popoverClassName}`}
-      style={{ zIndex: 'var(--rdp-z-popover, 1000)' }}
+      ref={popoverRef}
+      className={`${portal ? 'absolute' : 'absolute left-0 top-full mt-2'} rounded bg-white shadow ${popoverClassName}`}
+      style={portal ? { left: position.left, top: position.top, zIndex: 'var(--rdp-z-popover, 1000)' } : { zIndex: 'var(--rdp-z-popover, 1000)' }}
       role="dialog"
       aria-label={resolvedI18n.labels.calendar}
     >
@@ -286,6 +408,15 @@ function DatePickerCalendar({
         )}
       </div>
     </div>
+  )
+
+  if (portal) {
+    const target = portalContainer ?? (typeof document !== 'undefined' ? document.body : null)
+    return target ? createPortal(content, target) : null
+  }
+
+  return (
+    content
   )
 }
 

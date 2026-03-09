@@ -17,6 +17,14 @@ export const Uncontrolled: Story = {
   render: () => <DateRangePicker />,
 }
 
+export const TwoMonthView: Story = {
+  render: () => <DateRangePicker numberOfMonths={2} />,
+}
+
+export const ThreeMonthView: Story = {
+  render: () => <DateRangePicker numberOfMonths={3} />,
+}
+
 export const ControlledComposable: Story = {
   render: () => {
     const [range, setRange] = useState<DateRange>({ start: null, end: null })

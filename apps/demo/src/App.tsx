@@ -19,7 +19,19 @@ export default function App() {
     start: null,
     end: null
   })
+  const [rangeThree, setRangeThree] = useState<{ start: Date | null; end: Date | null }>({
+    start: null,
+    end: null
+  })
   const [rangeInput, setRangeInput] = useState<{ start: Date | null; end: Date | null }>({
+    start: null,
+    end: null
+  })
+  const [rangeInputDefault, setRangeInputDefault] = useState<{ start: Date | null; end: Date | null }>({
+    start: null,
+    end: null
+  })
+  const [rangeInputThree, setRangeInputThree] = useState<{ start: Date | null; end: Date | null }>({
     start: null,
     end: null
   })
@@ -65,11 +77,20 @@ export default function App() {
               <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#single-es">
                 Single Date ES Locale
               </a>
-              <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#range-inline">
-                Range Inline
+              <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#range-inline-2">
+                Range Inline 2-Month
               </a>
-              <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#range-popover">
-                Range Popover
+              <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#range-inline-3">
+                Range Inline 3-Month
+              </a>
+              <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#range-popover-default">
+                Range Popover Default
+              </a>
+              <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#range-popover-2">
+                Range Popover 2-Month
+              </a>
+              <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#range-popover-3">
+                Range Popover 3-Month
               </a>
               <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#range-es">
                 Range ES Locale
@@ -135,20 +156,46 @@ export default function App() {
               </p>
             </section>
 
-            <section id="range-inline" className={panelClass}>
-              <h2 className="text-lg font-semibold">Range selection (inline)</h2>
+            <section id="range-inline-2" className={panelClass}>
+              <h2 className="text-lg font-semibold">Range selection (inline, 2 months)</h2>
               <p className="mt-1 mb-3 text-sm text-[var(--q3-text-disabled)]">RangeCalendar component</p>
-              <RangeCalendar selectedRange={range} selectRange={setRange} />
+              <RangeCalendar selectedRange={range} selectRange={setRange} numberOfMonths={2} />
               <p className="mt-3 text-sm text-[var(--q3-text-disabled)]">
                 {range.start ? `Start: ${format(range.start, 'PPP')}` : 'Start: —'}{' '}
                 {range.end ? `End: ${format(range.end, 'PPP')}` : 'End: —'}
               </p>
             </section>
 
-            <section id="range-popover" className={panelClass}>
-              <h2 className="text-lg font-semibold">Range selection (popover)</h2>
+            <section id="range-inline-3" className={panelClass}>
+              <h2 className="text-lg font-semibold">Range selection (inline, 3 months)</h2>
+              <p className="mt-1 mb-3 text-sm text-[var(--q3-text-disabled)]">RangeCalendar + numberOfMonths</p>
+              <RangeCalendar selectedRange={rangeThree} selectRange={setRangeThree} numberOfMonths={3} />
+              <p className="mt-3 text-sm text-[var(--q3-text-disabled)]">
+                {rangeThree.start ? `Start: ${format(rangeThree.start, 'PPP')}` : 'Start: —'}{' '}
+                {rangeThree.end ? `End: ${format(rangeThree.end, 'PPP')}` : 'End: —'}
+              </p>
+            </section>
+
+            <section id="range-popover-default" className={panelClass}>
+              <h2 className="text-lg font-semibold">Range selection (popover, default)</h2>
+              <p className="mt-1 mb-3 text-sm text-[var(--q3-text-disabled)]">DateRangePicker default month view</p>
+              <DateRangePicker value={rangeInputDefault} onChange={setRangeInputDefault}>
+                <DateRangePicker.Input />
+                <DateRangePicker.Calendar>
+                  <DateRangePicker.CalendarHeader />
+                  <DateRangePicker.CalendarGrid />
+                </DateRangePicker.Calendar>
+              </DateRangePicker>
+              <p className="mt-3 text-sm text-[var(--q3-text-disabled)]">
+                {rangeInputDefault.start ? `Start: ${format(rangeInputDefault.start, 'PPP')}` : 'Start: —'}{' '}
+                {rangeInputDefault.end ? `End: ${format(rangeInputDefault.end, 'PPP')}` : 'End: —'}
+              </p>
+            </section>
+
+            <section id="range-popover-2" className={panelClass}>
+              <h2 className="text-lg font-semibold">Range selection (popover, 2 months)</h2>
               <p className="mt-1 mb-3 text-sm text-[var(--q3-text-disabled)]">DateRangePicker component</p>
-              <DateRangePicker value={rangeInput} onChange={setRangeInput}>
+              <DateRangePicker value={rangeInput} onChange={setRangeInput} numberOfMonths={2}>
                 <DateRangePicker.Input />
                 <DateRangePicker.Calendar>
                   <DateRangePicker.CalendarHeader />
@@ -158,6 +205,22 @@ export default function App() {
               <p className="mt-3 text-sm text-[var(--q3-text-disabled)]">
                 {rangeInput.start ? `Start: ${format(rangeInput.start, 'PPP')}` : 'Start: —'}{' '}
                 {rangeInput.end ? `End: ${format(rangeInput.end, 'PPP')}` : 'End: —'}
+              </p>
+            </section>
+
+            <section id="range-popover-3" className={panelClass}>
+              <h2 className="text-lg font-semibold">Range selection (popover, 3 months)</h2>
+              <p className="mt-1 mb-3 text-sm text-[var(--q3-text-disabled)]">DateRangePicker + numberOfMonths</p>
+              <DateRangePicker value={rangeInputThree} onChange={setRangeInputThree} numberOfMonths={3}>
+                <DateRangePicker.Input />
+                <DateRangePicker.Calendar>
+                  <DateRangePicker.CalendarHeader />
+                  <DateRangePicker.CalendarGrid />
+                </DateRangePicker.Calendar>
+              </DateRangePicker>
+              <p className="mt-3 text-sm text-[var(--q3-text-disabled)]">
+                {rangeInputThree.start ? `Start: ${format(rangeInputThree.start, 'PPP')}` : 'Start: —'}{' '}
+                {rangeInputThree.end ? `End: ${format(rangeInputThree.end, 'PPP')}` : 'End: —'}
               </p>
             </section>
 
