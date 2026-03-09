@@ -1,5 +1,5 @@
-export { default as DateRangeInput } from './components/DateRangeInput'
-export * from './components/DateRangeInput'
+export { default as DateRangePicker } from './components/DateRangePicker'
+export * from './components/DateRangePicker'
 export { default as RangeCalendar } from './components/RangeCalendar'
 export * from './components/RangeCalendar'
 export * from './headless/useRangeCalendar'
