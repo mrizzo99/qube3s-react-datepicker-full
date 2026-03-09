@@ -58,6 +58,7 @@ export function useCalendar(initial?: UseCalendarInitial, options: UseCalendarOp
     weeks,
     selectedDate,
     selectDate: setSelectedDate,
+    goToMonth: (month: Date) => setCurrentMonth(startOfMonth(month)),
     prev: () => setCurrentMonth(addMonths(currentMonth, -1)),
     next: () => setCurrentMonth(addMonths(currentMonth, 1)),
     isSameDay,

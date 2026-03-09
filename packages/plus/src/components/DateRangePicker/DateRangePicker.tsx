@@ -3,11 +3,22 @@ import React, {
   useContext,
   useEffect,
   useId,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from 'react'
-import { addMonths, format } from 'date-fns'
+import { createPortal } from 'react-dom'
+import {
+  addDays,
+  addMonths,
+  differenceInCalendarMonths,
+  endOfMonth,
+  endOfWeek,
+  format,
+  startOfMonth,
+  startOfWeek,
+} from 'date-fns'
 import { resolveCalendarI18n, type CalendarI18n } from '@core/i18n'
 import { useRangeCalendar, type DateRange } from '../../headless/useRangeCalendar'
 
@@ -30,7 +41,11 @@ type DateRangePickerContextValue = {
   focusDate: Date
   setFocusDate: React.Dispatch<React.SetStateAction<Date>>
   gridRef: React.RefObject<HTMLDivElement | null>
+  popoverRef: React.RefObject<HTMLDivElement | null>
   monthLabelId: string
+  numberOfMonths: number
+  portal: boolean
+  portalContainer: HTMLElement | null
   onEscape: () => void
 }
 
@@ -49,6 +64,61 @@ const visuallyHidden = {
   border: 0,
 } satisfies React.CSSProperties
 
+const POPOVER_VIEWPORT_PADDING = 16
+const POPOVER_OFFSET = 8
+
+const clampNumberOfMonths = (value: number | undefined) => {
+  if (!value) return 1
+  return Math.max(1, Math.min(3, Math.trunc(value)))
+}
+
+type MonthView = {
+  monthStart: Date
+  weeks: Date[][]
+  weekdayLabels: string[]
+}
+
+const buildMonthWeeks = (
+  monthStart: Date,
+  weekOptions: { locale: ReturnType<typeof resolveCalendarI18n>['locale']; weekStartsOn: 0 | 1 | 2 | 3 | 4 | 5 | 6 },
+) => {
+  const start = startOfWeek(startOfMonth(monthStart), weekOptions)
+  const end = endOfWeek(endOfMonth(monthStart), weekOptions)
+  const days: Date[] = []
+
+  let pointer = start
+  while (pointer <= end) {
+    days.push(pointer)
+    pointer = addDays(pointer, 1)
+  }
+
+  const weeks: Date[][] = []
+  for (let index = 0; index < days.length; index += 7) {
+    weeks.push(days.slice(index, index + 7))
+  }
+
+  return weeks
+}
+
+const getVisibleRangeDays = (
+  monthStart: Date,
+  numberOfMonths: number,
+  weekOptions: { locale: ReturnType<typeof resolveCalendarI18n>['locale']; weekStartsOn: 0 | 1 | 2 | 3 | 4 | 5 | 6 },
+) => {
+  const firstDay = startOfWeek(startOfMonth(monthStart), weekOptions)
+  const lastVisibleMonth = addMonths(monthStart, numberOfMonths - 1)
+  const lastDay = endOfWeek(endOfMonth(lastVisibleMonth), weekOptions)
+  const days: Date[] = []
+
+  let pointer = firstDay
+  while (pointer <= lastDay) {
+    days.push(pointer)
+    pointer = addDays(pointer, 1)
+  }
+
+  return days
+}
+
 export type DateRangePickerProps = {
   children?: React.ReactNode
   value?: DateRange | null
@@ -57,6 +127,9 @@ export type DateRangePickerProps = {
   placeholderEnd?: string
   formatDescription?: string
   i18n?: CalendarI18n
+  numberOfMonths?: number
+  portal?: boolean
+  portalContainer?: HTMLElement | null
 }
 
 export type DateRangePickerInputProps = {
@@ -92,17 +165,22 @@ function DateRangePickerRoot({
   placeholderEnd,
   formatDescription,
   i18n,
+  numberOfMonths,
+  portal = true,
+  portalContainer = null,
 }: DateRangePickerProps) {
   const resolvedI18n = useMemo(() => resolveCalendarI18n(i18n), [i18n])
   const formatOptions = useMemo(
     () => ({ locale: resolvedI18n.locale }),
     [resolvedI18n.locale],
   )
+  const normalizedMonths = clampNumberOfMonths(numberOfMonths)
   const [open, setOpen] = useState(false)
   const [internalRange, setInternalRange] = useState<DateRange>(value ?? emptyRange)
   const containerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const gridRef = useRef<HTMLDivElement>(null)
+  const popoverRef = useRef<HTMLDivElement>(null)
   const describedById = useId()
 
   useEffect(() => {
@@ -131,6 +209,7 @@ function DateRangePickerRoot({
       const target = event.target as Node | null
       if (!target) return
       if (containerRef.current?.contains(target)) return
+      if (popoverRef.current?.contains(target)) return
       setOpen(false)
     }
 
@@ -141,6 +220,29 @@ function DateRangePickerRoot({
       document.removeEventListener('touchstart', handlePointerDown)
     }
   }, [open])
+
+  useEffect(() => {
+    if (!open || portal) return
+
+    const frame = window.requestAnimationFrame(() => {
+      const popover = popoverRef.current
+      if (!popover) return
+
+      const rect = popover.getBoundingClientRect()
+      const overflowBottom = rect.bottom + POPOVER_VIEWPORT_PADDING - window.innerHeight
+      if (overflowBottom > 0) {
+        window.scrollBy({ top: overflowBottom, behavior: 'smooth' })
+      }
+    })
+
+    return () => window.cancelAnimationFrame(frame)
+  }, [open, portal])
+
+  useEffect(() => {
+    if (!open) return
+    const nextFocus = selectedRange.start ?? selectedRange.end ?? new Date()
+    setFocusDate(nextFocus)
+  }, [open, selectedRange.start, selectedRange.end])
 
   const formattedStart = useMemo(
     () =>
@@ -195,7 +297,11 @@ function DateRangePickerRoot({
     focusDate,
     setFocusDate,
     gridRef,
+    popoverRef,
     monthLabelId,
+    numberOfMonths: normalizedMonths,
+    portal,
+    portalContainer,
     onEscape,
   }
 
@@ -208,11 +314,11 @@ function DateRangePickerRoot({
       >
         {children ?? (
           <>
-            <DateRangePickerInput />
-            <DateRangePickerCalendar>
-              <DateRangePickerCalendarHeader />
-              <DateRangePickerCalendarGrid />
-            </DateRangePickerCalendar>
+            <DateRangePicker.Input />
+            <DateRangePicker.Calendar>
+              <DateRangePicker.CalendarHeader />
+              <DateRangePicker.CalendarGrid />
+            </DateRangePicker.Calendar>
           </>
         )}
       </div>
@@ -248,7 +354,7 @@ function DateRangePickerInput({
 
   return (
     <>
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <div className="inline-flex items-center gap-1">
           {iconPosition === 'left' && (
             <button
@@ -327,18 +433,106 @@ function DateRangePickerCalendar({
   className = '',
   popoverClassName = '',
 }: DateRangePickerCalendarProps) {
-  const { open, resolvedI18n } = useDateRangePickerContext()
+  const { open, resolvedI18n, containerRef, popoverRef, portal, portalContainer } = useDateRangePickerContext()
+  const [position, setPosition] = useState<{ left: number; top: number }>({ left: 0, top: 0 })
+  const [hasPosition, setHasPosition] = useState(!portal)
+  const bodyPaddingBaseRef = useRef<number | null>(null)
+  const bodyPaddingInlineRef = useRef<string | null>(null)
+  const bodyPaddingExtraRef = useRef(0)
+
+  useLayoutEffect(() => {
+    if (!open) {
+      setHasPosition(!portal)
+      return
+    }
+
+    if (!portal) {
+      setHasPosition(true)
+      return
+    }
+
+    const updatePosition = () => {
+      const anchor = containerRef.current
+      if (!anchor) return
+      const rect = anchor.getBoundingClientRect()
+      setPosition({
+        left: rect.left + window.scrollX,
+        top: rect.bottom + window.scrollY + POPOVER_OFFSET,
+      })
+      setHasPosition(true)
+    }
+
+    updatePosition()
+    window.addEventListener('resize', updatePosition)
+    window.addEventListener('scroll', updatePosition, true)
+    return () => {
+      window.removeEventListener('resize', updatePosition)
+      window.removeEventListener('scroll', updatePosition, true)
+    }
+  }, [open, portal, containerRef])
+
+  useEffect(() => {
+    const clearExtraBodyPadding = () => {
+      if (bodyPaddingInlineRef.current !== null) {
+        document.body.style.paddingBottom = bodyPaddingInlineRef.current
+      }
+      bodyPaddingInlineRef.current = null
+      bodyPaddingBaseRef.current = null
+      bodyPaddingExtraRef.current = 0
+    }
+
+    if (!open || !hasPosition) {
+      clearExtraBodyPadding()
+      return
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      const popover = popoverRef.current
+      if (!popover) return
+
+      const rect = popover.getBoundingClientRect()
+      const overflowBottom = rect.bottom + POPOVER_VIEWPORT_PADDING - window.innerHeight
+      if (overflowBottom > 0) {
+        if (portal) {
+          if (bodyPaddingInlineRef.current === null) {
+            bodyPaddingInlineRef.current = document.body.style.paddingBottom
+            bodyPaddingBaseRef.current = parseFloat(window.getComputedStyle(document.body).paddingBottom) || 0
+          }
+
+          const maxScrollable =
+            document.documentElement.scrollHeight - window.innerHeight - window.scrollY
+          const neededExtraSpace = overflowBottom - Math.max(0, maxScrollable)
+
+          if (neededExtraSpace > bodyPaddingExtraRef.current) {
+            const nextExtra = Math.ceil(neededExtraSpace + POPOVER_VIEWPORT_PADDING)
+            const basePadding = bodyPaddingBaseRef.current ?? 0
+            document.body.style.paddingBottom = `${basePadding + nextExtra}px`
+            bodyPaddingExtraRef.current = nextExtra
+          }
+        }
+
+        window.scrollBy({ top: overflowBottom, behavior: 'smooth' })
+      }
+    })
+
+    return () => {
+      window.cancelAnimationFrame(frame)
+      if (!open) clearExtraBodyPadding()
+    }
+  }, [open, hasPosition, position.left, position.top, popoverRef, portal])
 
   if (!open) return null
+  if (portal && !hasPosition) return null
 
-  return (
+  const content = (
     <div
-      className={`absolute left-0 top-full mt-2 rounded bg-white shadow ${popoverClassName}`}
-      style={{ zIndex: 'var(--rdp-z-popover, 1000)' }}
+      ref={popoverRef}
+      className={`${portal ? 'absolute' : 'absolute left-0 top-full mt-2'} rounded bg-white shadow ${popoverClassName}`}
+      style={portal ? { left: position.left, top: position.top, zIndex: 'var(--rdp-z-popover, 1000)' } : { zIndex: 'var(--rdp-z-popover, 1000)' }}
       role="dialog"
       aria-label={resolvedI18n.labels.rangeCalendar}
     >
-      <div className={`w-72 rounded-lg border bg-white p-4 text-gray-900 shadow ${className}`}>
+      <div className={`max-w-[calc(100vw-1rem)] rounded-lg border bg-white p-4 text-gray-900 shadow ${className}`}>
         {children ?? (
           <>
             <DateRangePickerCalendarHeader />
@@ -348,20 +542,60 @@ function DateRangePickerCalendar({
       </div>
     </div>
   )
+
+  if (portal) {
+    const target = portalContainer ?? (typeof document !== 'undefined' ? document.body : null)
+    return target ? createPortal(content, target) : null
+  }
+
+  return (
+    content
+  )
 }
 
 function DateRangePickerCalendarHeader() {
-  const { cal, resolvedI18n, formatOptions, monthLabelId } = useDateRangePickerContext()
+  const { cal, resolvedI18n, formatOptions, numberOfMonths, monthLabelId, setFocusDate } = useDateRangePickerContext()
+
+  const visibleMonths = useMemo(
+    () => Array.from({ length: numberOfMonths }, (_, index) => addMonths(cal.currentMonth, index)),
+    [cal.currentMonth, numberOfMonths],
+  )
+
+  const headerLabel = useMemo(() => {
+    if (visibleMonths.length === 1) {
+      return format(visibleMonths[0], resolvedI18n.format.monthLabel, formatOptions)
+    }
+
+    const first = format(visibleMonths[0], resolvedI18n.format.monthLabel, formatOptions)
+    const last = format(
+      visibleMonths[visibleMonths.length - 1],
+      resolvedI18n.format.monthLabel,
+      formatOptions,
+    )
+    return `${first} - ${last}`
+  }, [visibleMonths, resolvedI18n.format.monthLabel, formatOptions])
 
   return (
-    <header className="mb-2 flex justify-between">
-      <button onClick={cal.prev} aria-label={resolvedI18n.labels.prevMonth}>
+    <header className="mb-3 flex items-center justify-between gap-3">
+      <button
+        onClick={() => {
+          cal.prev()
+          setFocusDate(previous => addMonths(previous, -1))
+        }}
+        aria-label={resolvedI18n.labels.prevMonth}
+      >
         ←
       </button>
-      <div id={monthLabelId} className="font-semibold text-gray-900">
-        {format(cal.currentMonth, resolvedI18n.format.monthLabel, formatOptions)}
+      <div id={monthLabelId} className="text-center text-sm font-semibold text-gray-900 sm:text-base">
+        {headerLabel}
       </div>
-      <button onClick={cal.next} aria-label={resolvedI18n.labels.nextMonth}>
+      <button
+        onClick={() => {
+          cal.next()
+          setFocusDate(previous => addMonths(previous, 1))
+        }}
+        aria-label={resolvedI18n.labels.nextMonth}
+      >
         →
       </button>
     </header>
@@ -379,38 +613,119 @@ function DateRangePickerCalendarGrid() {
     setFocusDate,
     gridRef,
     monthLabelId,
+    numberOfMonths,
     onEscape,
   } = useDateRangePickerContext()
 
-  const gridDays = useMemo(() => cal.weeks.flat(), [cal.weeks])
-  const weekdayLabels = useMemo(
-    () =>
-      (cal.weeks[0] ?? []).map(day =>
-        format(day, resolvedI18n.format.weekdayLabel, formatOptions),
-      ),
-    [cal.weeks, resolvedI18n.format.weekdayLabel, formatOptions],
+  const weekOptions = useMemo(
+    () => ({ locale: resolvedI18n.locale, weekStartsOn: resolvedI18n.weekStartsOn }),
+    [resolvedI18n.locale, resolvedI18n.weekStartsOn],
   )
 
-  const findGridDate = (date: Date) => gridDays.find(d => cal.isSameDay(d, date)) ?? gridDays[0]
+  const visibleMonths = useMemo(
+    () =>
+      Array.from({ length: numberOfMonths }, (_, index) => {
+        const monthStart = startOfMonth(addMonths(cal.currentMonth, index))
+        return {
+          monthStart,
+          weeks: buildMonthWeeks(monthStart, weekOptions),
+          weekdayLabels: buildMonthWeeks(monthStart, weekOptions)[0].map(day =>
+            format(day, resolvedI18n.format.weekdayLabel, formatOptions),
+          ),
+        } satisfies MonthView
+      }),
+    [
+      cal.currentMonth,
+      numberOfMonths,
+      weekOptions,
+      resolvedI18n.format.weekdayLabel,
+      formatOptions,
+    ],
+  )
+
+  const visibleRangeDays = useMemo(
+    () => getVisibleRangeDays(cal.currentMonth, numberOfMonths, weekOptions),
+    [cal.currentMonth, numberOfMonths, weekOptions],
+  )
+
+  const monthAnimatorRef = useRef<HTMLDivElement>(null)
+  const previousMonthRef = useRef(cal.currentMonth)
 
   useEffect(() => {
-    setFocusDate(previous => findGridDate(previous))
-    const focusTarget = findGridDate(focusDate)
+    const monthOffset = differenceInCalendarMonths(startOfMonth(focusDate), startOfMonth(cal.currentMonth))
+
+    if (monthOffset < 0) {
+      cal.goToMonth(startOfMonth(focusDate))
+      return
+    }
+
+    if (monthOffset >= numberOfMonths) {
+      cal.goToMonth(addMonths(startOfMonth(focusDate), -(numberOfMonths - 1)))
+    }
+  }, [focusDate, cal, numberOfMonths])
+
+  useEffect(() => {
+    const prev = previousMonthRef.current
+    const next = cal.currentMonth
+    const monthDelta = differenceInCalendarMonths(startOfMonth(next), startOfMonth(prev))
+
+    if (monthDelta === 0 || !monthAnimatorRef.current || typeof monthAnimatorRef.current.animate !== 'function') {
+      previousMonthRef.current = next
+      return
+    }
+
+    monthAnimatorRef.current.animate(
+      [
+        { opacity: 0.88, transform: `translateX(${monthDelta > 0 ? '10px' : '-10px'})` },
+        { opacity: 1, transform: 'translateX(0)' },
+      ],
+      {
+        duration: 180,
+        easing: 'ease-out',
+      },
+    )
+
+    previousMonthRef.current = next
+  }, [cal.currentMonth])
+
+  useEffect(() => {
+    const focusMonthOffset = differenceInCalendarMonths(
+      startOfMonth(focusDate),
+      startOfMonth(cal.currentMonth),
+    )
+    const focusPanelIndex =
+      focusMonthOffset < 0 ? 0 : Math.min(numberOfMonths - 1, focusMonthOffset)
+    const focusPanelMonth = visibleMonths[focusPanelIndex]?.monthStart ?? visibleMonths[0]?.monthStart
+
+    if (!focusPanelMonth) return
+
     const cell = gridRef.current?.querySelector<HTMLButtonElement>(
-      `button[role="gridcell"][data-date="${focusTarget.getTime()}"]`,
+      `button[role="gridcell"][data-date-key="${focusDate.getTime()}-${focusPanelMonth.getTime()}"]`,
     )
     cell?.focus()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cal.currentMonth, gridDays])
+  }, [cal.currentMonth, focusDate, gridRef, numberOfMonths, visibleMonths])
+
+  const moveFocusByDays = (delta: number) => {
+    setFocusDate(previous => addDays(previous, delta))
+  }
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    const idx = gridDays.findIndex(d => cal.isSameDay(d, focusDate))
+    const idx = visibleRangeDays.findIndex(day => cal.isSameDay(day, focusDate))
     const currentIndex = idx >= 0 ? idx : 0
     const rowStart = currentIndex - (currentIndex % 7)
 
-    const setByIndex = (newIndex: number) => {
-      const clamped = Math.max(0, Math.min(gridDays.length - 1, newIndex))
-      setFocusDate(gridDays[clamped])
+    const setByIndex = (nextIndex: number) => {
+      if (nextIndex < 0) {
+        moveFocusByDays(nextIndex - currentIndex)
+        return
+      }
+
+      if (nextIndex >= visibleRangeDays.length) {
+        moveFocusByDays(nextIndex - currentIndex)
+        return
+      }
+
+      setFocusDate(visibleRangeDays[nextIndex])
     }
 
     switch (event.key) {
@@ -440,13 +755,11 @@ function DateRangePickerCalendarGrid() {
         break
       case 'PageUp':
         event.preventDefault()
-        cal.prev()
-        setFocusDate(addMonths(focusDate, -1))
+        setFocusDate(previous => addMonths(previous, -1))
         break
       case 'PageDown':
         event.preventDefault()
-        cal.next()
-        setFocusDate(addMonths(focusDate, 1))
+        setFocusDate(previous => addMonths(previous, 1))
         break
       case 'Escape':
         event.preventDefault()
@@ -455,7 +768,7 @@ function DateRangePickerCalendarGrid() {
       case ' ':
       case 'Enter':
         event.preventDefault()
-        selectRange(cal.nextRange(focusDate, selectedRange ?? cal.selectedRange))
+        selectRange(cal.nextRange(focusDate, selectedRange))
         break
       default:
         break
@@ -464,50 +777,63 @@ function DateRangePickerCalendarGrid() {
 
   return (
     <div role="grid" tabIndex={0} aria-labelledby={monthLabelId} onKeyDown={handleKeyDown} ref={gridRef}>
-      <div className="mb-1 grid grid-cols-7 text-sm text-gray-600" aria-hidden="true">
-        {weekdayLabels.map((label, index) => (
-          <div key={index} className="text-center">
-            {label}
-          </div>
+      <div ref={monthAnimatorRef} className="flex flex-col gap-4 sm:flex-row sm:gap-3">
+        {visibleMonths.map(monthView => (
+          <section
+            key={monthView.monthStart.getTime()}
+            className="w-72 rounded-md border border-gray-200 bg-gray-50/50 p-2 sm:w-64"
+          >
+            <div className="mb-1 text-center text-sm font-medium text-gray-700">
+              {format(monthView.monthStart, resolvedI18n.format.monthLabel, formatOptions)}
+            </div>
+            <div className="mb-1 grid grid-cols-7 text-sm text-gray-600" aria-hidden="true">
+              {monthView.weekdayLabels.map((label, index) => (
+                <div key={`${monthView.monthStart.getTime()}-weekday-${index}`} className="text-center">
+                  {label}
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-7 gap-1">
+              {monthView.weeks.map((week, weekIndex) =>
+                week.map((day, dayIndex) => {
+                  const faded = !cal.isSameMonth(day, monthView.monthStart)
+                  const isRangeEdge = cal.isRangeEdge(day, selectedRange)
+                  const inRange = cal.isInRange(day, selectedRange)
+                  const isFocused = cal.isSameDay(day, focusDate) && cal.isSameMonth(day, focusDate)
+
+                  return (
+                    <button
+                      key={`${monthView.monthStart.getTime()}-${weekIndex}-${dayIndex}`}
+                      role="gridcell"
+                      aria-selected={isRangeEdge}
+                      aria-disabled={faded}
+                      tabIndex={isFocused ? 0 : -1}
+                      data-date-key={`${day.getTime()}-${monthView.monthStart.getTime()}`}
+                      onClick={() => {
+                        const nextRange = cal.nextRange(day, selectedRange)
+                        setFocusDate(day)
+                        selectRange(nextRange)
+                      }}
+                      className={
+                        'rounded border border-transparent p-1 text-gray-900 transition-colors duration-150 hover:border-blue-400 focus-visible:border-blue-500 focus-visible:outline-none ' +
+                        (isRangeEdge
+                          ? 'bg-blue-600 text-white '
+                          : inRange
+                            ? 'bg-blue-100 text-blue-800 '
+                            : '') +
+                        (faded ? 'text-gray-300 ' : 'hover:bg-blue-100 ')
+                      }
+                      aria-label={format(day, resolvedI18n.format.dayAriaLabel, formatOptions)}
+                    >
+                      {format(day, resolvedI18n.format.dayLabel, formatOptions)}
+                    </button>
+                  )
+                }),
+              )}
+            </div>
+          </section>
         ))}
-      </div>
-
-      <div className="grid grid-cols-7 gap-1">
-        {cal.weeks.map((week, wi) =>
-          week.map((day, di) => {
-            const faded = !cal.isSameMonth(day, cal.currentMonth)
-            const isRangeEdge = cal.isRangeEdge(day, selectedRange)
-            const inRange = cal.isInRange(day, selectedRange)
-            const isFocused = cal.isSameDay(day, focusDate)
-
-            return (
-              <button
-                key={wi + '-' + di}
-                role="gridcell"
-                aria-selected={isRangeEdge}
-                aria-disabled={faded}
-                tabIndex={isFocused ? 0 : -1}
-                data-date={day.getTime()}
-                onClick={() => {
-                  const nextRange = cal.nextRange(day, selectedRange)
-                  selectRange(nextRange)
-                }}
-                className={
-                  'rounded border border-transparent p-1 text-gray-900 hover:border-blue-400 focus-visible:border-blue-500 focus-visible:outline-none ' +
-                  (isRangeEdge
-                    ? 'bg-blue-600 text-white '
-                    : inRange
-                      ? 'bg-blue-100 text-blue-800 '
-                      : '') +
-                  (faded ? 'text-gray-300 ' : 'hover:bg-blue-100 ')
-                }
-                aria-label={format(day, resolvedI18n.format.dayAriaLabel, formatOptions)}
-              >
-                {format(day, resolvedI18n.format.dayLabel, formatOptions)}
-              </button>
-            )
-          }),
-        )}
       </div>
     </div>
   )

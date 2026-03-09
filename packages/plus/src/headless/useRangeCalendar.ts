@@ -75,6 +75,7 @@ export function useRangeCalendar(initial?: UseRangeInitial, options?: UseCalenda
     nextRange,
     isInRange,
     isRangeEdge,
+    goToMonth: core.goToMonth,
     prev: core.prev,
     next: core.next,
     isSameDay: core.isSameDay,

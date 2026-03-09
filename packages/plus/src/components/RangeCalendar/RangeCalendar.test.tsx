@@ -21,15 +21,15 @@ describe('RangeCalendar', () => {
 
   it('renders the current month label and grid', () => {
     render(<RangeCalendar />)
-    expect(screen.getByText(format(jan102024, 'MMMM yyyy'))).toBeInTheDocument()
+    expect(screen.getByRole('grid', { name: format(jan102024, 'MMMM yyyy') })).toBeInTheDocument()
     expect(expectDayGrid().length).toBeGreaterThanOrEqual(35)
   })
 
   it('navigates months before selection', async () => {
     render(<RangeCalendar />)
-    expect(screen.getByText('January 2024')).toBeInTheDocument()
+    expect(screen.getByRole('grid', { name: 'January 2024' })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Next month' }))
-    expect(screen.getByText('February 2024')).toBeInTheDocument()
+    expect(screen.getByRole('grid', { name: 'February 2024' })).toBeInTheDocument()
   })
 
   it('selects a range', async () => {
@@ -90,5 +90,19 @@ describe('RangeCalendar', () => {
     await userEvent.keyboard(' ')
     const selectedCells = await screen.findAllByRole('gridcell', { selected: true })
     expect(selectedCells.length).toBeGreaterThanOrEqual(1)
+  })
+  it('shows one month by default and supports two/three-month layouts', () => {
+    const { rerender } = render(<RangeCalendar />)
+    expect(screen.getAllByText('January 2024').length).toBeGreaterThanOrEqual(1)
+    expect(screen.queryByText('February 2024')).not.toBeInTheDocument()
+
+    rerender(<RangeCalendar numberOfMonths={2} />)
+    expect(screen.getByText('January 2024')).toBeInTheDocument()
+    expect(screen.getByText('February 2024')).toBeInTheDocument()
+
+    rerender(<RangeCalendar numberOfMonths={3} />)
+    expect(screen.getByText('January 2024')).toBeInTheDocument()
+    expect(screen.getByText('February 2024')).toBeInTheDocument()
+    expect(screen.getByText('March 2024')).toBeInTheDocument()
   })
 })

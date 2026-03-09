@@ -87,6 +87,9 @@ import DatePicker from '@core/components/DatePicker'
   </DatePicker.Calendar>
 </DatePicker>
 
+// Disable portal rendering (render popover inline in component tree)
+<DatePicker portal={false} />
+
 // Inline
 <Calendar />
 
@@ -114,9 +117,30 @@ import RangeCalendar from '@plus/components/RangeCalendar'
   </DateRangePicker.Calendar>
 </DateRangePicker>
 
+// Disable portal rendering (render popover inline in component tree)
+<DateRangePicker portal={false} />
+
 // Inline
 <RangeCalendar />
+
+// 2-month popover range view
+<DateRangePicker numberOfMonths={2} />
+
+// 3-month popover range view
+<DateRangePicker numberOfMonths={3} />
+
+// 2-month inline range view
+<RangeCalendar numberOfMonths={2} />
+
+// 3-month inline range view
+<RangeCalendar numberOfMonths={3} />
 ```
+
+Multi-month range views
+- `DateRangePicker` and `RangeCalendar` default to a single visible month.
+- Use `numberOfMonths={2}` or `numberOfMonths={3}` for side-by-side multi-month views.
+- Values are clamped to `1..3`.
+- On small screens, month panels stack vertically; on larger screens, they render side-by-side.
 
 Internationalization (i18n)
 ```tsx
@@ -161,8 +185,10 @@ Keyboard navigation
 - Mobile virtual keyboards typically don’t expose these keys; keyboard nav requires a hardware keyboard.
 
 Layering / popovers
-- `DatePicker` and `DateRangePicker` popovers render inline in component tree.
-- Popover z-layer is controlled by CSS variable `--rdp-z-popover` (default: `1000`).
+- `DatePicker` and `DateRangePicker` popovers render in a portal by default (`document.body`).
+- Opt out with `portal={false}` to render inline in component tree.
+- Change the portal mount node with `portalContainer`.
+- Popover z-layer is controlled by CSS variable `--rdp-z-popover` (default: `1000`) in both portal and inline modes.
 - Override globally:
 ```css
 :root {
@@ -175,17 +201,20 @@ Layering / popovers
   --rdp-z-popover: 2200;
 }
 ```
-- Example usage with scoped layering:
+- Example usage with custom portal container:
 ```tsx
 import DatePicker from '@core/components/DatePicker'
 import DateRangePicker from '@plus/components/DateRangePicker'
 
 export function BookingModalBody() {
+  const portalRoot = document.getElementById('modal-popovers')
+
   return (
-    <div className="my-modal-theme">
-      <DatePicker />
-      <DateRangePicker />
-    </div>
+    <>
+      <div id="modal-popovers" className="my-modal-theme" />
+      <DatePicker portalContainer={portalRoot} />
+      <DateRangePicker portalContainer={portalRoot} />
+    </>
   )
 }
 ```
