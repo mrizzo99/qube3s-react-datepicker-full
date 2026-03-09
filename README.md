@@ -4,9 +4,9 @@
 
 ✅ UI calendar (core)
 
-✅ DateInput wrapper (core)
+✅ DatePicker compound API (core)
 
-✅ Range calendar + DateRangeInput (plus)
+✅ DateRangePicker compound API (plus)
 
 ✅ Storybook 10
 
@@ -27,8 +27,8 @@
 ✅ Quick Start Instructions
 
 Packages
-- `packages/core`: single-date calendar UI (`Calendar`), popover input (`DateInput`), headless hook (`useCalendar`).
-- `packages/plus`: range-only components/hooks (`RangeCalendar`, `DateRangeInput`, `useRangeCalendar`), built on core.
+- `packages/core`: single-date calendar UI (`Calendar`), composable picker (`DatePicker`), headless hook (`useCalendar`).
+- `packages/plus`: range-only components/hooks (`RangeCalendar`, composable `DateRangePicker`, `useRangeCalendar`), built on core.
 
 After downloading and extracting the ZIP:
 
@@ -76,25 +76,43 @@ npm run preview
 Core usage (single date):
 ```tsx
 import Calendar from '@core/components/Calendar'
-import DateInput from '@core/components/DateInput'
+import DatePicker from '@core/components/DatePicker'
 
-//Popover - single date selection
-<DateInput />
+// Popover - single date selection
+<DatePicker>
+  <DatePicker.Input />
+  <DatePicker.Calendar>
+    <DatePicker.CalendarHeader />
+    <DatePicker.CalendarGrid />
+  </DatePicker.Calendar>
+</DatePicker>
 
-// InLine
+// Inline
 <Calendar />
 
 // Custom icon on the input trigger (defaults to built-in calendar icon)
-<DateInput icon={<MyIcon />} iconPosition="left" iconAriaLabel="Choose date" />
+<DatePicker>
+  <DatePicker.Input icon={<MyIcon />} iconPosition="left" iconAriaLabel="Choose date" />
+  <DatePicker.Calendar>
+    <DatePicker.CalendarHeader />
+    <DatePicker.CalendarGrid />
+  </DatePicker.Calendar>
+</DatePicker>
 ```
 
 Plus usage (range):
 ```tsx
-import DateRangeInput from '@plus/components/DateRangeInput'
+import DateRangePicker from '@plus/components/DateRangePicker'
 import RangeCalendar from '@plus/components/RangeCalendar'
 
-// Popover - date range selection (start and end date)
-<DateRangeInput />
+// Popover - date range selection
+<DateRangePicker>
+  <DateRangePicker.Input />
+  <DateRangePicker.Calendar>
+    <DateRangePicker.CalendarHeader />
+    <DateRangePicker.CalendarGrid />
+  </DateRangePicker.Calendar>
+</DateRangePicker>
 
 // Inline
 <RangeCalendar />
@@ -104,14 +122,14 @@ Internationalization (i18n)
 ```tsx
 import { frI18n } from '@core/i18n-presets'
 import Calendar from '@core/components/Calendar'
-import DateInput from '@core/components/DateInput'
-import DateRangeInput from '@plus/components/DateRangeInput'
+import DatePicker from '@core/components/DatePicker'
+import DateRangePicker from '@plus/components/DateRangePicker'
 
 const i18n = frI18n
 
 <Calendar i18n={i18n} />
-<DateInput i18n={i18n} />
-<DateRangeInput i18n={i18n} />
+<DatePicker i18n={i18n} />
+<DateRangePicker i18n={i18n} />
 ```
 Presets are available from `@core/i18n-presets` (`enUSI18n`, `frI18n`, `esI18n`), or pass a custom `i18n` object to override defaults.
 Placeholders and the format hint text use `i18n.labels` when you don't supply explicit props.
@@ -143,7 +161,7 @@ Keyboard navigation
 - Mobile virtual keyboards typically don’t expose these keys; keyboard nav requires a hardware keyboard.
 
 Layering / popovers
-- `DateInput` and `DateRangeInput` popovers render through a portal to `document.body`.
+- `DatePicker` and `DateRangePicker` popovers render inline in component tree.
 - Popover z-layer is controlled by CSS variable `--rdp-z-popover` (default: `1000`).
 - Override globally:
 ```css
@@ -159,14 +177,14 @@ Layering / popovers
 ```
 - Example usage with scoped layering:
 ```tsx
-import DateInput from '@core/components/DateInput'
-import DateRangeInput from '@plus/components/DateRangeInput'
+import DatePicker from '@core/components/DatePicker'
+import DateRangePicker from '@plus/components/DateRangePicker'
 
 export function BookingModalBody() {
   return (
     <div className="my-modal-theme">
-      <DateInput />
-      <DateRangeInput />
+      <DatePicker />
+      <DateRangePicker />
     </div>
   )
 }

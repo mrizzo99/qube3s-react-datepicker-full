@@ -1,25 +1,25 @@
 # React Datepicker Developer Guide
 
-This core repo is a headless-first datepicker built with Vite, React, TypeScript, TailwindCSS, and date-fns. It includes a thin UI wrapper, a headless calendar hook. A Storybook setup in the plus package allows to preview components from both Core package and the Plus package.
+This core repo is a headless-first datepicker built with Vite, React, TypeScript, TailwindCSS, and date-fns. It includes composable picker components and headless calendar hooks. A Storybook setup in the plus package allows previewing components from both Core and Plus packages.
 
 ## Project layout
 - `apps/demo` – Vite demo shell that renders core/plus components.
 - `apps/storybook/.storybook` – Storybook 10 config (React + Vite, Docs addon).
 - `packages/core/src/headless/useCalendar.ts` – Headless calendar state and derived values (single-date).
 - `packages/core/src/components/Calendar` – Visual calendar that consumes the headless hook (single-date).
-- `packages/core/src/components/DateInput` – Popover-style input wrapper that toggles the calendar (single-date).
+- `packages/core/src/components/DatePicker` – Compound single-date picker (`Root/Input/Calendar/Header/Grid`).
 - `packages/plus/src/headless/useRangeCalendar.ts` – Range-aware hook that composes the core hook.
 - `packages/plus/src/components/RangeCalendar` – Range-capable calendar UI.
-- `packages/plus/src/components/DateRangeInput` – Popover-style input wrapper for range selection.
+- `packages/plus/src/components/DateRangePicker` – Compound range picker (`Root/Input/Calendar/Header/Grid`).
 - `tailwind.config.js`, `apps/demo/src/index.css` – Tailwind wiring (base/components/utilities only).
 
 ## Runtime flow (demo)
 1) `apps/demo/src/main.tsx` bootstraps React and renders `<App />` into `#root`.
-2) `App` renders core `<DateInput />` and plus `<DateRangeInput />` as the demo surfaces.
-3) `DateInput` manages `open` state for the popover. The input is read-only and toggles visibility of the calendar container; it can run controlled via `value`/`onChange` or uncontrolled (internal date state).
-4) When open, core `Calendar` mounts and calls `useCalendar()` to fetch calendar state, derived weeks, and actions. It also accepts `selectedDate`/`selectDate` props for controlled selection; the visible month seeds from the provided date if present.
+2) `App` renders core `<DatePicker />` and plus `<DateRangePicker />` as the popover surfaces.
+3) `DatePicker` manages `open` state for the popover. `DatePicker.Input` renders read-only input UI and toggles visibility of `DatePicker.Calendar`; it can run controlled via `value`/`onChange` or uncontrolled (internal date state).
+4) `DatePicker.CalendarGrid` calls `useCalendar()` for month/grid state and keyboard navigation behavior.
 5) User actions: month navigation triggers `cal.prev`/`cal.next`; clicking a day calls `selectDate(day)` which either updates internal hook state or bubbles through the controlled prop handler.
-6) Plus components follow the same pattern but use `useRangeCalendar` and `RangeCalendar` for range selection.
+6) Plus components follow the same pattern with `DateRangePicker` + `useRangeCalendar`.
 
 ## Calendar state model (core `packages/core/src/headless/useCalendar.ts`)
 - **State**: `currentMonth` (`Date` of the visible month) and single-date selection (`selectedDate: Date | null`). The `initial?: Date` argument seeds `currentMonth`; invalid dates normalize to `new Date()`.
@@ -46,16 +46,25 @@ This core repo is a headless-first datepicker built with Vite, React, TypeScript
 
 ## Controlled / Uncontrolled concepts
 - Controlled: Parent owns the value and passes it in with a change handler. The component reflects whatever value the parent gives and only updates via the handler. 
-Example: `<DateRangeInput value={range} onChange={setRange} />` — the parent state is the single source of truth.
-- Uncontrolled: Component manages its own internal state; parent can read via refs/events but doesn’t pass a value prop. Example: `<DateRangeInput />` — it tracks the range internally and just calls `onChange` optionally.
+Example: `<DateRangePicker value={range} onChange={setRange} />` — the parent state is the single source of truth.
+- Uncontrolled: Component manages its own internal state; parent can read via refs/events but doesn’t pass a value prop. Example: `<DateRangePicker />` — it tracks the range internally and just calls `onChange` optionally.
 - Key difference: controlled = external state, predictable and sync’d; uncontrolled = internal state, simpler wiring but less centralized control.
 
-## Date input wrapper (core `packages/core/src/components/DateInput.tsx`)
-- Maintains `open` popover state with `useState`.
-- Supports controlled (`value`/`onChange`) or uncontrolled selection; shows a formatted date string in the input and closes the popover on selection.
-- Renders a read-only text input; clicking toggles the calendar container.
-- Optional icon support: `icon` (ReactNode), `iconPosition` (`left`/`right`), `iconAriaLabel`; defaults to a built-in calendar icon if none provided. `inputClassName`/`triggerClassName` allow theming.
-- Positions the calendar below the input with simple absolute positioning.
+## Date picker compound API (core `packages/core/src/components/DatePicker/DatePicker.tsx`)
+- Exposes composable subcomponents: `DatePicker.Input`, `DatePicker.Calendar`, `DatePicker.CalendarHeader`, `DatePicker.CalendarGrid`.
+- Root owns controlled/uncontrolled state and context; subcomponents render UI using shared context.
+- Default usage `<DatePicker />` renders the full stack; custom composition can replace layout while keeping behavior logic.
+
+Example:
+```tsx
+<DatePicker>
+  <DatePicker.Input />
+  <DatePicker.Calendar>
+    <DatePicker.CalendarHeader />
+    <DatePicker.CalendarGrid />
+  </DatePicker.Calendar>
+</DatePicker>
+```
 
 Example: using PNG/JPG/GIF images for the icon
 ```tsx
@@ -63,39 +72,50 @@ import CalendarPng from './calendar.png'
 import CalendarGif from './calendar.gif'
 import CalendarJpg from './calendar.jpg'
 
-<DateInput
-  icon={<img src={CalendarPng} alt="" className="h-4 w-4" />}
-  iconAriaLabel="Choose date"
-/>
+<DatePicker>
+  <DatePicker.Input icon={<img src={CalendarPng} alt="" className="h-4 w-4" />} iconAriaLabel="Choose date" />
+  <DatePicker.Calendar>
+    <DatePicker.CalendarHeader />
+    <DatePicker.CalendarGrid />
+  </DatePicker.Calendar>
+</DatePicker>
 
-<DateInput
-  icon={<img src={CalendarGif} alt="" className="h-4 w-4" />}
-  iconAriaLabel="Choose date"
-/>
+<DatePicker>
+  <DatePicker.Input icon={<img src={CalendarGif} alt="" className="h-4 w-4" />} iconAriaLabel="Choose date" />
+</DatePicker>
 
-<DateInput
-  icon={<img src={CalendarJpg} alt="" className="h-4 w-4" />}
-  iconAriaLabel="Choose date"
-/>
+<DatePicker>
+  <DatePicker.Input icon={<img src={CalendarJpg} alt="" className="h-4 w-4" />} iconAriaLabel="Choose date" />
+</DatePicker>
 ```
 Note: you can also pass `icon={<img src="/calendar.png" ... />}` for assets in `public/`, or use external URLs if your build allows them.
 
-## Range input wrapper (plus `packages/plus/src/components/DateRangeInput.tsx`)
-- Maintains `open` popover state with `useState`.
-- Supports controlled (`value`/`onChange`) or uncontrolled selection; shows formatted date strings in the input fields and closes the popover on selection of both a start date and an end date for the date range. 
-- Renders two read-only text inputs; clicking in either the start date input field or the end date input field toggles the calendar container.
-- Optional icon support: `icon`, `iconPosition`, `iconAriaLabel` with the same defaults/overrides as `DateInput`; `inputClassName`/`triggerClassName` for theming.
-- Positions the calendar below the date inputs with simple absolute positioning.
+## Date range picker compound API (plus `packages/plus/src/components/DateRangePicker/DateRangePicker.tsx`)
+- Exposes composable subcomponents: `DateRangePicker.Input`, `DateRangePicker.Calendar`, `DateRangePicker.CalendarHeader`, `DateRangePicker.CalendarGrid`.
+- Root owns controlled/uncontrolled state and context; subcomponents reuse range behavior without duplicating logic.
+
+Example:
+```tsx
+<DateRangePicker>
+  <DateRangePicker.Input />
+  <DateRangePicker.Calendar>
+    <DateRangePicker.CalendarHeader />
+    <DateRangePicker.CalendarGrid />
+  </DateRangePicker.Calendar>
+</DateRangePicker>
+```
 
 Example: image icon with range input
 ```tsx
 import CalendarPng from './calendar.png'
 
-<DateRangeInput
-  icon={<img src={CalendarPng} alt="" className="h-4 w-4" />}
-  iconPosition="left"
-  iconAriaLabel="Choose date range"
-/>
+<DateRangePicker>
+  <DateRangePicker.Input
+    icon={<img src={CalendarPng} alt="" className="h-4 w-4" />}
+    iconPosition="left"
+    iconAriaLabel="Choose date range"
+  />
+</DateRangePicker>
 ```
 
 ## Internationalization (i18n)
@@ -108,14 +128,14 @@ Example: shared i18n object
 ```tsx
 import { frI18n } from '@core/i18n-presets'
 import Calendar from '@core/components/Calendar'
-import DateInput from '@core/components/DateInput'
-import DateRangeInput from '@plus/components/DateRangeInput'
+import DatePicker from '@core/components/DatePicker'
+import DateRangePicker from '@plus/components/DateRangePicker'
 
 const i18n = frI18n
 
 <Calendar i18n={i18n} />
-<DateInput i18n={i18n} />
-<DateRangeInput i18n={i18n} />
+<DatePicker i18n={i18n} />
+<DateRangePicker i18n={i18n} />
 ```
 Presets are exported from `packages/core/src/i18n-presets.ts` (`enUSI18n`, `frI18n`, `esI18n`) and can be used directly or extended.
 
@@ -143,10 +163,10 @@ const i18n = { ...frI18n, format: { ...frI18n.format, inputValue: 'Pp' } }
 - Current Stories:
   - **Core**
     - Calendar: `Uncontrolled`, `Controlled`
-    - DateInput: `Uncontrolled`, `Controlled`
+    - DatePicker: `Uncontrolled`, `ControlledComposable`
   - **Plus**
     - RangeCalendar: `Uncontrolled`, `Controlled`
-    - DateRangeInput: `Uncontrolled`, `Controlled`
+    - DateRangePicker: `Uncontrolled`, `ControlledComposable`
 
 
 ## Styling

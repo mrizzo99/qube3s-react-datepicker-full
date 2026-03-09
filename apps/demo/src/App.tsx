@@ -1,8 +1,8 @@
 import React, { useState } from 'react'
-import DateInput from '@core/components/DateInput'
+import DatePicker from '@core/components/DatePicker'
 import Calendar from '@core/components/Calendar'
 import { format } from 'date-fns'
-import DateRangeInput from '@plus/components/DateRangeInput'
+import DateRangePicker from '@plus/components/DateRangePicker'
 import RangeCalendar from '@plus/components/RangeCalendar'
 import { esI18n } from '@core/i18n-presets'
 import qube3sLogoPng from '../public/brand/qube3s-logo.png'
@@ -105,8 +105,14 @@ export default function App() {
 
             <section id="single-popover" className={panelClass}>
               <h2 className="text-lg font-semibold">Single date (popover)</h2>
-              <p className="mt-1 mb-3 text-sm text-[var(--q3-text-disabled)]">DateInput component</p>
-              <DateInput value={selectedDate} onChange={setSelectedDate} />
+              <p className="mt-1 mb-3 text-sm text-[var(--q3-text-disabled)]">DatePicker component</p>
+              <DatePicker value={selectedDate} onChange={setSelectedDate}>
+                <DatePicker.Input />
+                <DatePicker.Calendar>
+                  <DatePicker.CalendarHeader />
+                  <DatePicker.CalendarGrid />
+                </DatePicker.Calendar>
+              </DatePicker>
               <p className="mt-3 text-sm text-[var(--q3-text-disabled)]">
                 {selectedDate ? `Selected: ${format(selectedDate, 'PPP')}` : 'Choose a date'}
               </p>
@@ -114,8 +120,14 @@ export default function App() {
 
             <section id="single-es" className={panelClass}>
               <h2 className="text-lg font-semibold">Single date (popover, es locale)</h2>
-              <p className="mt-1 mb-3 text-sm text-[var(--q3-text-disabled)]">DateInput + esI18n preset</p>
-              <DateInput value={selectedDateEs} onChange={setSelectedDateEs} i18n={esI18n} />
+              <p className="mt-1 mb-3 text-sm text-[var(--q3-text-disabled)]">DatePicker + esI18n preset</p>
+              <DatePicker value={selectedDateEs} onChange={setSelectedDateEs} i18n={esI18n}>
+                <DatePicker.Input />
+                <DatePicker.Calendar>
+                  <DatePicker.CalendarHeader />
+                  <DatePicker.CalendarGrid />
+                </DatePicker.Calendar>
+              </DatePicker>
               <p className="mt-3 text-sm text-[var(--q3-text-disabled)]">
                 {selectedDateEs
                   ? `Selected: ${format(selectedDateEs, 'PPP', { locale: esI18n.locale })}`
@@ -135,8 +147,14 @@ export default function App() {
 
             <section id="range-popover" className={panelClass}>
               <h2 className="text-lg font-semibold">Range selection (popover)</h2>
-              <p className="mt-1 mb-3 text-sm text-[var(--q3-text-disabled)]">DateRangeInput component</p>
-              <DateRangeInput value={rangeInput} onChange={setRangeInput} />
+              <p className="mt-1 mb-3 text-sm text-[var(--q3-text-disabled)]">DateRangePicker component</p>
+              <DateRangePicker value={rangeInput} onChange={setRangeInput}>
+                <DateRangePicker.Input />
+                <DateRangePicker.Calendar>
+                  <DateRangePicker.CalendarHeader />
+                  <DateRangePicker.CalendarGrid />
+                </DateRangePicker.Calendar>
+              </DateRangePicker>
               <p className="mt-3 text-sm text-[var(--q3-text-disabled)]">
                 {rangeInput.start ? `Start: ${format(rangeInput.start, 'PPP')}` : 'Start: —'}{' '}
                 {rangeInput.end ? `End: ${format(rangeInput.end, 'PPP')}` : 'End: —'}
@@ -145,8 +163,14 @@ export default function App() {
 
             <section id="range-es" className={panelClass}>
               <h2 className="text-lg font-semibold">Range selection (popover, es locale)</h2>
-              <p className="mt-1 mb-3 text-sm text-[var(--q3-text-disabled)]">DateRangeInput + esI18n preset</p>
-              <DateRangeInput value={rangeInputEs} onChange={setRangeInputEs} i18n={esI18n} />
+              <p className="mt-1 mb-3 text-sm text-[var(--q3-text-disabled)]">DateRangePicker + esI18n preset</p>
+              <DateRangePicker value={rangeInputEs} onChange={setRangeInputEs} i18n={esI18n}>
+                <DateRangePicker.Input />
+                <DateRangePicker.Calendar>
+                  <DateRangePicker.CalendarHeader />
+                  <DateRangePicker.CalendarGrid />
+                </DateRangePicker.Calendar>
+              </DateRangePicker>
               <p className="mt-3 text-sm text-[var(--q3-text-disabled)]">
                 {rangeInputEs.start
                   ? `Start: ${format(rangeInputEs.start, 'PPP', { locale: esI18n.locale })}`

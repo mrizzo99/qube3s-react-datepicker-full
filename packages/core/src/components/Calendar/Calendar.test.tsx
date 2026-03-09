@@ -27,9 +27,9 @@ describe('Calendar', () => {
 
   it('navigates months with prev/next', async () => {
     render(<Calendar />)
-    await userEvent.click(screen.getAllByRole('button', { name: '→' })[0])
+    await userEvent.click(screen.getByRole('button', { name: 'Next month' }))
     expect(screen.getByText('February 2024')).toBeInTheDocument()
-    await userEvent.click(screen.getAllByRole('button', { name: '←' })[0])
+    await userEvent.click(screen.getByRole('button', { name: 'Previous month' }))
     expect(screen.getByText('January 2024')).toBeInTheDocument()
   })
 
