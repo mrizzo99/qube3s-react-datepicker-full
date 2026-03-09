@@ -78,6 +78,8 @@ export function useRangeCalendar(initial?: UseRangeInitial, options?: UseCalenda
     goToMonth: core.goToMonth,
     prev: core.prev,
     next: core.next,
+    prevYear: core.prevYear,
+    nextYear: core.nextYear,
     isSameDay: core.isSameDay,
     isSameMonth: core.isSameMonth
   }

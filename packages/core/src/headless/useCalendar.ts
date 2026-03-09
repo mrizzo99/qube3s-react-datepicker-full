@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   startOfMonth, endOfMonth, startOfWeek, endOfWeek,
-  addDays, addMonths, isSameDay, isSameMonth
+  addDays, addMonths, addYears, isSameDay, isSameMonth
 } from 'date-fns'
 import type { Locale } from 'date-fns'
 
@@ -61,6 +61,8 @@ export function useCalendar(initial?: UseCalendarInitial, options: UseCalendarOp
     goToMonth: (month: Date) => setCurrentMonth(startOfMonth(month)),
     prev: () => setCurrentMonth(addMonths(currentMonth, -1)),
     next: () => setCurrentMonth(addMonths(currentMonth, 1)),
+    prevYear: () => setCurrentMonth(addYears(currentMonth, -1)),
+    nextYear: () => setCurrentMonth(addYears(currentMonth, 1)),
     isSameDay,
     isSameMonth
   }

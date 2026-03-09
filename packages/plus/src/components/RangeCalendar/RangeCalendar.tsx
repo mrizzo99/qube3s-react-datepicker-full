@@ -241,11 +241,11 @@ export default function RangeCalendar({
         break
       case 'PageUp':
         event.preventDefault()
-        setFocusDate(previous => addMonths(previous, -1))
+        setFocusDate(previous => addMonths(previous, event.shiftKey ? -12 : -1))
         break
       case 'PageDown':
         event.preventDefault()
-        setFocusDate(previous => addMonths(previous, 1))
+        setFocusDate(previous => addMonths(previous, event.shiftKey ? 12 : 1))
         break
       case 'Escape':
         event.preventDefault()
@@ -286,27 +286,49 @@ export default function RangeCalendar({
       ref={gridRef}
     >
       <header className="mb-3 flex items-center justify-between gap-3">
-        <button
-          onClick={() => {
-            cal.prev()
-            setFocusDate(previous => addMonths(previous, -1))
-          }}
-          aria-label={resolvedI18n.labels.prevMonth}
-        >
-          ←
-        </button>
+        <div className="flex gap-1">
+          <button
+            onClick={() => {
+              cal.prevYear()
+              setFocusDate(previous => addMonths(previous, -12))
+            }}
+            aria-label={resolvedI18n.labels.prevYear}
+          >
+            «
+          </button>
+          <button
+            onClick={() => {
+              cal.prev()
+              setFocusDate(previous => addMonths(previous, -1))
+            }}
+            aria-label={resolvedI18n.labels.prevMonth}
+          >
+            ←
+          </button>
+        </div>
         <div id={monthLabelId} className="text-center text-sm font-semibold text-gray-900 sm:text-base">
           {headerLabel}
         </div>
-        <button
-          onClick={() => {
-            cal.next()
-            setFocusDate(previous => addMonths(previous, 1))
-          }}
-          aria-label={resolvedI18n.labels.nextMonth}
-        >
-          →
-        </button>
+        <div className="flex gap-1">
+          <button
+            onClick={() => {
+              cal.next()
+              setFocusDate(previous => addMonths(previous, 1))
+            }}
+            aria-label={resolvedI18n.labels.nextMonth}
+          >
+            →
+          </button>
+          <button
+            onClick={() => {
+              cal.nextYear()
+              setFocusDate(previous => addMonths(previous, 12))
+            }}
+            aria-label={resolvedI18n.labels.nextYear}
+          >
+            »
+          </button>
+        </div>
       </header>
 
       <div ref={monthAnimatorRef} className="flex flex-col gap-4 sm:flex-row sm:gap-3">

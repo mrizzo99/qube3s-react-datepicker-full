@@ -30,6 +30,10 @@ describe('RangeCalendar', () => {
     expect(screen.getByRole('grid', { name: 'January 2024' })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Next month' }))
     expect(screen.getByRole('grid', { name: 'February 2024' })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Next year' }))
+    expect(screen.getByRole('grid', { name: 'February 2025' })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Previous year' }))
+    expect(screen.getByRole('grid', { name: 'February 2024' })).toBeInTheDocument()
   })
 
   it('selects a range', async () => {
@@ -90,6 +94,8 @@ describe('RangeCalendar', () => {
     await userEvent.keyboard(' ')
     const selectedCells = await screen.findAllByRole('gridcell', { selected: true })
     expect(selectedCells.length).toBeGreaterThanOrEqual(1)
+    await userEvent.keyboard('{Shift>}{PageDown}{/Shift}')
+    expect(screen.getByRole('grid', { name: 'January 2025' })).toBeInTheDocument()
   })
   it('shows one month by default and supports two/three-month layouts', () => {
     const { rerender } = render(<RangeCalendar />)

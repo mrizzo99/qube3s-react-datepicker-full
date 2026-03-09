@@ -31,6 +31,10 @@ describe('Calendar', () => {
     expect(screen.getByText('February 2024')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Previous month' }))
     expect(screen.getByText('January 2024')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Next year' }))
+    expect(screen.getByText('January 2025')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Previous year' }))
+    expect(screen.getByText('January 2024')).toBeInTheDocument()
   })
 
   it('supports keyboard navigation', async () => {
@@ -40,6 +44,8 @@ describe('Calendar', () => {
     await userEvent.keyboard('{ArrowRight}')
     await userEvent.keyboard(' ')
     expect(await screen.findByRole('gridcell', { selected: true })).toBeInTheDocument()
+    await userEvent.keyboard('{Shift>}{PageDown}{/Shift}')
+    expect(screen.getByText('January 2025')).toBeInTheDocument()
   })
 
   it('highlights uncontrolled selection on click', async () => {

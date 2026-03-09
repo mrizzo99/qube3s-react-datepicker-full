@@ -425,15 +425,17 @@ function DatePickerCalendarHeader() {
 
   return (
     <header className="mb-2 flex justify-between">
-      <button onClick={cal.prev} aria-label={resolvedI18n.labels.prevMonth}>
-        ←
-      </button>
+      <div className="flex gap-1">
+        <button onClick={cal.prevYear} aria-label={resolvedI18n.labels.prevYear}>«</button>
+        <button onClick={cal.prev} aria-label={resolvedI18n.labels.prevMonth}>←</button>
+      </div>
       <div id={monthLabelId} className="font-semibold text-gray-900">
         {format(cal.currentMonth, resolvedI18n.format.monthLabel, formatOptions)}
       </div>
-      <button onClick={cal.next} aria-label={resolvedI18n.labels.nextMonth}>
-        →
-      </button>
+      <div className="flex gap-1">
+        <button onClick={cal.next} aria-label={resolvedI18n.labels.nextMonth}>→</button>
+        <button onClick={cal.nextYear} aria-label={resolvedI18n.labels.nextYear}>»</button>
+      </div>
     </header>
   )
 }
@@ -510,13 +512,23 @@ function DatePickerCalendarGrid() {
         break
       case 'PageUp':
         event.preventDefault()
-        cal.prev()
-        setFocusDate(addMonths(focusDate, -1))
+        if (event.shiftKey) {
+          cal.prevYear()
+          setFocusDate(addMonths(focusDate, -12))
+        } else {
+          cal.prev()
+          setFocusDate(addMonths(focusDate, -1))
+        }
         break
       case 'PageDown':
         event.preventDefault()
-        cal.next()
-        setFocusDate(addMonths(focusDate, 1))
+        if (event.shiftKey) {
+          cal.nextYear()
+          setFocusDate(addMonths(focusDate, 12))
+        } else {
+          cal.next()
+          setFocusDate(addMonths(focusDate, 1))
+        }
         break
       case 'Escape':
         event.preventDefault()

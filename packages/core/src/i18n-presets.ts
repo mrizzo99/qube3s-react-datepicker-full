@@ -5,8 +5,10 @@ export const enUSI18n: CalendarI18n = {
   locale: enUS,
   weekStartsOn: 0,
   labels: {
+    prevYear: 'Previous year',
     prevMonth: 'Previous month',
     nextMonth: 'Next month',
+    nextYear: 'Next year',
     calendar: 'Calendar',
     rangeCalendar: 'Range calendar',
     selectDatePlaceholder: 'Select date',
@@ -20,8 +22,10 @@ export const frI18n: CalendarI18n = {
   locale: fr,
   weekStartsOn: 1,
   labels: {
+    prevYear: 'Annee precedente',
     prevMonth: 'Mois precedent',
     nextMonth: 'Mois suivant',
+    nextYear: 'Annee suivante',
     calendar: 'Calendrier',
     rangeCalendar: 'Calendrier des plages',
     selectDatePlaceholder: 'Choisir une date',
@@ -35,8 +39,10 @@ export const esI18n: CalendarI18n = {
   locale: es,
   weekStartsOn: 1,
   labels: {
+    prevYear: 'Ano anterior',
     prevMonth: 'Mes anterior',
     nextMonth: 'Mes siguiente',
+    nextYear: 'Ano siguiente',
     calendar: 'Calendario',
     rangeCalendar: 'Calendario de rangos',
     selectDatePlaceholder: 'Seleccionar fecha',
