@@ -129,6 +129,12 @@ import RangeCalendar from '@plus/components/RangeCalendar'
 // 3-month popover range view
 <DateRangePicker numberOfMonths={3} />
 
+// Quick range presets are opt-in
+<DateRangePicker />
+
+// Enable quick presets (Today, Last 7 days, Last 30 days, This Quarter, Year to Date)
+<DateRangePicker showPresets />
+
 // 2-month inline range view
 <RangeCalendar numberOfMonths={2} />
 

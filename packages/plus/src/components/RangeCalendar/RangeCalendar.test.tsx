@@ -111,4 +111,22 @@ describe('RangeCalendar', () => {
     expect(screen.getByText('February 2024')).toBeInTheDocument()
     expect(screen.getByText('March 2024')).toBeInTheDocument()
   })
+
+  it('supports selecting quick preset ranges', async () => {
+    const onSelectRange = vi.fn()
+    render(
+      <RangeCalendar
+        selectRange={onSelectRange}
+        selectedRange={{ start: null, end: null }}
+        showPresets
+      />,
+    )
+
+    await userEvent.click(screen.getByRole('button', { name: 'Last 30 days' }))
+
+    expect(onSelectRange).toHaveBeenCalledWith({
+      start: new Date(2023, 11, 12),
+      end: new Date(2024, 0, 10),
+    })
+  })
 })

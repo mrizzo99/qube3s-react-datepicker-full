@@ -21,6 +21,7 @@ import {
 } from 'date-fns'
 import { resolveCalendarI18n, type CalendarI18n } from '@core/i18n'
 import { useRangeCalendar, type DateRange } from '../../headless/useRangeCalendar'
+import { getDateRangePresets, type DateRangePreset } from '../../presets/dateRangePresets'
 
 type DateRangePickerContextValue = {
   open: boolean
@@ -46,6 +47,9 @@ type DateRangePickerContextValue = {
   numberOfMonths: number
   portal: boolean
   portalContainer: HTMLElement | null
+  showPresets: boolean
+  presetRanges: DateRangePreset[]
+  applyPresetRange: (preset: DateRangePreset) => void
   onEscape: () => void
 }
 
@@ -128,6 +132,7 @@ export type DateRangePickerProps = {
   formatDescription?: string
   i18n?: CalendarI18n
   numberOfMonths?: number
+  showPresets?: boolean
   portal?: boolean
   portalContainer?: HTMLElement | null
 }
@@ -166,6 +171,7 @@ function DateRangePickerRoot({
   formatDescription,
   i18n,
   numberOfMonths,
+  showPresets = false,
   portal = true,
   portalContainer = null,
 }: DateRangePickerProps) {
@@ -273,6 +279,33 @@ function DateRangePickerRoot({
     }
   }
 
+  const presetRanges = useMemo(
+    () =>
+      getDateRangePresets({
+        today: resolvedI18n.labels.presetToday,
+        last7Days: resolvedI18n.labels.presetLast7Days,
+        last30Days: resolvedI18n.labels.presetLast30Days,
+        thisQuarter: resolvedI18n.labels.presetThisQuarter,
+        yearToDate: resolvedI18n.labels.presetYearToDate,
+      }),
+    [
+      resolvedI18n.labels.presetLast30Days,
+      resolvedI18n.labels.presetLast7Days,
+      resolvedI18n.labels.presetThisQuarter,
+      resolvedI18n.labels.presetToday,
+      resolvedI18n.labels.presetYearToDate,
+    ],
+  )
+
+  const applyPresetRange = (preset: DateRangePreset) => {
+    const anchorDay = preset.range.end ?? preset.range.start
+    if (anchorDay) {
+      setFocusDate(anchorDay)
+      cal.goToMonth(startOfMonth(anchorDay))
+    }
+    selectRange(preset.range)
+  }
+
   const onEscape = () => {
     setOpen(false)
     inputRef.current?.focus()
@@ -302,6 +335,9 @@ function DateRangePickerRoot({
     numberOfMonths: normalizedMonths,
     portal,
     portalContainer,
+    showPresets,
+    presetRanges,
+    applyPresetRange,
     onEscape,
   }
 
@@ -636,6 +672,9 @@ function DateRangePickerCalendarGrid() {
     gridRef,
     monthLabelId,
     numberOfMonths,
+    showPresets,
+    presetRanges,
+    applyPresetRange,
     onEscape,
   } = useDateRangePickerContext()
 
@@ -731,6 +770,17 @@ function DateRangePickerCalendarGrid() {
     setFocusDate(previous => addDays(previous, delta))
   }
 
+  const isPresetActive = (preset: DateRangePreset) => {
+    if (!selectedRange.start || !selectedRange.end || !preset.range.start || !preset.range.end) {
+      return false
+    }
+
+    return (
+      cal.isSameDay(selectedRange.start, preset.range.start) &&
+      cal.isSameDay(selectedRange.end, preset.range.end)
+    )
+  }
+
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     const idx = visibleRangeDays.findIndex(day => cal.isSameDay(day, focusDate))
     const currentIndex = idx >= 0 ? idx : 0
@@ -798,7 +848,29 @@ function DateRangePickerCalendarGrid() {
   }
 
   return (
-    <div role="grid" tabIndex={0} aria-labelledby={monthLabelId} onKeyDown={handleKeyDown} ref={gridRef}>
+    <div className="flex flex-col gap-3">
+      {showPresets && (
+        <section aria-label={resolvedI18n.labels.presetsTitle}>
+          <div className="flex flex-wrap gap-2">
+            {presetRanges.map(preset => (
+              <button
+                key={preset.key}
+                type="button"
+                onClick={() => applyPresetRange(preset)}
+                className={
+                  'rounded border px-2 py-1 text-xs transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:text-sm ' +
+                  (isPresetActive(preset)
+                    ? 'border-blue-600 bg-blue-600 text-white'
+                    : 'border-gray-300 bg-white text-gray-700 hover:border-blue-400 hover:bg-blue-50')
+                }
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+      <div role="grid" tabIndex={0} aria-labelledby={monthLabelId} onKeyDown={handleKeyDown} ref={gridRef}>
       <div ref={monthAnimatorRef} className="flex flex-col gap-4 sm:flex-row sm:gap-3">
         {visibleMonths.map(monthView => (
           <section
@@ -857,6 +929,7 @@ function DateRangePickerCalendarGrid() {
           </section>
         ))}
       </div>
+    </div>
     </div>
   )
 }

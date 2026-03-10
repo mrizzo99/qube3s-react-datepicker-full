@@ -21,6 +21,12 @@ export type CalendarI18n = {
     startDatePlaceholder?: string
     endDatePlaceholder?: string
     formatDescription?: string
+    presetsTitle?: string
+    presetToday?: string
+    presetLast7Days?: string
+    presetLast30Days?: string
+    presetThisQuarter?: string
+    presetYearToDate?: string
   }
 }
 
@@ -45,6 +51,12 @@ export type ResolvedCalendarI18n = {
     startDatePlaceholder: string
     endDatePlaceholder: string
     formatDescription: string
+    presetsTitle: string
+    presetToday: string
+    presetLast7Days: string
+    presetLast30Days: string
+    presetThisQuarter: string
+    presetYearToDate: string
   }
 }
 
@@ -68,7 +80,13 @@ const defaultI18n: ResolvedCalendarI18n = {
     selectDatePlaceholder: 'Select date',
     startDatePlaceholder: 'Start date',
     endDatePlaceholder: 'End date',
-    formatDescription: 'Date format: MM/DD/YYYY'
+    formatDescription: 'Date format: MM/DD/YYYY',
+    presetsTitle: 'Quick ranges',
+    presetToday: 'Today',
+    presetLast7Days: 'Last 7 days',
+    presetLast30Days: 'Last 30 days',
+    presetThisQuarter: 'This Quarter',
+    presetYearToDate: 'Year to Date'
   }
 }
 

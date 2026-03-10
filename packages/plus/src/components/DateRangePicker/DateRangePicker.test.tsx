@@ -154,4 +154,22 @@ describe('DateRangePicker', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Previous year' }))
     expect(screen.getByRole('grid', { name: 'January 2024' })).toBeInTheDocument()
   })
+
+  it('supports selecting quick preset ranges', async () => {
+    const onChange = vi.fn()
+
+    render(<DateRangePicker onChange={onChange} showPresets />)
+    await userEvent.click(screen.getByPlaceholderText('Start date'))
+
+    await userEvent.click(screen.getByRole('button', { name: 'Last 7 days' }))
+
+    const startInput = screen.getByPlaceholderText('Start date')
+    const endInput = screen.getByPlaceholderText('End date')
+    expect(startInput).toHaveValue(format(new Date(2024, 0, 4), 'PPP'))
+    expect(endInput).toHaveValue(format(new Date(2024, 0, 10), 'PPP'))
+    expect(onChange).toHaveBeenCalledWith({
+      start: new Date(2024, 0, 4),
+      end: new Date(2024, 0, 10),
+    })
+  })
 })
