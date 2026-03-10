@@ -11,6 +11,7 @@ import {
 } from 'date-fns'
 import { resolveCalendarI18n, type CalendarI18n } from '@core/i18n'
 import { useRangeCalendar, type DateRange } from '../../headless/useRangeCalendar'
+import { getDateRangePresets, type DateRangePreset } from '../../presets/dateRangePresets'
 
 export type RangeCalendarProps = {
   selectedRange?: DateRange | null
@@ -18,6 +19,7 @@ export type RangeCalendarProps = {
   onEscape?: () => void
   i18n?: CalendarI18n
   numberOfMonths?: number
+  showPresets?: boolean
 }
 
 type MonthView = {
@@ -78,6 +80,7 @@ export default function RangeCalendar({
   onEscape,
   i18n,
   numberOfMonths,
+  showPresets = false,
 }: RangeCalendarProps) {
   const normalizedRange = controlledSelectedRange ?? null
   const resolvedI18n = useMemo(() => resolveCalendarI18n(i18n), [i18n])
@@ -193,6 +196,44 @@ export default function RangeCalendar({
 
   const moveFocusByDays = (delta: number) => {
     setFocusDate(previous => addDays(previous, delta))
+  }
+
+  const presetRanges = useMemo(
+    () =>
+      getDateRangePresets({
+        today: resolvedI18n.labels.presetToday,
+        last7Days: resolvedI18n.labels.presetLast7Days,
+        last30Days: resolvedI18n.labels.presetLast30Days,
+        thisQuarter: resolvedI18n.labels.presetThisQuarter,
+        yearToDate: resolvedI18n.labels.presetYearToDate,
+      }),
+    [
+      resolvedI18n.labels.presetLast30Days,
+      resolvedI18n.labels.presetLast7Days,
+      resolvedI18n.labels.presetThisQuarter,
+      resolvedI18n.labels.presetToday,
+      resolvedI18n.labels.presetYearToDate,
+    ],
+  )
+
+  const applyPresetRange = (preset: DateRangePreset) => {
+    const anchorDay = preset.range.end ?? preset.range.start
+    if (anchorDay) {
+      setFocusDate(anchorDay)
+      cal.goToMonth(startOfMonth(anchorDay))
+    }
+    selectRange(preset.range)
+  }
+
+  const isPresetActive = (preset: DateRangePreset) => {
+    if (!selectedRange?.start || !selectedRange?.end || !preset.range.start || !preset.range.end) {
+      return false
+    }
+
+    return (
+      cal.isSameDay(selectedRange.start, preset.range.start) &&
+      cal.isSameDay(selectedRange.end, preset.range.end)
+    )
   }
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -330,6 +371,28 @@ export default function RangeCalendar({
           </button>
         </div>
       </header>
+
+      {showPresets && (
+        <section aria-label={resolvedI18n.labels.presetsTitle} className="mb-3">
+          <div className="flex flex-wrap gap-2">
+            {presetRanges.map(preset => (
+              <button
+                key={preset.key}
+                type="button"
+                onClick={() => applyPresetRange(preset)}
+                className={
+                  'rounded border px-2 py-1 text-xs transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:text-sm ' +
+                  (isPresetActive(preset)
+                    ? 'border-blue-600 bg-blue-600 text-white'
+                    : 'border-gray-300 bg-white text-gray-700 hover:border-blue-400 hover:bg-blue-50')
+                }
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       <div ref={monthAnimatorRef} className="flex flex-col gap-4 sm:flex-row sm:gap-3">
         {visibleMonths.map(monthView => (

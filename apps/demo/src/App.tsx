@@ -31,6 +31,10 @@ export default function App() {
     start: null,
     end: null
   })
+  const [rangeInputPresets, setRangeInputPresets] = useState<{ start: Date | null; end: Date | null }>({
+    start: null,
+    end: null
+  })
   const [rangeInputThree, setRangeInputThree] = useState<{ start: Date | null; end: Date | null }>({
     start: null,
     end: null
@@ -85,6 +89,9 @@ export default function App() {
               </a>
               <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#range-popover-default">
                 Range Popover Default
+              </a>
+              <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#range-popover-presets">
+                Range Popover Presets
               </a>
               <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#range-popover-2">
                 Range Popover 2-Month
@@ -178,7 +185,7 @@ export default function App() {
 
             <section id="range-popover-default" className={panelClass}>
               <h2 className="text-lg font-semibold">Range selection (popover, default)</h2>
-              <p className="mt-1 mb-3 text-sm text-[var(--q3-text-disabled)]">DateRangePicker default month view</p>
+              <p className="mt-1 mb-3 text-sm text-[var(--q3-text-disabled)]">DateRangePicker default month view (presets disabled)</p>
               <DateRangePicker value={rangeInputDefault} onChange={setRangeInputDefault}>
                 <DateRangePicker.Input />
                 <DateRangePicker.Calendar>
@@ -189,6 +196,22 @@ export default function App() {
               <p className="mt-3 text-sm text-[var(--q3-text-disabled)]">
                 {rangeInputDefault.start ? `Start: ${format(rangeInputDefault.start, 'PPP')}` : 'Start: —'}{' '}
                 {rangeInputDefault.end ? `End: ${format(rangeInputDefault.end, 'PPP')}` : 'End: —'}
+              </p>
+            </section>
+
+            <section id="range-popover-presets" className={panelClass}>
+              <h2 className="text-lg font-semibold">Range selection (popover, presets enabled)</h2>
+              <p className="mt-1 mb-3 text-sm text-[var(--q3-text-disabled)]">DateRangePicker default month view + quick presets</p>
+              <DateRangePicker value={rangeInputPresets} onChange={setRangeInputPresets} showPresets>
+                <DateRangePicker.Input />
+                <DateRangePicker.Calendar>
+                  <DateRangePicker.CalendarHeader />
+                  <DateRangePicker.CalendarGrid />
+                </DateRangePicker.Calendar>
+              </DateRangePicker>
+              <p className="mt-3 text-sm text-[var(--q3-text-disabled)]">
+                {rangeInputPresets.start ? `Start: ${format(rangeInputPresets.start, 'PPP')}` : 'Start: —'}{' '}
+                {rangeInputPresets.end ? `End: ${format(rangeInputPresets.end, 'PPP')}` : 'End: —'}
               </p>
             </section>
 

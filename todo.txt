@@ -25,7 +25,7 @@ start + end selection -DONE
 
 drag-hover preselection -DONE
 
-quick presets (Last 7 days, This month, etc.)
+quick presets (Last 7 days, This month, etc.) -DONE
 
 3. Add a Multi-Month View (like Airbnb) -DONE
 
