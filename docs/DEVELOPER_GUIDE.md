@@ -101,6 +101,7 @@ Note: you can also pass `icon={<img src="/calendar.png" ... />}` for assets in `
 - Exposes composable subcomponents: `DateRangePicker.Input`, `DateRangePicker.Calendar`, `DateRangePicker.CalendarHeader`, `DateRangePicker.CalendarGrid`.
 - Root owns controlled/uncontrolled state and context; subcomponents reuse range behavior without duplicating logic.
 - Multi-month range views are enabled with `numberOfMonths` (default `1`, max `3`).
+- Date + time mode is opt-in with `enableTime` and supports `12h` and `24h` wheel layouts.
 - Popover behavior: `portal` defaults to `true`; use `portalContainer` to customize mount target.
 
 Example:
@@ -158,6 +159,39 @@ import CalendarPng from './calendar.png'
 </DateRangePicker>
 ```
 
+Example: date + time range (12-hour)
+```tsx
+<DateRangePicker
+  enableTime
+  timeFormat="12h"
+  defaultStartTime="08:00 AM"
+  defaultEndTime="05:00 PM"
+/>
+```
+
+Example: date + time range (24-hour) with custom clock icon
+```tsx
+import ClockIcon from './ClockIcon'
+
+<DateRangePicker
+  enableTime
+  timeFormat="24h"
+  minuteStep={5}
+  defaultStartTime="08:00"
+  defaultEndTime="17:00"
+  timeLabelIcon={<ClockIcon className="h-4 w-4 text-blue-600" />}
+  timeLabelIconClassName="text-blue-600"
+/>
+```
+
+Date + time props on `DateRangePicker`
+- `enableTime?: boolean` – toggles time wheels in the popover.
+- `timeFormat?: '12h' | '24h'` – `12h` adds an AM/PM wheel; `24h` uses 00-23 hours.
+- `minuteStep?: number` – minute options step size (for example `1`, `5`, `15`).
+- `defaultStartTime?: string` / `defaultEndTime?: string` – accepts `HH:mm` or `hh:mm AM/PM`.
+- `timeLabelIcon?: React.ReactNode` – replaces the default clock icon used in Start/End time headings.
+- `timeLabelIconClassName?: string` – className applied to the icon wrapper for easy theming.
+
 ## Internationalization (i18n)
 - UI components accept an `i18n` prop to localize month/day labels, aria labels, and input formatting.
 - Headless hooks accept locale/week-start options (`useCalendar(initial, { locale, weekStartsOn })` and `useRangeCalendar(initial, { locale, weekStartsOn })`).
@@ -206,7 +240,7 @@ const i18n = { ...frI18n, format: { ...frI18n.format, inputValue: 'Pp' } }
     - DatePicker: `Uncontrolled`, `ControlledComposable`
   - **Plus**
     - RangeCalendar: `Uncontrolled`, `TwoMonthView`, `ThreeMonthView`, `Controlled`
-    - DateRangePicker: `Uncontrolled`, `TwoMonthView`, `ThreeMonthView`, `ControlledComposable`
+    - DateRangePicker: `Uncontrolled`, `TwoMonthView`, `ThreeMonthView`, `ControlledComposable`, `DateTimeRange24Hour`
 
 
 ## Styling

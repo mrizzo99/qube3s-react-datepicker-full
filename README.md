@@ -8,6 +8,8 @@
 
 ✅ DateRangePicker compound API (plus)
 
+✅ Date + time range picker wheels (plus)
+
 ✅ Storybook 10
 
 ✅ Vite React starter
@@ -28,7 +30,7 @@
 
 Packages
 - `packages/core`: single-date calendar UI (`Calendar`), composable picker (`DatePicker`), headless hook (`useCalendar`).
-- `packages/plus`: range-only components/hooks (`RangeCalendar`, composable `DateRangePicker`, `useRangeCalendar`), built on core.
+- `packages/plus`: range and date-time-range components/hooks (`RangeCalendar`, composable `DateRangePicker`, `useRangeCalendar`), built on core.
 
 After downloading and extracting the ZIP:
 
@@ -142,6 +144,32 @@ import RangeCalendar from '@plus/components/RangeCalendar'
 <RangeCalendar numberOfMonths={3} />
 ```
 
+Plus usage (date + time range):
+```tsx
+import DateRangePicker from '@plus/components/DateRangePicker'
+import ClockIcon from './ClockIcon'
+
+// 12-hour mode with AM/PM wheel and custom clock icon
+<DateRangePicker
+  enableTime
+  timeFormat="12h"
+  defaultStartTime="08:00 AM"
+  defaultEndTime="05:00 PM"
+  timeLabelIcon={<ClockIcon className="h-4 w-4 text-blue-600" />}
+/>
+
+// 24-hour mode
+<DateRangePicker
+  enableTime
+  timeFormat="24h"
+  minuteStep={5}
+  defaultStartTime="08:00"
+  defaultEndTime="17:00"
+/>
+```
+
+Date + time wheels are a Plus feature and are only available on `DateRangePicker`.
+
 Multi-month range views
 - `DateRangePicker` and `RangeCalendar` default to a single visible month.
 - Use `numberOfMonths={2}` or `numberOfMonths={3}` for side-by-side multi-month views.
@@ -189,6 +217,11 @@ Keyboard navigation
 - Press Space or Enter to select the focused day (range picks start/end in sequence).
 - Press Escape to close the calendar popover and return focus to the input.
 - Mobile virtual keyboards typically don’t expose these keys; keyboard nav requires a hardware keyboard.
+- Time wheel keyboard controls (when `enableTime` is set on `DateRangePicker`):
+  - ArrowUp/ArrowDown change by one option.
+  - Home/End jump to first/last option.
+  - PageUp/PageDown jump by larger steps.
+  - Enter/Space confirm the active option.
 
 Layering / popovers
 - `DatePicker` and `DateRangePicker` popovers render in a portal by default (`document.body`).

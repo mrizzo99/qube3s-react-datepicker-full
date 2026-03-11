@@ -172,4 +172,99 @@ describe('DateRangePicker', () => {
       end: new Date(2024, 0, 10),
     })
   })
+
+  it('applies default times and date-time formatting when time is enabled', async () => {
+    const onChange = vi.fn()
+
+    render(
+      <DateRangePicker
+        onChange={onChange}
+        enableTime
+        timeFormat="24h"
+        defaultStartTime="08:30"
+        defaultEndTime="17:45"
+      />,
+    )
+
+    const startInput = screen.getByPlaceholderText('Start date')
+    const endInput = screen.getByPlaceholderText('End date')
+
+    await userEvent.click(startInput)
+
+    const day5 = getCurrentMonthDay('5')!
+    const day7 = getCurrentMonthDay('7')!
+    await userEvent.click(day5)
+    await userEvent.click(day7)
+
+    expect(startInput).toHaveValue(format(new Date(2024, 0, 5, 8, 30), 'PPP HH:mm'))
+    expect(endInput).toHaveValue(format(new Date(2024, 0, 7, 17, 45), 'PPP HH:mm'))
+    expect(onChange).toHaveBeenLastCalledWith({
+      start: new Date(2024, 0, 5, 8, 30),
+      end: new Date(2024, 0, 7, 17, 45),
+    })
+  })
+
+  it('updates selected range time from wheel controls', async () => {
+    const onChange = vi.fn()
+
+    render(
+      <DateRangePicker
+        onChange={onChange}
+        enableTime
+        timeFormat="24h"
+        defaultStartTime="08:00"
+        defaultEndTime="17:00"
+      />,
+    )
+
+    const startInput = screen.getByPlaceholderText('Start date')
+    await userEvent.click(startInput)
+
+    const day5 = getCurrentMonthDay('5')!
+    const day7 = getCurrentMonthDay('7')!
+    await userEvent.click(day5)
+    await userEvent.click(day7)
+
+    await userEvent.click(screen.getByRole('option', { name: 'Start hour - Set hour to 10' }))
+    await userEvent.click(screen.getByRole('option', { name: 'Start minute - Set minutes to 15' }))
+
+    expect(onChange).toHaveBeenLastCalledWith({
+      start: new Date(2024, 0, 5, 10, 15),
+      end: new Date(2024, 0, 7, 17, 0),
+    })
+
+    expect(startInput).toHaveValue(format(new Date(2024, 0, 5, 10, 15), 'PPP HH:mm'))
+  })
+
+  it('supports keyboard navigation for time wheel listboxes', async () => {
+    render(
+      <DateRangePicker
+        enableTime
+        timeFormat="24h"
+        defaultStartTime="08:00"
+        defaultEndTime="17:00"
+      />,
+    )
+
+    const startInput = screen.getByPlaceholderText('Start date')
+    await userEvent.click(startInput)
+
+    const day5 = getCurrentMonthDay('5')!
+    const day7 = getCurrentMonthDay('7')!
+    await userEvent.click(day5)
+    await userEvent.click(day7)
+
+    const startHourListbox = screen.getByRole('listbox', { name: 'Start hour' })
+    startHourListbox.focus()
+    await userEvent.keyboard('{ArrowDown}')
+    await userEvent.keyboard('{PageDown}')
+
+    const startMinuteListbox = screen.getByRole('listbox', { name: 'Start minute' })
+    startMinuteListbox.focus()
+    await userEvent.keyboard('{End}')
+
+    expect(startInput).toHaveValue(format(new Date(2024, 0, 5, 14, 59), 'PPP HH:mm'))
+    expect(startHourListbox).toHaveAttribute('aria-activedescendant')
+    expect(screen.getByRole('option', { selected: true, name: 'Start hour - Set hour to 14' })).toBeInTheDocument()
+  })
 })
