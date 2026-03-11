@@ -859,6 +859,7 @@ function TimeWheelColumn<T extends string | number>({
   disabled = false,
   onChange,
 }: TimeWheelColumnProps<T>) {
+  const optionIdBase = useId()
   const selectedRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
@@ -868,6 +869,12 @@ function TimeWheelColumn<T extends string | number>({
   }, [value])
 
   const selectedIndex = options.findIndex(option => option.value === value)
+  const selectedOptionId = selectedIndex >= 0 ? `${optionIdBase}-option-${selectedIndex}` : undefined
+
+  const setByIndex = (nextIndex: number) => {
+    if (options.length === 0) return
+    onChange(options[Math.max(0, Math.min(options.length - 1, nextIndex))].value)
+  }
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (disabled || options.length === 0) return
@@ -876,19 +883,32 @@ function TimeWheelColumn<T extends string | number>({
     switch (event.key) {
       case 'ArrowUp':
         event.preventDefault()
-        onChange(options[Math.max(0, currentIndex - 1)].value)
+        setByIndex(currentIndex - 1)
         break
       case 'ArrowDown':
         event.preventDefault()
-        onChange(options[Math.min(options.length - 1, currentIndex + 1)].value)
+        setByIndex(currentIndex + 1)
         break
       case 'Home':
         event.preventDefault()
-        onChange(options[0].value)
+        setByIndex(0)
         break
       case 'End':
         event.preventDefault()
-        onChange(options[options.length - 1].value)
+        setByIndex(options.length - 1)
+        break
+      case 'PageUp':
+        event.preventDefault()
+        setByIndex(currentIndex - 5)
+        break
+      case 'PageDown':
+        event.preventDefault()
+        setByIndex(currentIndex + 5)
+        break
+      case ' ':
+      case 'Enter':
+        event.preventDefault()
+        setByIndex(currentIndex)
         break
       default:
         break
@@ -896,22 +916,29 @@ function TimeWheelColumn<T extends string | number>({
   }
 
   return (
-    <div className="flex min-w-[5rem] flex-1 flex-col gap-1">
+    <div className="flex w-16 flex-none flex-col gap-1">
       <div className="text-xs font-medium text-gray-600">{title}</div>
       <div
         className={`h-16 overflow-y-auto rounded border p-1 ${disabled ? 'cursor-not-allowed bg-gray-100' : 'bg-white'}`}
         onKeyDown={handleKeyDown}
         role="listbox"
+        tabIndex={disabled ? -1 : 0}
         aria-label={ariaLabel}
+        aria-activedescendant={selectedOptionId}
+        aria-orientation="vertical"
         aria-disabled={disabled}
       >
-        {options.map(option => {
+        {options.map((option, index) => {
           const isSelected = option.value === value
           return (
             <button
               key={String(option.value)}
+              id={`${optionIdBase}-option-${index}`}
               ref={isSelected ? selectedRef : undefined}
               type="button"
+              role="option"
+              aria-selected={isSelected}
+              tabIndex={-1}
               disabled={disabled}
               onClick={() => onChange(option.value)}
               aria-label={`${ariaLabel} - ${option.ariaLabel}`}
@@ -957,6 +984,7 @@ function DateRangePickerTimeWheels() {
     timeLabelIconClassName,
     updateRangeTime,
   } = useDateRangePickerContext()
+  const summaryId = useId()
 
   if (!enableTime) return null
 
@@ -1066,13 +1094,23 @@ function DateRangePickerTimeWheels() {
     )
   }
 
+  const startSummary = selectedRange.start
+    ? format(selectedRange.start, timeFormat === '24h' ? 'PPP HH:mm' : 'PPP hh:mm a')
+    : 'not selected'
+  const endSummary = selectedRange.end
+    ? format(selectedRange.end, timeFormat === '24h' ? 'PPP HH:mm' : 'PPP hh:mm a')
+    : 'not selected'
+
   return (
-    <section className="mt-2 border-t pt-3" aria-label="Time range selectors">
+    <section className="mt-2 border-t pt-3" aria-label="Time range selectors" aria-describedby={summaryId}>
       <div className="mb-2 text-sm font-semibold text-gray-800">Time range</div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {renderBoundaryWheels('start', startParts, !selectedRange.start)}
         {renderBoundaryWheels('end', endParts, !selectedRange.end)}
       </div>
+      <span id={summaryId} style={visuallyHidden} aria-live="polite">
+        {`Start ${startSummary}. End ${endSummary}.`}
+      </span>
     </section>
   )
 }
