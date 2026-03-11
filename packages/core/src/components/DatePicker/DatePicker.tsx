@@ -54,6 +54,25 @@ const visuallyHidden = {
 const POPOVER_VIEWPORT_PADDING = 16
 const POPOVER_OFFSET = 8
 
+const normalizeIconNode = (icon: React.ReactNode, iconClassName = 'h-4 w-4 object-contain') => {
+  if (!React.isValidElement(icon)) return icon
+  const props = icon.props as { className?: string; ['aria-hidden']?: boolean }
+  const className = `${iconClassName} ${props.className ?? ''}`.trim()
+  return React.cloneElement(
+    icon as React.ReactElement<{ className?: string; ['aria-hidden']?: boolean }>,
+    {
+      className,
+      'aria-hidden': props['aria-hidden'] ?? true,
+    },
+  )
+}
+
+const renderPickerIcon = (icon?: React.ReactNode) => (
+  <span className="inline-flex h-4 w-4 items-center justify-center overflow-hidden" aria-hidden="true">
+    {icon ? normalizeIconNode(icon) : <DefaultCalendarIcon />}
+  </span>
+)
+
 export type DatePickerProps = {
   children?: React.ReactNode
   value?: Date | null
@@ -257,16 +276,16 @@ function DatePickerInput({
 
   return (
     <>
-      {iconPosition === 'left' && (
-        <button
-          type="button"
-          onClick={() => setOpen(current => !current)}
-          aria-label={iconAriaLabel}
-          className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
-        >
-          {icon ?? <DefaultCalendarIcon />}
-        </button>
-      )}
+        {iconPosition === 'left' && (
+          <button
+            type="button"
+            onClick={() => setOpen(current => !current)}
+            aria-label={iconAriaLabel}
+            className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
+          >
+            {renderPickerIcon(icon)}
+          </button>
+        )}
       <input
         readOnly
         className={`w-48 rounded border border-gray-300 bg-white p-2 text-gray-900 placeholder:text-gray-500 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${inputClassName}`}
@@ -278,16 +297,16 @@ function DatePickerInput({
         aria-expanded={open}
         aria-describedby={describedById}
       />
-      {iconPosition === 'right' && (
-        <button
-          type="button"
-          onClick={() => setOpen(current => !current)}
-          aria-label={iconAriaLabel}
-          className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
-        >
-          {icon ?? <DefaultCalendarIcon />}
-        </button>
-      )}
+        {iconPosition === 'right' && (
+          <button
+            type="button"
+            onClick={() => setOpen(current => !current)}
+            aria-label={iconAriaLabel}
+            className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
+          >
+            {renderPickerIcon(icon)}
+          </button>
+        )}
       <span id={describedById} style={visuallyHidden}>
         {resolvedFormatDescription}
       </span>

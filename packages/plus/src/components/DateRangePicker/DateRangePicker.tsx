@@ -90,6 +90,25 @@ const clampNumberOfMonths = (value: number | undefined) => {
   return Math.max(1, Math.min(3, Math.trunc(value)))
 }
 
+const normalizeIconNode = (icon: React.ReactNode, iconClassName = 'h-4 w-4 object-contain') => {
+  if (!React.isValidElement(icon)) return icon
+  const props = icon.props as { className?: string; ['aria-hidden']?: boolean }
+  const className = `${iconClassName} ${props.className ?? ''}`.trim()
+  return React.cloneElement(
+    icon as React.ReactElement<{ className?: string; ['aria-hidden']?: boolean }>,
+    {
+      className,
+      'aria-hidden': props['aria-hidden'] ?? true,
+    },
+  )
+}
+
+const renderPickerIcon = (icon?: React.ReactNode) => (
+  <span className="inline-flex h-4 w-4 items-center justify-center overflow-hidden" aria-hidden="true">
+    {icon ? normalizeIconNode(icon) : <DefaultCalendarIcon />}
+  </span>
+)
+
 type MonthView = {
   monthStart: Date
   weeks: Date[][]
@@ -575,7 +594,7 @@ function DateRangePickerInput({
               aria-label={iconAriaLabel}
               className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
             >
-              {icon ?? <DefaultCalendarIcon />}
+              {renderPickerIcon(icon)}
             </button>
           )}
           <input
@@ -596,7 +615,7 @@ function DateRangePickerInput({
               aria-label={iconAriaLabel}
               className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
             >
-              {icon ?? <DefaultCalendarIcon />}
+              {renderPickerIcon(icon)}
             </button>
           )}
         </div>
@@ -609,7 +628,7 @@ function DateRangePickerInput({
               aria-label={iconAriaLabel}
               className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
             >
-              {icon ?? <DefaultCalendarIcon />}
+              {renderPickerIcon(icon)}
             </button>
           )}
           <input
@@ -627,7 +646,7 @@ function DateRangePickerInput({
               aria-label={iconAriaLabel}
               className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
             >
-              {icon ?? <DefaultCalendarIcon />}
+              {renderPickerIcon(icon)}
             </button>
           )}
         </div>
@@ -1023,12 +1042,12 @@ function DateRangePickerTimeWheels() {
     const meridiem = getMeridiem(parts.hours)
     const hour12 = getTwelveHour(parts.hours)
     const titlePrefix = boundary === 'start' ? 'Start' : 'End'
-    const iconNode = timeLabelIcon ?? <DefaultClockIcon />
+    const iconNode = timeLabelIcon ? normalizeIconNode(timeLabelIcon) : <DefaultClockIcon />
 
     return (
       <section className="rounded-md border border-gray-200 bg-gray-50/70 p-2">
         <div className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700">
-          <span className={`inline-flex items-center text-gray-500 ${timeLabelIconClassName}`} aria-hidden="true">
+          <span className={`inline-flex h-4 w-4 items-center justify-center overflow-hidden text-gray-500 ${timeLabelIconClassName}`} aria-hidden="true">
             {iconNode}
           </span>
           <span>{titlePrefix} time</span>
