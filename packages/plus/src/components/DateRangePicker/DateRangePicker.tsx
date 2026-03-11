@@ -16,6 +16,7 @@ import {
   endOfMonth,
   endOfWeek,
   format,
+  isSameDay,
   startOfMonth,
   startOfWeek,
 } from 'date-fns'
@@ -23,11 +24,17 @@ import { resolveCalendarI18n, type CalendarI18n } from '@core/i18n'
 import { useRangeCalendar, type DateRange } from '../../headless/useRangeCalendar'
 import { getDateRangePresets, type DateRangePreset } from '../../presets/dateRangePresets'
 
+type TimeParts = {
+  hours: number
+  minutes: number
+}
+
 type DateRangePickerContextValue = {
   open: boolean
   setOpen: React.Dispatch<React.SetStateAction<boolean>>
   selectedRange: DateRange
   selectRange: (range: DateRange) => void
+  updateRangeTime: (boundary: 'start' | 'end', parts: TimeParts) => void
   inputRef: React.RefObject<HTMLInputElement | null>
   containerRef: React.RefObject<HTMLDivElement | null>
   describedById: string
@@ -36,6 +43,13 @@ type DateRangePickerContextValue = {
   placeholderStartText: string
   placeholderEndText: string
   formatDescriptionText: string
+  enableTime: boolean
+  timeFormat: '12h' | '24h'
+  minuteStep: number
+  startDefaultTime: TimeParts
+  endDefaultTime: TimeParts
+  timeLabelIcon: React.ReactNode | null
+  timeLabelIconClassName: string
   resolvedI18n: ReturnType<typeof resolveCalendarI18n>
   formatOptions: { locale: ReturnType<typeof resolveCalendarI18n>['locale'] }
   cal: ReturnType<typeof useRangeCalendar>
@@ -133,6 +147,13 @@ export type DateRangePickerProps = {
   i18n?: CalendarI18n
   numberOfMonths?: number
   showPresets?: boolean
+  enableTime?: boolean
+  timeFormat?: '12h' | '24h'
+  minuteStep?: number
+  defaultStartTime?: string
+  defaultEndTime?: string
+  timeLabelIcon?: React.ReactNode
+  timeLabelIconClassName?: string
   portal?: boolean
   portalContainer?: HTMLElement | null
 }
@@ -154,6 +175,114 @@ export type DateRangePickerCalendarProps = {
   popoverClassName?: string
 }
 
+const DEFAULT_START_TIME: TimeParts = { hours: 9, minutes: 0 }
+const DEFAULT_END_TIME: TimeParts = { hours: 17, minutes: 0 }
+
+const normalizeMinuteStep = (value: number | undefined) => {
+  if (!value || Number.isNaN(value)) return 1
+  return Math.max(1, Math.min(30, Math.trunc(value)))
+}
+
+const normalizeTimeParts = (parts: TimeParts, minuteStep: number): TimeParts => {
+  const nextHours = Math.max(0, Math.min(23, Math.trunc(parts.hours)))
+  const normalizedMinutes = Math.max(0, Math.min(59, Math.trunc(parts.minutes)))
+  const snappedMinutes = Math.floor(normalizedMinutes / minuteStep) * minuteStep
+  return {
+    hours: nextHours,
+    minutes: Math.max(0, Math.min(59, snappedMinutes)),
+  }
+}
+
+const parseTimeParts = (value: string | undefined, fallback: TimeParts, minuteStep: number): TimeParts => {
+  if (!value) return normalizeTimeParts(fallback, minuteStep)
+
+  const match = value.trim().match(/^(\d{1,2}):(\d{2})(?:\s*([AaPp][Mm]))?$/)
+  if (!match) return normalizeTimeParts(fallback, minuteStep)
+
+  const rawHours = Number(match[1])
+  const rawMinutes = Number(match[2])
+  const meridiem = match[3]?.toLowerCase()
+  if (Number.isNaN(rawHours) || Number.isNaN(rawMinutes)) {
+    return normalizeTimeParts(fallback, minuteStep)
+  }
+
+  if (meridiem) {
+    if (rawHours < 1 || rawHours > 12) return normalizeTimeParts(fallback, minuteStep)
+    const base = rawHours % 12
+    const hours = meridiem === 'pm' ? base + 12 : base
+    return normalizeTimeParts({ hours, minutes: rawMinutes }, minuteStep)
+  }
+
+  return normalizeTimeParts({ hours: rawHours, minutes: rawMinutes }, minuteStep)
+}
+
+const applyTimeParts = (date: Date, parts: TimeParts): Date => {
+  const next = new Date(date)
+  next.setHours(parts.hours, parts.minutes, 0, 0)
+  return next
+}
+
+const getTimePartsFromDate = (date: Date | null, fallback: TimeParts): TimeParts => {
+  if (!date) return fallback
+  return { hours: date.getHours(), minutes: date.getMinutes() }
+}
+
+const withBoundaryTime = (
+  range: DateRange,
+  boundary: 'start' | 'end',
+  parts: TimeParts,
+): DateRange => {
+  const target = boundary === 'start' ? range.start : range.end
+  if (!target) return range
+
+  const next = {
+    start: range.start ? new Date(range.start) : null,
+    end: range.end ? new Date(range.end) : null,
+  }
+
+  if (boundary === 'start' && next.start) next.start = applyTimeParts(next.start, parts)
+  if (boundary === 'end' && next.end) next.end = applyTimeParts(next.end, parts)
+
+  if (next.start && next.end && isSameDay(next.start, next.end) && next.start.getTime() > next.end.getTime()) {
+    if (boundary === 'start') {
+      next.start = new Date(next.end)
+    } else {
+      next.end = new Date(next.start)
+    }
+  }
+
+  return next
+}
+
+const coerceRangeWithTime = (
+  range: DateRange,
+  previousRange: DateRange,
+  startFallback: TimeParts,
+  endFallback: TimeParts,
+): DateRange => {
+  const start =
+    range.start
+      ? applyTimeParts(
+          range.start,
+          previousRange.start && isSameDay(range.start, previousRange.start)
+            ? { hours: previousRange.start.getHours(), minutes: previousRange.start.getMinutes() }
+            : startFallback,
+        )
+      : null
+
+  const end =
+    range.end
+      ? applyTimeParts(
+          range.end,
+          previousRange.end && isSameDay(range.end, previousRange.end)
+            ? { hours: previousRange.end.getHours(), minutes: previousRange.end.getMinutes() }
+            : endFallback,
+        )
+      : null
+
+  return { start, end }
+}
+
 function useDateRangePickerContext() {
   const context = useContext(DateRangePickerContext)
   if (!context) {
@@ -172,6 +301,13 @@ function DateRangePickerRoot({
   i18n,
   numberOfMonths,
   showPresets = false,
+  enableTime = false,
+  timeFormat = '12h',
+  minuteStep = 1,
+  defaultStartTime,
+  defaultEndTime,
+  timeLabelIcon = null,
+  timeLabelIconClassName = '',
   portal = true,
   portalContainer = null,
 }: DateRangePickerProps) {
@@ -181,6 +317,19 @@ function DateRangePickerRoot({
     [resolvedI18n.locale],
   )
   const normalizedMonths = clampNumberOfMonths(numberOfMonths)
+  const normalizedMinuteStep = normalizeMinuteStep(minuteStep)
+  const startTimeFallback = useMemo(
+    () => parseTimeParts(defaultStartTime, DEFAULT_START_TIME, normalizedMinuteStep),
+    [defaultStartTime, normalizedMinuteStep],
+  )
+  const endTimeFallback = useMemo(
+    () => parseTimeParts(defaultEndTime, DEFAULT_END_TIME, normalizedMinuteStep),
+    [defaultEndTime, normalizedMinuteStep],
+  )
+  const inputValueFormat = useMemo(
+    () => (enableTime ? (timeFormat === '24h' ? 'PPP HH:mm' : 'PPP hh:mm a') : resolvedI18n.format.inputValue),
+    [enableTime, resolvedI18n.format.inputValue, timeFormat],
+  )
   const [open, setOpen] = useState(false)
   const [internalRange, setInternalRange] = useState<DateRange>(value ?? emptyRange)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -253,30 +402,46 @@ function DateRangePickerRoot({
   const formattedStart = useMemo(
     () =>
       selectedRange.start
-        ? format(selectedRange.start, resolvedI18n.format.inputValue, formatOptions)
+        ? format(selectedRange.start, inputValueFormat, formatOptions)
         : '',
-    [selectedRange.start, resolvedI18n.format.inputValue, formatOptions],
+    [selectedRange.start, inputValueFormat, formatOptions],
   )
 
   const formattedEnd = useMemo(
     () =>
       selectedRange.end
-        ? format(selectedRange.end, resolvedI18n.format.inputValue, formatOptions)
+        ? format(selectedRange.end, inputValueFormat, formatOptions)
         : '',
-    [selectedRange.end, resolvedI18n.format.inputValue, formatOptions],
+    [selectedRange.end, inputValueFormat, formatOptions],
   )
 
   const placeholderStartText = placeholderStart ?? resolvedI18n.labels.startDatePlaceholder
   const placeholderEndText = placeholderEnd ?? resolvedI18n.labels.endDatePlaceholder
-  const formatDescriptionText = formatDescription ?? resolvedI18n.labels.formatDescription
+  const formatDescriptionText = formatDescription
+    ?? (enableTime
+      ? (timeFormat === '24h'
+        ? 'Date and time format: MM/DD/YYYY HH:mm'
+        : 'Date and time format: MM/DD/YYYY hh:mm AM/PM')
+      : resolvedI18n.labels.formatDescription)
 
   const selectRange = (range: DateRange) => {
-    if (value === undefined) setInternalRange(range)
-    onChange?.(range)
-    if (range.start && range.end) {
+    const nextRange = enableTime
+      ? coerceRangeWithTime(range, selectedRange, startTimeFallback, endTimeFallback)
+      : range
+
+    if (value === undefined) setInternalRange(nextRange)
+    onChange?.(nextRange)
+    if (nextRange.start && nextRange.end && !enableTime) {
       setOpen(false)
       inputRef.current?.focus()
     }
+  }
+
+  const updateRangeTime = (boundary: 'start' | 'end', parts: TimeParts) => {
+    const nextRange = withBoundaryTime(selectedRange, boundary, normalizeTimeParts(parts, normalizedMinuteStep))
+    if (nextRange === selectedRange) return
+    if (value === undefined) setInternalRange(nextRange)
+    onChange?.(nextRange)
   }
 
   const presetRanges = useMemo(
@@ -316,6 +481,7 @@ function DateRangePickerRoot({
     setOpen,
     selectedRange,
     selectRange,
+    updateRangeTime,
     inputRef,
     containerRef,
     describedById,
@@ -324,6 +490,13 @@ function DateRangePickerRoot({
     placeholderStartText,
     placeholderEndText,
     formatDescriptionText,
+    enableTime,
+    timeFormat,
+    minuteStep: normalizedMinuteStep,
+    startDefaultTime: startTimeFallback,
+    endDefaultTime: endTimeFallback,
+    timeLabelIcon,
+    timeLabelIconClassName,
     resolvedI18n,
     formatOptions,
     cal,
@@ -382,11 +555,14 @@ function DateRangePickerInput({
     placeholderStartText,
     placeholderEndText,
     formatDescriptionText,
+    enableTime,
   } = useDateRangePickerContext()
 
   const resolvedPlaceholderStart = placeholderStart ?? placeholderStartText
   const resolvedPlaceholderEnd = placeholderEnd ?? placeholderEndText
   const resolvedFormatDescription = formatDescription ?? formatDescriptionText
+
+  const dateInputWidthClass = enableTime ? 'w-56' : 'w-40'
 
   return (
     <>
@@ -404,7 +580,7 @@ function DateRangePickerInput({
           )}
           <input
             readOnly
-            className={`w-40 rounded border border-gray-300 bg-white p-2 text-gray-900 placeholder:text-gray-500 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${inputClassName}`}
+            className={`${dateInputWidthClass} rounded border border-gray-300 bg-white p-2 text-gray-900 placeholder:text-gray-500 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${inputClassName}`}
             placeholder={resolvedPlaceholderStart}
             onClick={() => setOpen(current => !current)}
             value={formattedStart}
@@ -438,7 +614,7 @@ function DateRangePickerInput({
           )}
           <input
             readOnly
-            className={`w-40 rounded border border-gray-300 bg-white p-2 text-gray-900 placeholder:text-gray-500 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${inputClassName}`}
+            className={`${dateInputWidthClass} rounded border border-gray-300 bg-white p-2 text-gray-900 placeholder:text-gray-500 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${inputClassName}`}
             placeholder={resolvedPlaceholderEnd}
             onClick={() => setOpen(current => !current)}
             value={formattedEnd}
@@ -657,6 +833,247 @@ function DateRangePickerCalendarHeader() {
         </button>
       </div>
     </header>
+  )
+}
+
+type TimeWheelOption<T extends string | number> = {
+  value: T
+  label: string
+  ariaLabel: string
+}
+
+type TimeWheelColumnProps<T extends string | number> = {
+  title: string
+  ariaLabel: string
+  options: TimeWheelOption<T>[]
+  value: T
+  disabled?: boolean
+  onChange: (value: T) => void
+}
+
+function TimeWheelColumn<T extends string | number>({
+  title,
+  ariaLabel,
+  options,
+  value,
+  disabled = false,
+  onChange,
+}: TimeWheelColumnProps<T>) {
+  const selectedRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    const button = selectedRef.current
+    if (!button || typeof button.scrollIntoView !== 'function') return
+    button.scrollIntoView({ block: 'start' })
+  }, [value])
+
+  const selectedIndex = options.findIndex(option => option.value === value)
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (disabled || options.length === 0) return
+
+    const currentIndex = selectedIndex >= 0 ? selectedIndex : 0
+    switch (event.key) {
+      case 'ArrowUp':
+        event.preventDefault()
+        onChange(options[Math.max(0, currentIndex - 1)].value)
+        break
+      case 'ArrowDown':
+        event.preventDefault()
+        onChange(options[Math.min(options.length - 1, currentIndex + 1)].value)
+        break
+      case 'Home':
+        event.preventDefault()
+        onChange(options[0].value)
+        break
+      case 'End':
+        event.preventDefault()
+        onChange(options[options.length - 1].value)
+        break
+      default:
+        break
+    }
+  }
+
+  return (
+    <div className="flex min-w-[5rem] flex-1 flex-col gap-1">
+      <div className="text-xs font-medium text-gray-600">{title}</div>
+      <div
+        className={`h-16 overflow-y-auto rounded border p-1 ${disabled ? 'cursor-not-allowed bg-gray-100' : 'bg-white'}`}
+        onKeyDown={handleKeyDown}
+        role="listbox"
+        aria-label={ariaLabel}
+        aria-disabled={disabled}
+      >
+        {options.map(option => {
+          const isSelected = option.value === value
+          return (
+            <button
+              key={String(option.value)}
+              ref={isSelected ? selectedRef : undefined}
+              type="button"
+              disabled={disabled}
+              onClick={() => onChange(option.value)}
+              aria-label={`${ariaLabel} - ${option.ariaLabel}`}
+              className={
+                'w-full rounded px-2 py-1 text-left text-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ' +
+                (isSelected
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-700 hover:bg-blue-50')
+              }
+            >
+              {option.label}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+const twoDigit = (value: number) => String(value).padStart(2, '0')
+
+const getMeridiem = (hours: number) => (hours >= 12 ? 'PM' : 'AM')
+
+const getTwelveHour = (hours: number) => {
+  const normalized = hours % 12
+  return normalized === 0 ? 12 : normalized
+}
+
+const toTwentyFourHour = (hour12: number, meridiem: 'AM' | 'PM') => {
+  const normalized = hour12 % 12
+  return meridiem === 'PM' ? normalized + 12 : normalized
+}
+
+function DateRangePickerTimeWheels() {
+  const {
+    enableTime,
+    timeFormat,
+    minuteStep,
+    selectedRange,
+    startDefaultTime,
+    endDefaultTime,
+    timeLabelIcon,
+    timeLabelIconClassName,
+    updateRangeTime,
+  } = useDateRangePickerContext()
+
+  if (!enableTime) return null
+
+  const startParts = getTimePartsFromDate(selectedRange.start, startDefaultTime)
+  const endParts = getTimePartsFromDate(selectedRange.end, endDefaultTime)
+  const minuteOptions: TimeWheelOption<number>[] = []
+  for (let minute = 0; minute < 60; minute += minuteStep) {
+    minuteOptions.push({
+      value: minute,
+      label: twoDigit(minute),
+      ariaLabel: `Set minutes to ${twoDigit(minute)}`,
+    })
+  }
+
+  const hour24Options: TimeWheelOption<number>[] = Array.from({ length: 24 }, (_, hour) => ({
+    value: hour,
+    label: twoDigit(hour),
+    ariaLabel: `Set hour to ${twoDigit(hour)}`,
+  }))
+
+  const hour12Options: TimeWheelOption<number>[] = Array.from({ length: 12 }, (_, index) => {
+    const hour = index + 1
+    return {
+      value: hour,
+      label: String(hour),
+      ariaLabel: `Set hour to ${hour}`,
+    }
+  })
+
+  const periodOptions: TimeWheelOption<'AM' | 'PM'>[] = [
+    { value: 'AM', label: 'AM', ariaLabel: 'Set period to AM' },
+    { value: 'PM', label: 'PM', ariaLabel: 'Set period to PM' },
+  ]
+
+  const renderBoundaryWheels = (boundary: 'start' | 'end', parts: TimeParts, disabled: boolean) => {
+    const meridiem = getMeridiem(parts.hours)
+    const hour12 = getTwelveHour(parts.hours)
+    const titlePrefix = boundary === 'start' ? 'Start' : 'End'
+    const iconNode = timeLabelIcon ?? <DefaultClockIcon />
+
+    return (
+      <section className="rounded-md border border-gray-200 bg-gray-50/70 p-2">
+        <div className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700">
+          <span className={`inline-flex items-center text-gray-500 ${timeLabelIconClassName}`} aria-hidden="true">
+            {iconNode}
+          </span>
+          <span>{titlePrefix} time</span>
+        </div>
+        <div className="flex gap-2">
+          {timeFormat === '24h' ? (
+            <>
+              <TimeWheelColumn
+                title="Hour"
+                ariaLabel={`${titlePrefix} hour`}
+                options={hour24Options}
+                value={parts.hours}
+                disabled={disabled}
+                onChange={nextHour => updateRangeTime(boundary, { ...parts, hours: nextHour })}
+              />
+              <TimeWheelColumn
+                title="Minute"
+                ariaLabel={`${titlePrefix} minute`}
+                options={minuteOptions}
+                value={parts.minutes}
+                disabled={disabled}
+                onChange={nextMinute => updateRangeTime(boundary, { ...parts, minutes: nextMinute })}
+              />
+            </>
+          ) : (
+            <>
+              <TimeWheelColumn
+                title="Hour"
+                ariaLabel={`${titlePrefix} hour`}
+                options={hour12Options}
+                value={hour12}
+                disabled={disabled}
+                onChange={nextHour =>
+                  updateRangeTime(boundary, {
+                    ...parts,
+                    hours: toTwentyFourHour(nextHour, meridiem),
+                  })}
+              />
+              <TimeWheelColumn
+                title="Minute"
+                ariaLabel={`${titlePrefix} minute`}
+                options={minuteOptions}
+                value={parts.minutes}
+                disabled={disabled}
+                onChange={nextMinute => updateRangeTime(boundary, { ...parts, minutes: nextMinute })}
+              />
+              <TimeWheelColumn
+                title="AM/PM"
+                ariaLabel={`${titlePrefix} period`}
+                options={periodOptions}
+                value={meridiem}
+                disabled={disabled}
+                onChange={nextPeriod =>
+                  updateRangeTime(boundary, {
+                    ...parts,
+                    hours: toTwentyFourHour(hour12, nextPeriod),
+                  })}
+              />
+            </>
+          )}
+        </div>
+      </section>
+    )
+  }
+
+  return (
+    <section className="mt-2 border-t pt-3" aria-label="Time range selectors">
+      <div className="mb-2 text-sm font-semibold text-gray-800">Time range</div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {renderBoundaryWheels('start', startParts, !selectedRange.start)}
+        {renderBoundaryWheels('end', endParts, !selectedRange.end)}
+      </div>
+    </section>
   )
 }
 
@@ -930,6 +1347,7 @@ function DateRangePickerCalendarGrid() {
         ))}
       </div>
     </div>
+    <DateRangePickerTimeWheels />
     </div>
   )
 }
@@ -951,6 +1369,24 @@ function DefaultCalendarIcon() {
       <line x1="16" y1="2" x2="16" y2="6" />
       <line x1="8" y1="2" x2="8" y2="6" />
       <line x1="3" y1="10" x2="21" y2="10" />
+    </svg>
+  )
+}
+
+function DefaultClockIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-4 w-4"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
     </svg>
   )
 }

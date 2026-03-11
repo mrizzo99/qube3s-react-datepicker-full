@@ -43,6 +43,14 @@ export default function App() {
     start: null,
     end: null
   })
+  const [rangeInputDateTime12h, setRangeInputDateTime12h] = useState<{ start: Date | null; end: Date | null }>({
+    start: null,
+    end: null
+  })
+  const [rangeInputDateTime24h, setRangeInputDateTime24h] = useState<{ start: Date | null; end: Date | null }>({
+    start: null,
+    end: null
+  })
 
   return (
     <div className="min-h-screen bg-[var(--q3-bg)] text-[var(--q3-text-primary)]">
@@ -101,6 +109,12 @@ export default function App() {
               </a>
               <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#range-es">
                 Range ES Locale
+              </a>
+              <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#range-datetime-12h">
+                Range DateTime 12h
+              </a>
+              <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#range-datetime-24h">
+                Range DateTime 24h
               </a>
             </nav>
             <div className="mb-5 flex items-center gap-3 rounded-lg border border-[var(--q3-border)] bg-[color:rgb(11_18_32_/_0.35)] px-3 py-2">
@@ -264,6 +278,52 @@ export default function App() {
                 {rangeInputEs.end
                   ? `End: ${format(rangeInputEs.end, 'PPP', { locale: esI18n.locale })}`
                   : 'End: —'}
+              </p>
+            </section>
+
+            <section id="range-datetime-12h" className={panelClass}>
+              <h2 className="text-lg font-semibold">Range selection (date + time, 12-hour)</h2>
+              <p className="mt-1 mb-3 text-sm text-[var(--q3-text-disabled)]">DateRangePicker + time wheels (12h)</p>
+              <DateRangePicker
+                value={rangeInputDateTime12h}
+                onChange={setRangeInputDateTime12h}
+                enableTime
+                timeFormat="12h"
+                defaultStartTime="08:00 AM"
+                defaultEndTime="05:00 PM"
+              >
+                <DateRangePicker.Input />
+                <DateRangePicker.Calendar>
+                  <DateRangePicker.CalendarHeader />
+                  <DateRangePicker.CalendarGrid />
+                </DateRangePicker.Calendar>
+              </DateRangePicker>
+              <p className="mt-3 text-sm text-[var(--q3-text-disabled)]">
+                {rangeInputDateTime12h.start ? `Start: ${format(rangeInputDateTime12h.start, 'PPP hh:mm a')}` : 'Start: —'}{' '}
+                {rangeInputDateTime12h.end ? `End: ${format(rangeInputDateTime12h.end, 'PPP hh:mm a')}` : 'End: —'}
+              </p>
+            </section>
+
+            <section id="range-datetime-24h" className={panelClass}>
+              <h2 className="text-lg font-semibold">Range selection (date + time, 24-hour)</h2>
+              <p className="mt-1 mb-3 text-sm text-[var(--q3-text-disabled)]">DateRangePicker + time wheels (24h)</p>
+              <DateRangePicker
+                value={rangeInputDateTime24h}
+                onChange={setRangeInputDateTime24h}
+                enableTime
+                timeFormat="24h"
+                defaultStartTime="08:00"
+                defaultEndTime="17:00"
+              >
+                <DateRangePicker.Input />
+                <DateRangePicker.Calendar>
+                  <DateRangePicker.CalendarHeader />
+                  <DateRangePicker.CalendarGrid />
+                </DateRangePicker.Calendar>
+              </DateRangePicker>
+              <p className="mt-3 text-sm text-[var(--q3-text-disabled)]">
+                {rangeInputDateTime24h.start ? `Start: ${format(rangeInputDateTime24h.start, 'PPP HH:mm')}` : 'Start: —'}{' '}
+                {rangeInputDateTime24h.end ? `End: ${format(rangeInputDateTime24h.end, 'PPP HH:mm')}` : 'End: —'}
               </p>
             </section>
           </div>

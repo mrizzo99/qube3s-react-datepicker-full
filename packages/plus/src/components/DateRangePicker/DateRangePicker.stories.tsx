@@ -44,3 +44,14 @@ export const ControlledComposable: Story = {
 export const SpanishI18n: Story = {
   render: () => <DateRangePicker i18n={esI18n} />,
 }
+
+export const DateTimeRange24Hour: Story = {
+  render: () => (
+    <DateRangePicker
+      enableTime
+      timeFormat="24h"
+      defaultStartTime="08:30"
+      defaultEndTime="17:00"
+    />
+  ),
+}
