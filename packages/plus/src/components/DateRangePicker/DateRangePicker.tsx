@@ -648,6 +648,9 @@ function DateRangePickerInput({
   placeholderEnd,
   formatDescription,
 }: DateRangePickerInputProps) {
+  const inputIdBase = useId()
+  const startInputId = `${inputIdBase}-start`
+  const endInputId = `${inputIdBase}-end`
   const {
     open,
     setOpen,
@@ -670,70 +673,82 @@ function DateRangePickerInput({
 
   return (
     <>
-      <div className="flex flex-wrap gap-2">
-        <div className="inline-flex items-center gap-1">
-          {iconPosition === 'left' && (
-            <button
-              type="button"
+      <div className="flex flex-wrap gap-3">
+        <div className="flex flex-col gap-1">
+          <label htmlFor={startInputId} className="text-sm font-medium text-gray-700">
+            {resolvedPlaceholderStart}
+          </label>
+          <div className="inline-flex items-center gap-1">
+            {iconPosition === 'left' && (
+              <button
+                type="button"
+                onClick={() => setOpen(current => !current)}
+                aria-label={iconAriaLabel}
+                className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
+              >
+                {renderPickerIcon(icon)}
+              </button>
+            )}
+            <input
+              id={startInputId}
+              readOnly
+              className={`${dateInputWidthClass} rounded border border-gray-300 bg-white p-2 text-gray-900 placeholder:text-gray-500 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${inputClassName}`}
+              placeholder={resolvedPlaceholderStart}
               onClick={() => setOpen(current => !current)}
-              aria-label={iconAriaLabel}
-              className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
-            >
-              {renderPickerIcon(icon)}
-            </button>
-          )}
-          <input
-            readOnly
-            className={`${dateInputWidthClass} rounded border border-gray-300 bg-white p-2 text-gray-900 placeholder:text-gray-500 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${inputClassName}`}
-            placeholder={resolvedPlaceholderStart}
-            onClick={() => setOpen(current => !current)}
-            value={formattedStart}
-            ref={inputRef}
-            aria-haspopup={isMobilePresentation ? 'dialog' : 'grid'}
-            aria-expanded={open}
-            aria-describedby={describedById}
-          />
-          {iconPosition === 'right' && (
-            <button
-              type="button"
-              onClick={() => setOpen(current => !current)}
-              aria-label={iconAriaLabel}
-              className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
-            >
-              {renderPickerIcon(icon)}
-            </button>
-          )}
+              value={formattedStart}
+              ref={inputRef}
+              aria-haspopup={isMobilePresentation ? 'dialog' : 'grid'}
+              aria-expanded={open}
+              aria-describedby={describedById}
+            />
+            {iconPosition === 'right' && (
+              <button
+                type="button"
+                onClick={() => setOpen(current => !current)}
+                aria-label={iconAriaLabel}
+                className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
+              >
+                {renderPickerIcon(icon)}
+              </button>
+            )}
+          </div>
         </div>
 
-        <div className="inline-flex items-center gap-1">
-          {iconPosition === 'left' && (
-            <button
-              type="button"
+        <div className="flex flex-col gap-1">
+          <label htmlFor={endInputId} className="text-sm font-medium text-gray-700">
+            {resolvedPlaceholderEnd}
+          </label>
+          <div className="inline-flex items-center gap-1">
+            {iconPosition === 'left' && (
+              <button
+                type="button"
+                onClick={() => setOpen(current => !current)}
+                aria-label={iconAriaLabel}
+                className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
+              >
+                {renderPickerIcon(icon)}
+              </button>
+            )}
+            <input
+              id={endInputId}
+              readOnly
+              className={`${dateInputWidthClass} rounded border border-gray-300 bg-white p-2 text-gray-900 placeholder:text-gray-500 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${inputClassName}`}
+              placeholder={resolvedPlaceholderEnd}
               onClick={() => setOpen(current => !current)}
-              aria-label={iconAriaLabel}
-              className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
-            >
-              {renderPickerIcon(icon)}
-            </button>
-          )}
-          <input
-            readOnly
-            className={`${dateInputWidthClass} rounded border border-gray-300 bg-white p-2 text-gray-900 placeholder:text-gray-500 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${inputClassName}`}
-            placeholder={resolvedPlaceholderEnd}
-            onClick={() => setOpen(current => !current)}
-            value={formattedEnd}
-            aria-describedby={describedById}
-          />
-          {iconPosition === 'right' && (
-            <button
-              type="button"
-              onClick={() => setOpen(current => !current)}
-              aria-label={iconAriaLabel}
-              className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
-            >
-              {renderPickerIcon(icon)}
-            </button>
-          )}
+              value={formattedEnd}
+              aria-describedby={describedById}
+            />
+            {iconPosition === 'right' && (
+              <button
+                type="button"
+                onClick={() => setOpen(current => !current)}
+                aria-label={iconAriaLabel}
+                className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
+              >
+                {renderPickerIcon(icon)}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
