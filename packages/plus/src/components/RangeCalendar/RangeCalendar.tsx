@@ -136,6 +136,10 @@ export default function RangeCalendar({
     () => getVisibleRangeDays(cal.currentMonth, normalizedMonths, weekOptions),
     [cal.currentMonth, normalizedMonths, weekOptions],
   )
+  const isGridDayEnabled = (day: Date) => {
+    const monthOffset = differenceInCalendarMonths(startOfMonth(day), startOfMonth(cal.currentMonth))
+    return monthOffset >= 0 && monthOffset < normalizedMonths
+  }
 
   const monthAnimatorRef = useRef<HTMLDivElement>(null)
   const previousMonthRef = useRef(cal.currentMonth)
@@ -252,7 +256,27 @@ export default function RangeCalendar({
         return
       }
 
-      setFocusDate(visibleRangeDays[nextIndex])
+      const direction = nextIndex === currentIndex ? 0 : nextIndex > currentIndex ? 1 : -1
+      let nextFocusableIndex = nextIndex
+
+      while (
+        nextFocusableIndex >= 0 &&
+        nextFocusableIndex < visibleRangeDays.length &&
+        !isGridDayEnabled(visibleRangeDays[nextFocusableIndex])
+      ) {
+        if (direction === 0) break
+        nextFocusableIndex += direction
+      }
+
+      if (
+        nextFocusableIndex < 0 ||
+        nextFocusableIndex >= visibleRangeDays.length ||
+        !isGridDayEnabled(visibleRangeDays[nextFocusableIndex])
+      ) {
+        return
+      }
+
+      setFocusDate(visibleRangeDays[nextFocusableIndex])
     }
 
     switch (event.key) {
@@ -295,6 +319,9 @@ export default function RangeCalendar({
       case ' ':
       case 'Enter':
         event.preventDefault()
+        if (!isGridDayEnabled(focusDate)) {
+          break
+        }
         selectRange(cal.nextRange(focusDate, selectedRange ?? cal.selectedRange))
         break
       default:
@@ -431,9 +458,13 @@ export default function RangeCalendar({
                       role="gridcell"
                       aria-selected={isRangeEdge}
                       aria-disabled={faded}
-                      tabIndex={isFocused ? 0 : -1}
+                      tabIndex={isFocused && !faded ? 0 : -1}
+                      disabled={faded}
                       data-date-key={`${day.getTime()}-${monthView.monthStart.getTime()}`}
-                      onClick={handleClick}
+                      onClick={() => {
+                        if (faded) return
+                        handleClick()
+                      }}
                       className={
                         'rounded border border-transparent p-1 text-gray-900 transition-colors duration-150 hover:border-blue-400 focus-visible:border-blue-500 focus-visible:outline-none ' +
                         (isRangeEdge

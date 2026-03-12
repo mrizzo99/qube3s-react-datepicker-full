@@ -1405,6 +1405,10 @@ function DateRangePickerCalendarGrid() {
     () => getVisibleRangeDays(cal.currentMonth, numberOfMonths, weekOptions),
     [cal.currentMonth, numberOfMonths, weekOptions],
   )
+  const isGridDayEnabled = (day: Date) => {
+    const monthOffset = differenceInCalendarMonths(startOfMonth(day), startOfMonth(cal.currentMonth))
+    return monthOffset >= 0 && monthOffset < numberOfMonths
+  }
 
   const monthAnimatorRef = useRef<HTMLDivElement>(null)
   const previousMonthRef = useRef(cal.currentMonth)
@@ -1519,7 +1523,27 @@ function DateRangePickerCalendarGrid() {
         return
       }
 
-      setFocusDate(visibleRangeDays[nextIndex])
+      const direction = nextIndex === currentIndex ? 0 : nextIndex > currentIndex ? 1 : -1
+      let nextFocusableIndex = nextIndex
+
+      while (
+        nextFocusableIndex >= 0 &&
+        nextFocusableIndex < visibleRangeDays.length &&
+        !isGridDayEnabled(visibleRangeDays[nextFocusableIndex])
+      ) {
+        if (direction === 0) break
+        nextFocusableIndex += direction
+      }
+
+      if (
+        nextFocusableIndex < 0 ||
+        nextFocusableIndex >= visibleRangeDays.length ||
+        !isGridDayEnabled(visibleRangeDays[nextFocusableIndex])
+      ) {
+        return
+      }
+
+      setFocusDate(visibleRangeDays[nextFocusableIndex])
     }
 
     switch (event.key) {
@@ -1562,6 +1586,9 @@ function DateRangePickerCalendarGrid() {
       case ' ':
       case 'Enter':
         event.preventDefault()
+        if (!isGridDayEnabled(focusDate)) {
+          break
+        }
         selectRange(cal.nextRange(focusDate, selectedRange))
         break
       default:
@@ -1631,9 +1658,11 @@ function DateRangePickerCalendarGrid() {
                       role="gridcell"
                       aria-selected={isRangeEdge}
                       aria-disabled={faded}
-                      tabIndex={isFocused ? 0 : -1}
+                      tabIndex={isFocused && !faded ? 0 : -1}
+                      disabled={faded}
                       data-date-key={`${day.getTime()}-${monthView.monthStart.getTime()}`}
                       onClick={() => {
+                        if (faded) return
                         const nextRange = cal.nextRange(day, selectedRange)
                         setFocusDate(day)
                         selectRange(nextRange)
