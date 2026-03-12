@@ -137,6 +137,20 @@ import RangeCalendar from '@plus/components/RangeCalendar'
 // Enable quick presets (Today, Last 7 days, Last 30 days, This Quarter, Year to Date)
 <DateRangePicker showPresets />
 
+// Mobile sheet presentation (phase 1)
+<DateRangePicker mobile={{ enabled: true, mode: 'auto' }} />
+
+// Force mobile sheet everywhere
+<DateRangePicker mobile={{ enabled: true, mode: 'always' }} />
+
+// Phase 2 gestures (enabled by default when mobile sheet is active)
+<DateRangePicker
+  mobile={{ enabled: true, mode: 'auto', gestures: { swipeMonth: true, swipeToClose: true } }}
+/>
+
+// Phase 3 sheet drag physics
+// Drag the handle downward: sheet follows pointer, then snaps closed or springs back.
+
 // 2-month inline range view
 <RangeCalendar numberOfMonths={2} />
 
@@ -169,6 +183,15 @@ import ClockIcon from './ClockIcon'
 ```
 
 Date + time wheels are a Plus feature and are only available on `DateRangePicker`.
+
+Mobile presentation options (`DateRangePicker` only)
+- `mobile.enabled`: turns on mobile presentation logic (defaults to `false`).
+- `mobile.mode`: `'auto' | 'always' | 'never'` (defaults to `'auto'` when enabled).
+- `mobile.breakpoint`: width threshold used by auto mode (defaults to `768`).
+- `mobile.gestures.swipeMonth`: swipe horizontally to change month (defaults to `true`).
+- `mobile.gestures.swipeToClose`: swipe sheet handle downward to close (defaults to `true`).
+- In `auto`, the picker uses a mobile bottom sheet when `(max-width: breakpoint)` or `(pointer: coarse)` matches.
+- Phase 3: the mobile sheet now follows the drag gesture and snaps back when the close threshold is not reached.
 
 Multi-month range views
 - `DateRangePicker` and `RangeCalendar` default to a single visible month.
