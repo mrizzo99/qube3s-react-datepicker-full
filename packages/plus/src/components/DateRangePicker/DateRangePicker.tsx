@@ -93,6 +93,22 @@ const DEFAULT_MOBILE_BREAKPOINT = 768
 const SWIPE_MONTH_THRESHOLD = 48
 const SWIPE_CLOSE_THRESHOLD = 56
 const SHEET_CLOSE_RATIO_THRESHOLD = 0.22
+const focusableSelector = [
+  'button:not([disabled])',
+  '[href]',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(', ')
+
+const getFocusableElements = (root: HTMLElement) =>
+  Array.from(root.querySelectorAll<HTMLElement>(focusableSelector)).filter(
+    element =>
+      !element.hasAttribute('disabled')
+      && element.getAttribute('aria-hidden') !== 'true'
+      && !element.hasAttribute('inert'),
+  )
 
 const clampNumberOfMonths = (value: number | undefined) => {
   if (!value) return 1
@@ -936,6 +952,60 @@ function DateRangePickerCalendar({
     }
   }, [open, isMobilePresentation])
 
+  useEffect(() => {
+    if (!open) return
+    if (shouldUseAnchorPosition && !hasPosition) return
+
+    const frame = window.requestAnimationFrame(() => {
+      const dialog = popoverRef.current
+      if (!dialog) return
+      const initialTarget = dialog.querySelector<HTMLElement>('[data-initial-focus="true"]')
+        ?? dialog.querySelector<HTMLElement>('[role="grid"]')
+        ?? getFocusableElements(dialog)[0]
+      initialTarget?.focus()
+    })
+
+    return () => window.cancelAnimationFrame(frame)
+  }, [open, hasPosition, popoverRef, shouldUseAnchorPosition])
+
+  const handleDialogKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.defaultPrevented && event.key !== 'Tab') return
+
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      event.stopPropagation()
+      onEscape()
+      return
+    }
+
+    if (event.key !== 'Tab') return
+
+    const dialog = popoverRef.current
+    if (!dialog) return
+    const focusable = getFocusableElements(dialog)
+    if (focusable.length === 0) {
+      event.preventDefault()
+      dialog.focus()
+      return
+    }
+
+    const activeElement = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    const activeIndex = activeElement ? focusable.indexOf(activeElement) : -1
+
+    if (event.shiftKey) {
+      if (activeIndex <= 0) {
+        event.preventDefault()
+        focusable[focusable.length - 1].focus()
+      }
+      return
+    }
+
+    if (activeIndex === -1 || activeIndex === focusable.length - 1) {
+      event.preventDefault()
+      focusable[0].focus()
+    }
+  }
+
   if (!open) return null
   if (shouldUseAnchorPosition && !hasPosition) return null
 
@@ -953,6 +1023,8 @@ function DateRangePickerCalendar({
         role="dialog"
         aria-modal="true"
         aria-label={resolvedI18n.labels.rangeCalendar}
+        tabIndex={-1}
+        onKeyDown={handleDialogKeyDown}
         className={`relative max-h-[90vh] w-full overflow-y-auto rounded-t-2xl border border-gray-200 bg-white p-4 text-gray-900 shadow-xl ${className}`}
         style={{
           transform: `translateY(${sheetDragOffset}px)`,
@@ -984,6 +1056,8 @@ function DateRangePickerCalendar({
       style={shouldPortal ? { left: position.left, top: position.top, zIndex: 'var(--rdp-z-popover, 1000)' } : { zIndex: 'var(--rdp-z-popover, 1000)' }}
       role="dialog"
       aria-label={resolvedI18n.labels.rangeCalendar}
+      tabIndex={-1}
+      onKeyDown={handleDialogKeyDown}
     >
       <div className={`max-w-[calc(100vw-1rem)] rounded-lg border bg-white p-4 text-gray-900 shadow ${className}`}>
         {children ?? (
@@ -1619,7 +1693,14 @@ function DateRangePickerCalendarGrid() {
           </div>
         </section>
       )}
-      <div role="grid" tabIndex={0} aria-labelledby={monthLabelId} onKeyDown={handleKeyDown} ref={gridRef}>
+      <div
+        role="grid"
+        tabIndex={0}
+        aria-labelledby={monthLabelId}
+        onKeyDown={handleKeyDown}
+        ref={gridRef}
+        data-initial-focus="true"
+      >
       <div
         ref={monthAnimatorRef}
         className="flex flex-col gap-4 sm:flex-row sm:gap-3"
