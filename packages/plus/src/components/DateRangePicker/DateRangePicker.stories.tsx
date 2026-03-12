@@ -55,3 +55,24 @@ export const DateTimeRange24Hour: Story = {
     />
   ),
 }
+
+export const MobileSheetAlways: Story = {
+  render: () => (
+    <DateRangePicker
+      numberOfMonths={2}
+      mobile={{ enabled: true, mode: 'always' }}
+    />
+  ),
+}
+
+export const MobileSheetGestures: Story = {
+  render: () => (
+    <DateRangePicker
+      mobile={{
+        enabled: true,
+        mode: 'always',
+        gestures: { swipeMonth: true, swipeToClose: true },
+      }}
+    />
+  ),
+}

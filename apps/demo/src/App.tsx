@@ -35,6 +35,10 @@ export default function App() {
     start: null,
     end: null
   })
+  const [rangeInputMobileSheet, setRangeInputMobileSheet] = useState<{ start: Date | null; end: Date | null }>({
+    start: null,
+    end: null
+  })
   const [rangeInputThree, setRangeInputThree] = useState<{ start: Date | null; end: Date | null }>({
     start: null,
     end: null
@@ -100,6 +104,9 @@ export default function App() {
               </a>
               <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#range-popover-presets">
                 Range Popover Presets
+              </a>
+              <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#range-mobile-sheet">
+                Range Mobile Sheet
               </a>
               <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#range-popover-2">
                 Range Popover 2-Month
@@ -226,6 +233,31 @@ export default function App() {
               <p className="mt-3 text-sm text-[var(--q3-text-disabled)]">
                 {rangeInputPresets.start ? `Start: ${format(rangeInputPresets.start, 'PPP')}` : 'Start: —'}{' '}
                 {rangeInputPresets.end ? `End: ${format(rangeInputPresets.end, 'PPP')}` : 'End: —'}
+              </p>
+            </section>
+
+            <section id="range-mobile-sheet" className={panelClass}>
+              <h2 className="text-lg font-semibold">Range selection (mobile sheet, forced)</h2>
+              <p className="mt-1 mb-3 text-sm text-[var(--q3-text-disabled)]">DateRangePicker mobile presentation + swipe gestures (phase 2)</p>
+              <DateRangePicker
+                value={rangeInputMobileSheet}
+                onChange={setRangeInputMobileSheet}
+                mobile={{
+                  enabled: true,
+                  mode: 'always',
+                  gestures: { swipeMonth: true, swipeToClose: true }
+                }}
+              >
+                <DateRangePicker.Input />
+                <DateRangePicker.Calendar>
+                  <DateRangePicker.CalendarHeader />
+                  <DateRangePicker.CalendarGrid />
+                </DateRangePicker.Calendar>
+              </DateRangePicker>
+              <p className="mt-2 text-xs text-[var(--q3-text-disabled)]">Swipe left/right on month panels to change month. Drag down on the sheet handle to close, or release early to see snap-back.</p>
+              <p className="mt-3 text-sm text-[var(--q3-text-disabled)]">
+                {rangeInputMobileSheet.start ? `Start: ${format(rangeInputMobileSheet.start, 'PPP')}` : 'Start: —'}{' '}
+                {rangeInputMobileSheet.end ? `End: ${format(rangeInputMobileSheet.end, 'PPP')}` : 'End: —'}
               </p>
             </section>
 

@@ -61,6 +61,11 @@ type DateRangePickerContextValue = {
   numberOfMonths: number
   portal: boolean
   portalContainer: HTMLElement | null
+  isMobilePresentation: boolean
+  mobileGestures: {
+    swipeMonth: boolean
+    swipeToClose: boolean
+  }
   showPresets: boolean
   presetRanges: DateRangePreset[]
   applyPresetRange: (preset: DateRangePreset) => void
@@ -84,6 +89,10 @@ const visuallyHidden = {
 
 const POPOVER_VIEWPORT_PADDING = 16
 const POPOVER_OFFSET = 8
+const DEFAULT_MOBILE_BREAKPOINT = 768
+const SWIPE_MONTH_THRESHOLD = 48
+const SWIPE_CLOSE_THRESHOLD = 56
+const SHEET_CLOSE_RATIO_THRESHOLD = 0.22
 
 const clampNumberOfMonths = (value: number | undefined) => {
   if (!value) return 1
@@ -175,6 +184,19 @@ export type DateRangePickerProps = {
   timeLabelIconClassName?: string
   portal?: boolean
   portalContainer?: HTMLElement | null
+  mobile?: DateRangePickerMobileOptions
+}
+
+export type DateRangePickerMobileMode = 'auto' | 'always' | 'never'
+
+export type DateRangePickerMobileOptions = {
+  enabled?: boolean
+  mode?: DateRangePickerMobileMode
+  breakpoint?: number
+  gestures?: {
+    swipeMonth?: boolean
+    swipeToClose?: boolean
+  }
 }
 
 export type DateRangePickerInputProps = {
@@ -200,6 +222,11 @@ const DEFAULT_END_TIME: TimeParts = { hours: 17, minutes: 0 }
 const normalizeMinuteStep = (value: number | undefined) => {
   if (!value || Number.isNaN(value)) return 1
   return Math.max(1, Math.min(30, Math.trunc(value)))
+}
+
+const normalizeMobileBreakpoint = (value: number | undefined) => {
+  if (!value || Number.isNaN(value)) return DEFAULT_MOBILE_BREAKPOINT
+  return Math.max(320, Math.min(1600, Math.trunc(value)))
 }
 
 const normalizeTimeParts = (parts: TimeParts, minuteStep: number): TimeParts => {
@@ -329,6 +356,7 @@ function DateRangePickerRoot({
   timeLabelIconClassName = '',
   portal = true,
   portalContainer = null,
+  mobile,
 }: DateRangePickerProps) {
   const resolvedI18n = useMemo(() => resolveCalendarI18n(i18n), [i18n])
   const formatOptions = useMemo(
@@ -350,6 +378,12 @@ function DateRangePickerRoot({
     [enableTime, resolvedI18n.format.inputValue, timeFormat],
   )
   const [open, setOpen] = useState(false)
+  const mobileEnabled = mobile?.enabled ?? false
+  const mobileMode = mobile?.mode ?? 'auto'
+  const mobileBreakpoint = normalizeMobileBreakpoint(mobile?.breakpoint)
+  const swipeMonthGesture = mobile?.gestures?.swipeMonth ?? true
+  const swipeToCloseGesture = mobile?.gestures?.swipeToClose ?? true
+  const [autoMobileMatch, setAutoMobileMatch] = useState(false)
   const [internalRange, setInternalRange] = useState<DateRange>(value ?? emptyRange)
   const containerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -375,6 +409,54 @@ function DateRangePickerRoot({
 
   const anchorDate = selectedRange.start ?? selectedRange.end ?? cal.currentMonth
   const [focusDate, setFocusDate] = useState<Date>(anchorDate)
+
+  useEffect(() => {
+    if (!mobileEnabled || mobileMode !== 'auto') {
+      setAutoMobileMatch(false)
+      return
+    }
+
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      setAutoMobileMatch(false)
+      return
+    }
+
+    const viewportQuery = window.matchMedia(`(max-width: ${mobileBreakpoint}px)`)
+    const pointerQuery = window.matchMedia('(pointer: coarse)')
+    const updateMatch = () => {
+      setAutoMobileMatch(viewportQuery.matches || pointerQuery.matches)
+    }
+
+    updateMatch()
+
+    if (typeof viewportQuery.addEventListener === 'function') {
+      viewportQuery.addEventListener('change', updateMatch)
+      pointerQuery.addEventListener('change', updateMatch)
+      return () => {
+        viewportQuery.removeEventListener('change', updateMatch)
+        pointerQuery.removeEventListener('change', updateMatch)
+      }
+    }
+
+    viewportQuery.addListener(updateMatch)
+    pointerQuery.addListener(updateMatch)
+    return () => {
+      viewportQuery.removeListener(updateMatch)
+      pointerQuery.removeListener(updateMatch)
+    }
+  }, [mobileEnabled, mobileMode, mobileBreakpoint])
+
+  const isMobilePresentation =
+    mobileEnabled
+      ? (mobileMode === 'always' || (mobileMode === 'auto' && autoMobileMatch))
+      : false
+  const mobileGestures = useMemo(
+    () => ({
+      swipeMonth: isMobilePresentation && swipeMonthGesture,
+      swipeToClose: isMobilePresentation && swipeToCloseGesture,
+    }),
+    [isMobilePresentation, swipeMonthGesture, swipeToCloseGesture],
+  )
 
   useEffect(() => {
     if (!open) return
@@ -527,6 +609,8 @@ function DateRangePickerRoot({
     numberOfMonths: normalizedMonths,
     portal,
     portalContainer,
+    isMobilePresentation,
+    mobileGestures,
     showPresets,
     presetRanges,
     applyPresetRange,
@@ -575,6 +659,7 @@ function DateRangePickerInput({
     placeholderEndText,
     formatDescriptionText,
     enableTime,
+    isMobilePresentation,
   } = useDateRangePickerContext()
 
   const resolvedPlaceholderStart = placeholderStart ?? placeholderStartText
@@ -604,7 +689,7 @@ function DateRangePickerInput({
             onClick={() => setOpen(current => !current)}
             value={formattedStart}
             ref={inputRef}
-            aria-haspopup="grid"
+            aria-haspopup={isMobilePresentation ? 'dialog' : 'grid'}
             aria-expanded={open}
             aria-describedby={describedById}
           />
@@ -664,20 +749,90 @@ function DateRangePickerCalendar({
   className = '',
   popoverClassName = '',
 }: DateRangePickerCalendarProps) {
-  const { open, resolvedI18n, containerRef, popoverRef, portal, portalContainer } = useDateRangePickerContext()
+  const {
+    open,
+    resolvedI18n,
+    containerRef,
+    popoverRef,
+    portal,
+    portalContainer,
+    isMobilePresentation,
+    mobileGestures,
+    onEscape,
+  } = useDateRangePickerContext()
+  const shouldPortal = isMobilePresentation || portal
+  const shouldUseAnchorPosition = shouldPortal && !isMobilePresentation
   const [position, setPosition] = useState<{ left: number; top: number }>({ left: 0, top: 0 })
-  const [hasPosition, setHasPosition] = useState(!portal)
+  const [hasPosition, setHasPosition] = useState(!shouldUseAnchorPosition)
   const bodyPaddingBaseRef = useRef<number | null>(null)
   const bodyPaddingInlineRef = useRef<string | null>(null)
   const bodyPaddingExtraRef = useRef(0)
+  const sheetDragStartRef = useRef<{ x: number; y: number; pointerId: number } | null>(null)
+  const [sheetDragOffset, setSheetDragOffset] = useState(0)
+  const [isSheetDragging, setIsSheetDragging] = useState(false)
 
-  useLayoutEffect(() => {
-    if (!open) {
-      setHasPosition(!portal)
+  const handleSheetPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!mobileGestures.swipeToClose) return
+    sheetDragStartRef.current = { x: event.clientX, y: event.clientY, pointerId: event.pointerId }
+    setIsSheetDragging(true)
+    if (typeof event.currentTarget.setPointerCapture === 'function') {
+      event.currentTarget.setPointerCapture(event.pointerId)
+    }
+  }
+
+  const handleSheetPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!mobileGestures.swipeToClose || !sheetDragStartRef.current) return
+    if (event.pointerId !== sheetDragStartRef.current.pointerId) return
+
+    const start = sheetDragStartRef.current
+    const deltaX = event.clientX - start.x
+    const deltaY = event.clientY - start.y
+    if (Math.abs(deltaY) < Math.abs(deltaX)) return
+
+    setSheetDragOffset(Math.max(0, deltaY))
+  }
+
+  const handleSheetPointerEnd = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!mobileGestures.swipeToClose || !sheetDragStartRef.current) return
+    if (event.pointerId !== sheetDragStartRef.current.pointerId) return
+
+    if (
+      typeof event.currentTarget.hasPointerCapture === 'function' &&
+      typeof event.currentTarget.releasePointerCapture === 'function' &&
+      event.currentTarget.hasPointerCapture(event.pointerId)
+    ) {
+      event.currentTarget.releasePointerCapture(event.pointerId)
+    }
+
+    const start = sheetDragStartRef.current
+    sheetDragStartRef.current = null
+    setIsSheetDragging(false)
+
+    const deltaX = event.clientX - start.x
+    const deltaY = event.clientY - start.y
+    const dialogHeight = popoverRef.current?.getBoundingClientRect().height ?? 0
+    const ratioThreshold = dialogHeight > 0 ? dialogHeight * SHEET_CLOSE_RATIO_THRESHOLD : SWIPE_CLOSE_THRESHOLD
+    const shouldClose =
+      deltaY > SWIPE_CLOSE_THRESHOLD &&
+      deltaY >= ratioThreshold &&
+      Math.abs(deltaY) > Math.abs(deltaX)
+
+    if (shouldClose) {
+      setSheetDragOffset(0)
+      onEscape()
       return
     }
 
-    if (!portal) {
+    setSheetDragOffset(0)
+  }
+
+  useLayoutEffect(() => {
+    if (!open) {
+      setHasPosition(!shouldUseAnchorPosition)
+      return
+    }
+
+    if (!shouldUseAnchorPosition) {
       setHasPosition(true)
       return
     }
@@ -700,7 +855,7 @@ function DateRangePickerCalendar({
       window.removeEventListener('resize', updatePosition)
       window.removeEventListener('scroll', updatePosition, true)
     }
-  }, [open, portal, containerRef])
+  }, [open, shouldUseAnchorPosition, containerRef])
 
   useEffect(() => {
     const clearExtraBodyPadding = () => {
@@ -712,7 +867,7 @@ function DateRangePickerCalendar({
       bodyPaddingExtraRef.current = 0
     }
 
-    if (!open || !hasPosition) {
+    if (!open || !hasPosition || isMobilePresentation) {
       clearExtraBodyPadding()
       return
     }
@@ -724,7 +879,7 @@ function DateRangePickerCalendar({
       const rect = popover.getBoundingClientRect()
       const overflowBottom = rect.bottom + POPOVER_VIEWPORT_PADDING - window.innerHeight
       if (overflowBottom > 0) {
-        if (portal) {
+        if (shouldPortal) {
           if (bodyPaddingInlineRef.current === null) {
             bodyPaddingInlineRef.current = document.body.style.paddingBottom
             bodyPaddingBaseRef.current = parseFloat(window.getComputedStyle(document.body).paddingBottom) || 0
@@ -750,16 +905,68 @@ function DateRangePickerCalendar({
       window.cancelAnimationFrame(frame)
       if (!open) clearExtraBodyPadding()
     }
-  }, [open, hasPosition, position.left, position.top, popoverRef, portal])
+  }, [open, hasPosition, position.left, position.top, popoverRef, shouldPortal, isMobilePresentation])
+
+  useEffect(() => {
+    if (!open || !isMobilePresentation) return
+
+    const originalOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      document.body.style.overflow = originalOverflow
+      sheetDragStartRef.current = null
+      setSheetDragOffset(0)
+      setIsSheetDragging(false)
+    }
+  }, [open, isMobilePresentation])
 
   if (!open) return null
-  if (portal && !hasPosition) return null
+  if (shouldUseAnchorPosition && !hasPosition) return null
 
-  const content = (
+  const content = isMobilePresentation ? (
+    <div className={`fixed inset-0 z-[var(--rdp-z-popover,1000)] flex items-end justify-center ${popoverClassName}`}>
+      <button
+        type="button"
+        aria-label="Close range calendar"
+        className="absolute inset-0 bg-gray-900/45 transition-opacity duration-200"
+        style={{ opacity: Math.max(0.2, 1 - sheetDragOffset / 280) }}
+        onClick={onEscape}
+      />
+      <div
+        ref={popoverRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={resolvedI18n.labels.rangeCalendar}
+        className={`relative max-h-[90vh] w-full overflow-y-auto rounded-t-2xl border border-gray-200 bg-white p-4 text-gray-900 shadow-xl ${className}`}
+        style={{
+          transform: `translateY(${sheetDragOffset}px)`,
+          transition: isSheetDragging ? 'none' : 'transform 220ms cubic-bezier(0.22, 1, 0.36, 1)',
+        }}
+      >
+        <div
+          className="mb-3 flex justify-center py-1"
+          onPointerDown={handleSheetPointerDown}
+          onPointerMove={handleSheetPointerMove}
+          onPointerUp={handleSheetPointerEnd}
+          onPointerCancel={handleSheetPointerEnd}
+          data-testid="range-sheet-handle"
+        >
+          <div className="h-1.5 w-12 rounded-full bg-gray-300" aria-hidden="true" />
+        </div>
+        {children ?? (
+          <>
+            <DateRangePickerCalendarHeader />
+            <DateRangePickerCalendarGrid />
+          </>
+        )}
+      </div>
+    </div>
+  ) : (
     <div
       ref={popoverRef}
-      className={`${portal ? 'absolute' : 'absolute left-0 top-full mt-2'} rounded bg-white shadow ${popoverClassName}`}
-      style={portal ? { left: position.left, top: position.top, zIndex: 'var(--rdp-z-popover, 1000)' } : { zIndex: 'var(--rdp-z-popover, 1000)' }}
+      className={`${shouldPortal ? 'absolute' : 'absolute left-0 top-full mt-2'} rounded bg-white shadow ${popoverClassName}`}
+      style={shouldPortal ? { left: position.left, top: position.top, zIndex: 'var(--rdp-z-popover, 1000)' } : { zIndex: 'var(--rdp-z-popover, 1000)' }}
       role="dialog"
       aria-label={resolvedI18n.labels.rangeCalendar}
     >
@@ -774,7 +981,7 @@ function DateRangePickerCalendar({
     </div>
   )
 
-  if (portal) {
+  if (shouldPortal) {
     const target = portalContainer ?? (typeof document !== 'undefined' ? document.body : null)
     return target ? createPortal(content, target) : null
   }
@@ -1146,6 +1353,7 @@ function DateRangePickerCalendarGrid() {
     gridRef,
     monthLabelId,
     numberOfMonths,
+    mobileGestures,
     showPresets,
     presetRanges,
     applyPresetRange,
@@ -1185,6 +1393,7 @@ function DateRangePickerCalendarGrid() {
 
   const monthAnimatorRef = useRef<HTMLDivElement>(null)
   const previousMonthRef = useRef(cal.currentMonth)
+  const monthSwipeStartRef = useRef<{ x: number; y: number } | null>(null)
 
   useEffect(() => {
     const monthOffset = differenceInCalendarMonths(startOfMonth(focusDate), startOfMonth(cal.currentMonth))
@@ -1242,6 +1451,30 @@ function DateRangePickerCalendarGrid() {
 
   const moveFocusByDays = (delta: number) => {
     setFocusDate(previous => addDays(previous, delta))
+  }
+
+  const handleMonthViewportPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!mobileGestures.swipeMonth) return
+    monthSwipeStartRef.current = { x: event.clientX, y: event.clientY }
+  }
+
+  const handleMonthViewportPointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!mobileGestures.swipeMonth || !monthSwipeStartRef.current) return
+
+    const start = monthSwipeStartRef.current
+    monthSwipeStartRef.current = null
+    const deltaX = event.clientX - start.x
+    const deltaY = event.clientY - start.y
+    if (Math.abs(deltaX) < SWIPE_MONTH_THRESHOLD || Math.abs(deltaX) < Math.abs(deltaY)) return
+
+    if (deltaX < 0) {
+      cal.next()
+      setFocusDate(previous => addMonths(previous, 1))
+      return
+    }
+
+    cal.prev()
+    setFocusDate(previous => addMonths(previous, -1))
   }
 
   const isPresetActive = (preset: DateRangePreset) => {
@@ -1345,7 +1578,14 @@ function DateRangePickerCalendarGrid() {
         </section>
       )}
       <div role="grid" tabIndex={0} aria-labelledby={monthLabelId} onKeyDown={handleKeyDown} ref={gridRef}>
-      <div ref={monthAnimatorRef} className="flex flex-col gap-4 sm:flex-row sm:gap-3">
+      <div
+        ref={monthAnimatorRef}
+        className="flex flex-col gap-4 sm:flex-row sm:gap-3"
+        onPointerDown={handleMonthViewportPointerDown}
+        onPointerUp={handleMonthViewportPointerUp}
+        onPointerCancel={() => { monthSwipeStartRef.current = null }}
+        data-testid="range-month-viewport"
+      >
         {visibleMonths.map(monthView => (
           <section
             key={monthView.monthStart.getTime()}

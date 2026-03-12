@@ -8,8 +8,9 @@ B. TypeDoc added to be able to generate JSDoc API documentation - DONE
 
 1. Look into installing react devtools for better experience with Chrome Developer Tools.
 1b. Add Real UI Polish
+1c. Need to test out on actual mobile device.
 
-Tailwind-styled buttons
+Tailwind-styled buttons - DONE
 
 Hover/focus states
 
@@ -17,7 +18,7 @@ Animations (Framer Motion)
 
 Better popover positioning (Floating UI)
 
-2. Build the Range Picker 
+2. Build the Range Picker - DONE
 
 Fully functional range selection: -DONE
 
@@ -89,7 +90,7 @@ Design guidelines
 
 Props lists
 
-8. Create a demo site
+8. Create a demo site - DEMO
 
 Publish Storybook to GitHub Pages
 

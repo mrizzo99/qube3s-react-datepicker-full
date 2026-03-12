@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { format } from 'date-fns'
@@ -142,6 +142,80 @@ describe('DateRangePicker', () => {
     rectSpy.mockRestore()
     window.scrollBy = originalScrollBy
     Object.defineProperty(window, 'innerHeight', { value: originalInnerHeight, configurable: true })
+  })
+
+  it('renders a bottom-sheet calendar when mobile mode is always enabled', async () => {
+    const originalBodyOverflow = document.body.style.overflow
+
+    render(<DateRangePicker mobile={{ enabled: true, mode: 'always' }} />)
+
+    await userEvent.click(screen.getByPlaceholderText('Start date'))
+
+    const dialog = await screen.findByRole('dialog', { name: 'Range calendar' })
+    expect(dialog).toHaveAttribute('aria-modal', 'true')
+    expect(dialog.className).toContain('rounded-t-2xl')
+    expect(document.body.style.overflow).toBe('hidden')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Close range calendar' }))
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Range calendar' })).not.toBeInTheDocument()
+    })
+    expect(document.body.style.overflow).toBe(originalBodyOverflow)
+  })
+
+  it('supports swipe month navigation in mobile sheet mode', async () => {
+    render(
+      <DateRangePicker
+        mobile={{ enabled: true, mode: 'always', gestures: { swipeMonth: true } }}
+      />,
+    )
+
+    await userEvent.click(screen.getByPlaceholderText('Start date'))
+    expect(screen.getByRole('grid', { name: 'January 2024' })).toBeInTheDocument()
+
+    const monthViewport = screen.getByTestId('range-month-viewport')
+    fireEvent.pointerDown(monthViewport, { clientX: 240, clientY: 120 })
+    fireEvent.pointerUp(monthViewport, { clientX: 140, clientY: 126 })
+
+    expect(screen.getByRole('grid', { name: 'February 2024' })).toBeInTheDocument()
+  })
+
+  it('supports swipe down to close in mobile sheet mode', async () => {
+    render(
+      <DateRangePicker
+        mobile={{ enabled: true, mode: 'always', gestures: { swipeToClose: true } }}
+      />,
+    )
+
+    await userEvent.click(screen.getByPlaceholderText('Start date'))
+    await screen.findByRole('dialog', { name: 'Range calendar' })
+
+    const handle = screen.getByTestId('range-sheet-handle')
+    fireEvent.pointerDown(handle, { clientX: 120, clientY: 24 })
+    fireEvent.pointerUp(handle, { clientX: 126, clientY: 116 })
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Range calendar' })).not.toBeInTheDocument()
+    })
+  })
+
+  it('keeps the mobile sheet open when drag distance is below the close threshold', async () => {
+    render(
+      <DateRangePicker
+        mobile={{ enabled: true, mode: 'always', gestures: { swipeToClose: true } }}
+      />,
+    )
+
+    await userEvent.click(screen.getByPlaceholderText('Start date'))
+    const dialog = await screen.findByRole('dialog', { name: 'Range calendar' })
+
+    const handle = screen.getByTestId('range-sheet-handle')
+    fireEvent.pointerDown(handle, { clientX: 120, clientY: 24 })
+    fireEvent.pointerMove(handle, { clientX: 122, clientY: 56 })
+    fireEvent.pointerUp(handle, { clientX: 122, clientY: 56 })
+
+    expect(dialog).toBeInTheDocument()
   })
 
   it('supports year navigation controls in popover header', async () => {
