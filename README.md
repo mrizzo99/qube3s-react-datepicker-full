@@ -246,6 +246,28 @@ Keyboard navigation
   - PageUp/PageDown jump by larger steps.
   - Enter/Space confirm the active option.
 
+Screen reader QA script (grid indexing)
+- Validate in browser accessibility tools first:
+  - Inspect the calendar root and confirm `role="grid"` with `aria-rowcount` and `aria-colcount`.
+  - Inspect a sample day and confirm `role="gridcell"` with `aria-rowindex` and `aria-colindex`.
+  - Confirm weekday headers are `role="columnheader"`.
+- NVDA + Firefox (recommended baseline):
+  - Open `DateRangePicker` and `RangeCalendar`.
+  - Move focus into the day grid, then use arrow keys to navigate.
+  - Confirm announcements include day label and row/column context.
+  - Confirm out-of-month cells are announced as unavailable/disabled and are not selectable.
+- JAWS + Chrome:
+  - Repeat the same flow and confirm row/column announcements are present.
+  - Verify `Home`, `End`, `PageUp`, `PageDown`, and `Shift+PageUp/PageDown` preserve expected position context.
+- VoiceOver + Safari:
+  - Enter interaction mode on the grid and navigate day cells.
+  - Confirm weekday context, row/column position, and disabled behavior match expectations.
+- Cover all Plus layouts:
+  - Test 1, 2, and 3 month views (`numberOfMonths={1|2|3}`) in both `DateRangePicker` and `RangeCalendar`.
+  - Re-check that row indices stay logical when multiple month panels are rendered.
+- Optional automation guard:
+  - Add RTL tests that assert `aria-rowcount`, `aria-colcount`, and sampled `aria-rowindex` / `aria-colindex` values to catch regressions.
+
 Layering / popovers
 - `DatePicker` and `DateRangePicker` popovers render in a portal by default (`document.body`).
 - Opt out with `portal={false}` to render inline in component tree.
