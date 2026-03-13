@@ -53,6 +53,22 @@ const visuallyHidden = {
 
 const POPOVER_VIEWPORT_PADDING = 16
 const POPOVER_OFFSET = 8
+const focusableSelector = [
+  'button:not([disabled])',
+  '[href]',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(', ')
+
+const getFocusableElements = (root: HTMLElement) =>
+  Array.from(root.querySelectorAll<HTMLElement>(focusableSelector)).filter(
+    element =>
+      !element.hasAttribute('disabled')
+      && element.getAttribute('aria-hidden') !== 'true'
+      && !element.hasAttribute('inert'),
+  )
 
 const normalizeIconNode = (icon: React.ReactNode, iconClassName = 'h-4 w-4 object-contain') => {
   if (!React.isValidElement(icon)) return icon
@@ -273,6 +289,12 @@ function DatePickerInput({
 
   const resolvedPlaceholder = placeholder ?? placeholderText
   const resolvedFormatDescription = formatDescription ?? formatDescriptionText
+  const handleInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter' || event.key === ' ' || event.key === 'ArrowDown') {
+      event.preventDefault()
+      setOpen(true)
+    }
+  }
 
   return (
     <>
@@ -291,6 +313,7 @@ function DatePickerInput({
         className={`w-48 rounded border border-gray-300 bg-white p-2 text-gray-900 placeholder:text-gray-500 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${inputClassName}`}
         placeholder={resolvedPlaceholder}
         onClick={() => setOpen(current => !current)}
+        onKeyDown={handleInputKeyDown}
         value={formatted}
         ref={inputRef}
         aria-haspopup="grid"
@@ -319,7 +342,7 @@ function DatePickerCalendar({
   className = '',
   popoverClassName = '',
 }: DatePickerCalendarProps) {
-  const { open, resolvedI18n, containerRef, popoverRef, portal, portalContainer } = useDatePickerContext()
+  const { open, resolvedI18n, containerRef, popoverRef, portal, portalContainer, onEscape } = useDatePickerContext()
   const [position, setPosition] = useState<{ left: number; top: number }>({ left: 0, top: 0 })
   const [hasPosition, setHasPosition] = useState(!portal)
   const bodyPaddingBaseRef = useRef<number | null>(null)
@@ -407,6 +430,60 @@ function DatePickerCalendar({
     }
   }, [open, hasPosition, position.left, position.top, popoverRef, portal])
 
+  useEffect(() => {
+    if (!open) return
+    if (portal && !hasPosition) return
+
+    const frame = window.requestAnimationFrame(() => {
+      const dialog = popoverRef.current
+      if (!dialog) return
+      const initialTarget = dialog.querySelector<HTMLElement>('[data-initial-focus="true"]')
+        ?? dialog.querySelector<HTMLElement>('[role="grid"]')
+        ?? getFocusableElements(dialog)[0]
+      initialTarget?.focus()
+    })
+
+    return () => window.cancelAnimationFrame(frame)
+  }, [open, hasPosition, portal, popoverRef])
+
+  const handleDialogKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.defaultPrevented && event.key !== 'Tab') return
+
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      event.stopPropagation()
+      onEscape()
+      return
+    }
+
+    if (event.key !== 'Tab') return
+
+    const dialog = popoverRef.current
+    if (!dialog) return
+    const focusable = getFocusableElements(dialog)
+    if (focusable.length === 0) {
+      event.preventDefault()
+      dialog.focus()
+      return
+    }
+
+    const activeElement = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    const activeIndex = activeElement ? focusable.indexOf(activeElement) : -1
+
+    if (event.shiftKey) {
+      if (activeIndex <= 0) {
+        event.preventDefault()
+        focusable[focusable.length - 1].focus()
+      }
+      return
+    }
+
+    if (activeIndex === -1 || activeIndex === focusable.length - 1) {
+      event.preventDefault()
+      focusable[0].focus()
+    }
+  }
+
   if (!open) return null
   if (portal && !hasPosition) return null
 
@@ -417,6 +494,8 @@ function DatePickerCalendar({
       style={portal ? { left: position.left, top: position.top, zIndex: 'var(--rdp-z-popover, 1000)' } : { zIndex: 'var(--rdp-z-popover, 1000)' }}
       role="dialog"
       aria-label={resolvedI18n.labels.calendar}
+      tabIndex={-1}
+      onKeyDown={handleDialogKeyDown}
     >
       <div className={`w-72 rounded-lg border bg-white p-4 text-gray-900 shadow ${className}`}>
         {children ?? (
@@ -492,7 +571,7 @@ function DatePickerCalendarGrid() {
     )
     cell?.focus()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cal.currentMonth, gridDays])
+  }, [cal.currentMonth, gridDays, focusDate])
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     const idx = gridDays.findIndex(d => cal.isSameDay(d, focusDate))
@@ -564,7 +643,14 @@ function DatePickerCalendarGrid() {
   }
 
   return (
-    <div role="grid" tabIndex={0} aria-labelledby={monthLabelId} onKeyDown={handleKeyDown} ref={gridRef}>
+    <div
+      role="grid"
+      tabIndex={0}
+      aria-labelledby={monthLabelId}
+      onKeyDown={handleKeyDown}
+      ref={gridRef}
+      data-initial-focus="true"
+    >
       <div className="mb-1 grid grid-cols-7 text-sm text-gray-600" aria-hidden="true">
         {weekdayLabels.map((label, index) => (
           <div key={index} className="text-center">
@@ -585,7 +671,6 @@ function DatePickerCalendarGrid() {
                 key={wi + '-' + di}
                 role="gridcell"
                 aria-selected={isActive}
-                aria-disabled={faded}
                 tabIndex={isFocused ? 0 : -1}
                 data-date={day.getTime()}
                 onClick={() => selectDate(day)}

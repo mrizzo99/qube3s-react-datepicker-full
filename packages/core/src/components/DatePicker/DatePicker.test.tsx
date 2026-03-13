@@ -10,6 +10,14 @@ const getCurrentMonthDay = (label: string) =>
   screen
     .getAllByRole('gridcell')
     .find(button => button.textContent === label && !button.classList.contains('text-gray-300'))
+const focusableSelector = [
+  'button:not([disabled])',
+  '[href]',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(', ')
 
 describe('DatePicker', () => {
   beforeEach(() => vi.setSystemTime(jan102024))
@@ -130,5 +138,65 @@ describe('DatePicker', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Previous year' }))
     expect(screen.getByRole('grid', { name: 'January 2024' })).toBeInTheDocument()
+  })
+
+  it('opens the calendar from input keyboard keys', async () => {
+    const { rerender } = render(<DatePicker />)
+    const input = screen.getByRole('textbox')
+
+    input.focus()
+    await userEvent.keyboard('{ArrowDown}')
+    expect(await screen.findByRole('dialog', { name: 'Calendar' })).toBeInTheDocument()
+
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Calendar' })).not.toBeInTheDocument()
+    })
+
+    rerender(<DatePicker />)
+    input.focus()
+    await userEvent.keyboard('{Enter}')
+    expect(await screen.findByRole('dialog', { name: 'Calendar' })).toBeInTheDocument()
+
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Calendar' })).not.toBeInTheDocument()
+    })
+
+    rerender(<DatePicker />)
+    input.focus()
+    await userEvent.keyboard(' ')
+    expect(await screen.findByRole('dialog', { name: 'Calendar' })).toBeInTheDocument()
+  })
+
+  it('traps focus and handles Escape at dialog level', async () => {
+    render(<DatePicker />)
+    const input = screen.getByRole('textbox')
+    await userEvent.click(input)
+
+    const dialog = await screen.findByRole('dialog', { name: 'Calendar' })
+    const grid = screen.getByRole('grid', { name: 'January 2024' })
+    await waitFor(() => expect(grid).toHaveFocus())
+
+    const focusable = Array.from(dialog.querySelectorAll<HTMLElement>(focusableSelector))
+    expect(focusable.length).toBeGreaterThan(1)
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+
+    last.focus()
+    await userEvent.tab()
+    expect(first).toHaveFocus()
+
+    first.focus()
+    await userEvent.tab({ shift: true })
+    expect(last).toHaveFocus()
+
+    screen.getByRole('button', { name: 'Next month' }).focus()
+    await userEvent.keyboard('{Escape}')
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Calendar' })).not.toBeInTheDocument()
+    })
+    expect(input).toHaveFocus()
   })
 })

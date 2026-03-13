@@ -69,6 +69,8 @@ type DateRangePickerContextValue = {
   showPresets: boolean
   presetRanges: DateRangePreset[]
   applyPresetRange: (preset: DateRangePreset) => void
+  onConfirm: () => void
+  onCancel: () => void
   onEscape: () => void
 }
 
@@ -93,6 +95,22 @@ const DEFAULT_MOBILE_BREAKPOINT = 768
 const SWIPE_MONTH_THRESHOLD = 48
 const SWIPE_CLOSE_THRESHOLD = 56
 const SHEET_CLOSE_RATIO_THRESHOLD = 0.22
+const focusableSelector = [
+  'button:not([disabled])',
+  '[href]',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(', ')
+
+const getFocusableElements = (root: HTMLElement) =>
+  Array.from(root.querySelectorAll<HTMLElement>(focusableSelector)).filter(
+    element =>
+      !element.hasAttribute('disabled')
+      && element.getAttribute('aria-hidden') !== 'true'
+      && !element.hasAttribute('inert'),
+  )
 
 const clampNumberOfMonths = (value: number | undefined) => {
   if (!value) return 1
@@ -391,11 +409,22 @@ function DateRangePickerRoot({
   const popoverRef = useRef<HTMLDivElement>(null)
   const describedById = useId()
 
+  const committedRange = value ?? internalRange
+  const [draftRange, setDraftRange] = useState<DateRange>(committedRange)
+
   useEffect(() => {
-    if (value !== undefined) setInternalRange(value ?? emptyRange)
+    if (value === undefined) return
+    const nextValue = value ?? emptyRange
+    setInternalRange(nextValue)
+    setDraftRange(nextValue)
   }, [value])
 
-  const selectedRange = value ?? internalRange
+  useEffect(() => {
+    if (!open || !enableTime) return
+    setDraftRange(committedRange)
+  }, [open, enableTime, committedRange])
+
+  const selectedRange = enableTime && open ? draftRange : committedRange
 
   const cal = useRangeCalendar(selectedRange, {
     locale: resolvedI18n.locale,
@@ -502,18 +531,18 @@ function DateRangePickerRoot({
 
   const formattedStart = useMemo(
     () =>
-      selectedRange.start
-        ? format(selectedRange.start, inputValueFormat, formatOptions)
+      committedRange.start
+        ? format(committedRange.start, inputValueFormat, formatOptions)
         : '',
-    [selectedRange.start, inputValueFormat, formatOptions],
+    [committedRange.start, inputValueFormat, formatOptions],
   )
 
   const formattedEnd = useMemo(
     () =>
-      selectedRange.end
-        ? format(selectedRange.end, inputValueFormat, formatOptions)
+      committedRange.end
+        ? format(committedRange.end, inputValueFormat, formatOptions)
         : '',
-    [selectedRange.end, inputValueFormat, formatOptions],
+    [committedRange.end, inputValueFormat, formatOptions],
   )
 
   const placeholderStartText = placeholderStart ?? resolvedI18n.labels.startDatePlaceholder
@@ -525,13 +554,22 @@ function DateRangePickerRoot({
         : 'Date and time format: MM/DD/YYYY hh:mm AM/PM')
       : resolvedI18n.labels.formatDescription)
 
+  const commitRange = (range: DateRange) => {
+    if (value === undefined) setInternalRange(range)
+    onChange?.(range)
+  }
+
   const selectRange = (range: DateRange) => {
     const nextRange = enableTime
       ? coerceRangeWithTime(range, selectedRange, startTimeFallback, endTimeFallback)
       : range
 
-    if (value === undefined) setInternalRange(nextRange)
-    onChange?.(nextRange)
+    if (enableTime) {
+      setDraftRange(nextRange)
+      return
+    }
+
+    commitRange(nextRange)
     if (nextRange.start && nextRange.end && !enableTime) {
       setOpen(false)
       inputRef.current?.focus()
@@ -541,8 +579,12 @@ function DateRangePickerRoot({
   const updateRangeTime = (boundary: 'start' | 'end', parts: TimeParts) => {
     const nextRange = withBoundaryTime(selectedRange, boundary, normalizeTimeParts(parts, normalizedMinuteStep))
     if (nextRange === selectedRange) return
-    if (value === undefined) setInternalRange(nextRange)
-    onChange?.(nextRange)
+    if (enableTime) {
+      setDraftRange(nextRange)
+      return
+    }
+
+    commitRange(nextRange)
   }
 
   const presetRanges = useMemo(
@@ -572,7 +614,27 @@ function DateRangePickerRoot({
     selectRange(preset.range)
   }
 
+  const onConfirm = () => {
+    if (enableTime) {
+      commitRange(draftRange)
+    }
+    setOpen(false)
+    inputRef.current?.focus()
+  }
+
+  const onCancel = () => {
+    if (enableTime) {
+      setDraftRange(committedRange)
+    }
+    setOpen(false)
+    inputRef.current?.focus()
+  }
+
   const onEscape = () => {
+    if (enableTime) {
+      onCancel()
+      return
+    }
     setOpen(false)
     inputRef.current?.focus()
   }
@@ -614,6 +676,8 @@ function DateRangePickerRoot({
     showPresets,
     presetRanges,
     applyPresetRange,
+    onConfirm,
+    onCancel,
     onEscape,
   }
 
@@ -648,6 +712,9 @@ function DateRangePickerInput({
   placeholderEnd,
   formatDescription,
 }: DateRangePickerInputProps) {
+  const inputIdBase = useId()
+  const startInputId = `${inputIdBase}-start`
+  const endInputId = `${inputIdBase}-end`
   const {
     open,
     setOpen,
@@ -667,73 +734,93 @@ function DateRangePickerInput({
   const resolvedFormatDescription = formatDescription ?? formatDescriptionText
 
   const dateInputWidthClass = enableTime ? 'w-56' : 'w-40'
+  const handleInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter' || event.key === ' ' || event.key === 'ArrowDown') {
+      event.preventDefault()
+      setOpen(true)
+    }
+  }
 
   return (
     <>
-      <div className="flex flex-wrap gap-2">
-        <div className="inline-flex items-center gap-1">
-          {iconPosition === 'left' && (
-            <button
-              type="button"
+      <div className="flex flex-wrap gap-3">
+        <div className="flex flex-col gap-1">
+          <label htmlFor={startInputId} className="text-sm font-medium text-gray-700">
+            {resolvedPlaceholderStart}
+          </label>
+          <div className="inline-flex items-center gap-1">
+            {iconPosition === 'left' && (
+              <button
+                type="button"
+                onClick={() => setOpen(current => !current)}
+                aria-label={iconAriaLabel}
+                className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
+              >
+                {renderPickerIcon(icon)}
+              </button>
+            )}
+            <input
+              id={startInputId}
+              readOnly
+              className={`${dateInputWidthClass} rounded border border-gray-300 bg-white p-2 text-gray-900 placeholder:text-gray-500 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${inputClassName}`}
+              placeholder={resolvedPlaceholderStart}
               onClick={() => setOpen(current => !current)}
-              aria-label={iconAriaLabel}
-              className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
-            >
-              {renderPickerIcon(icon)}
-            </button>
-          )}
-          <input
-            readOnly
-            className={`${dateInputWidthClass} rounded border border-gray-300 bg-white p-2 text-gray-900 placeholder:text-gray-500 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${inputClassName}`}
-            placeholder={resolvedPlaceholderStart}
-            onClick={() => setOpen(current => !current)}
-            value={formattedStart}
-            ref={inputRef}
-            aria-haspopup={isMobilePresentation ? 'dialog' : 'grid'}
-            aria-expanded={open}
-            aria-describedby={describedById}
-          />
-          {iconPosition === 'right' && (
-            <button
-              type="button"
-              onClick={() => setOpen(current => !current)}
-              aria-label={iconAriaLabel}
-              className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
-            >
-              {renderPickerIcon(icon)}
-            </button>
-          )}
+              onKeyDown={handleInputKeyDown}
+              value={formattedStart}
+              ref={inputRef}
+              aria-haspopup={isMobilePresentation ? 'dialog' : 'grid'}
+              aria-expanded={open}
+              aria-describedby={describedById}
+            />
+            {iconPosition === 'right' && (
+              <button
+                type="button"
+                onClick={() => setOpen(current => !current)}
+                aria-label={iconAriaLabel}
+                className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
+              >
+                {renderPickerIcon(icon)}
+              </button>
+            )}
+          </div>
         </div>
 
-        <div className="inline-flex items-center gap-1">
-          {iconPosition === 'left' && (
-            <button
-              type="button"
+        <div className="flex flex-col gap-1">
+          <label htmlFor={endInputId} className="text-sm font-medium text-gray-700">
+            {resolvedPlaceholderEnd}
+          </label>
+          <div className="inline-flex items-center gap-1">
+            {iconPosition === 'left' && (
+              <button
+                type="button"
+                onClick={() => setOpen(current => !current)}
+                aria-label={iconAriaLabel}
+                className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
+              >
+                {renderPickerIcon(icon)}
+              </button>
+            )}
+            <input
+              id={endInputId}
+              readOnly
+              className={`${dateInputWidthClass} rounded border border-gray-300 bg-white p-2 text-gray-900 placeholder:text-gray-500 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${inputClassName}`}
+              placeholder={resolvedPlaceholderEnd}
               onClick={() => setOpen(current => !current)}
-              aria-label={iconAriaLabel}
-              className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
-            >
-              {renderPickerIcon(icon)}
-            </button>
-          )}
-          <input
-            readOnly
-            className={`${dateInputWidthClass} rounded border border-gray-300 bg-white p-2 text-gray-900 placeholder:text-gray-500 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${inputClassName}`}
-            placeholder={resolvedPlaceholderEnd}
-            onClick={() => setOpen(current => !current)}
-            value={formattedEnd}
-            aria-describedby={describedById}
-          />
-          {iconPosition === 'right' && (
-            <button
-              type="button"
-              onClick={() => setOpen(current => !current)}
-              aria-label={iconAriaLabel}
-              className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
-            >
-              {renderPickerIcon(icon)}
-            </button>
-          )}
+              onKeyDown={handleInputKeyDown}
+              value={formattedEnd}
+              aria-describedby={describedById}
+            />
+            {iconPosition === 'right' && (
+              <button
+                type="button"
+                onClick={() => setOpen(current => !current)}
+                aria-label={iconAriaLabel}
+                className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
+              >
+                {renderPickerIcon(icon)}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -921,6 +1008,60 @@ function DateRangePickerCalendar({
     }
   }, [open, isMobilePresentation])
 
+  useEffect(() => {
+    if (!open) return
+    if (shouldUseAnchorPosition && !hasPosition) return
+
+    const frame = window.requestAnimationFrame(() => {
+      const dialog = popoverRef.current
+      if (!dialog) return
+      const initialTarget = dialog.querySelector<HTMLElement>('[data-initial-focus="true"]')
+        ?? dialog.querySelector<HTMLElement>('[role="grid"]')
+        ?? getFocusableElements(dialog)[0]
+      initialTarget?.focus()
+    })
+
+    return () => window.cancelAnimationFrame(frame)
+  }, [open, hasPosition, popoverRef, shouldUseAnchorPosition])
+
+  const handleDialogKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.defaultPrevented && event.key !== 'Tab') return
+
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      event.stopPropagation()
+      onEscape()
+      return
+    }
+
+    if (event.key !== 'Tab') return
+
+    const dialog = popoverRef.current
+    if (!dialog) return
+    const focusable = getFocusableElements(dialog)
+    if (focusable.length === 0) {
+      event.preventDefault()
+      dialog.focus()
+      return
+    }
+
+    const activeElement = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    const activeIndex = activeElement ? focusable.indexOf(activeElement) : -1
+
+    if (event.shiftKey) {
+      if (activeIndex <= 0) {
+        event.preventDefault()
+        focusable[focusable.length - 1].focus()
+      }
+      return
+    }
+
+    if (activeIndex === -1 || activeIndex === focusable.length - 1) {
+      event.preventDefault()
+      focusable[0].focus()
+    }
+  }
+
   if (!open) return null
   if (shouldUseAnchorPosition && !hasPosition) return null
 
@@ -938,6 +1079,8 @@ function DateRangePickerCalendar({
         role="dialog"
         aria-modal="true"
         aria-label={resolvedI18n.labels.rangeCalendar}
+        tabIndex={-1}
+        onKeyDown={handleDialogKeyDown}
         className={`relative max-h-[90vh] w-full overflow-y-auto rounded-t-2xl border border-gray-200 bg-white p-4 text-gray-900 shadow-xl ${className}`}
         style={{
           transform: `translateY(${sheetDragOffset}px)`,
@@ -969,6 +1112,8 @@ function DateRangePickerCalendar({
       style={shouldPortal ? { left: position.left, top: position.top, zIndex: 'var(--rdp-z-popover, 1000)' } : { zIndex: 'var(--rdp-z-popover, 1000)' }}
       role="dialog"
       aria-label={resolvedI18n.labels.rangeCalendar}
+      tabIndex={-1}
+      onKeyDown={handleDialogKeyDown}
     >
       <div className={`max-w-[calc(100vw-1rem)] rounded-lg border bg-white p-4 text-gray-900 shadow ${className}`}>
         {children ?? (
@@ -1346,6 +1491,7 @@ function DateRangePickerCalendarGrid() {
     cal,
     selectedRange,
     selectRange,
+    enableTime,
     resolvedI18n,
     formatOptions,
     focusDate,
@@ -1357,6 +1503,8 @@ function DateRangePickerCalendarGrid() {
     showPresets,
     presetRanges,
     applyPresetRange,
+    onConfirm,
+    onCancel,
     onEscape,
   } = useDateRangePickerContext()
 
@@ -1389,6 +1537,18 @@ function DateRangePickerCalendarGrid() {
   const visibleRangeDays = useMemo(
     () => getVisibleRangeDays(cal.currentMonth, numberOfMonths, weekOptions),
     [cal.currentMonth, numberOfMonths, weekOptions],
+  )
+  const monthRowStarts = useMemo(() => {
+    let rowCursor = 1
+    return visibleMonths.map(monthView => {
+      const start = rowCursor
+      rowCursor += monthView.weeks.length + 1
+      return start
+    })
+  }, [visibleMonths])
+  const totalGridRows = useMemo(
+    () => visibleMonths.reduce((sum, monthView) => sum + monthView.weeks.length + 1, 0),
+    [visibleMonths],
   )
 
   const monthAnimatorRef = useRef<HTMLDivElement>(null)
@@ -1577,7 +1737,16 @@ function DateRangePickerCalendarGrid() {
           </div>
         </section>
       )}
-      <div role="grid" tabIndex={0} aria-labelledby={monthLabelId} onKeyDown={handleKeyDown} ref={gridRef}>
+      <div
+        role="grid"
+        tabIndex={0}
+        aria-labelledby={monthLabelId}
+        aria-colcount={7}
+        aria-rowcount={totalGridRows}
+        onKeyDown={handleKeyDown}
+        ref={gridRef}
+        data-initial-focus="true"
+      >
       <div
         ref={monthAnimatorRef}
         className="flex flex-col gap-4 sm:flex-row sm:gap-3"
@@ -1586,7 +1755,9 @@ function DateRangePickerCalendarGrid() {
         onPointerCancel={() => { monthSwipeStartRef.current = null }}
         data-testid="range-month-viewport"
       >
-        {visibleMonths.map(monthView => (
+        {visibleMonths.map((monthView, monthIndex) => {
+          const rowStart = monthRowStarts[monthIndex]
+          return (
           <section
             key={monthView.monthStart.getTime()}
             className="w-72 rounded-md border border-gray-200 bg-gray-50/50 p-2 sm:w-64"
@@ -1594,17 +1765,29 @@ function DateRangePickerCalendarGrid() {
             <div className="mb-1 text-center text-sm font-medium text-gray-700">
               {format(monthView.monthStart, resolvedI18n.format.monthLabel, formatOptions)}
             </div>
-            <div className="mb-1 grid grid-cols-7 text-sm text-gray-600" aria-hidden="true">
-              {monthView.weekdayLabels.map((label, index) => (
-                <div key={`${monthView.monthStart.getTime()}-weekday-${index}`} className="text-center">
-                  {label}
-                </div>
-              ))}
-            </div>
+            <div role="rowgroup" aria-labelledby={monthLabelId}>
+              <div className="mb-1 grid grid-cols-7 text-sm text-gray-600" role="row" aria-rowindex={rowStart}>
+                {monthView.weekdayLabels.map((label, index) => (
+                  <div
+                    key={`${monthView.monthStart.getTime()}-weekday-${index}`}
+                    className="text-center"
+                    role="columnheader"
+                    aria-colindex={index + 1}
+                  >
+                    {label}
+                  </div>
+                ))}
+              </div>
 
-            <div className="grid grid-cols-7 gap-1">
-              {monthView.weeks.map((week, weekIndex) =>
-                week.map((day, dayIndex) => {
+              <div className="flex flex-col gap-1">
+                {monthView.weeks.map((week, weekIndex) => (
+                  <div
+                    key={`${monthView.monthStart.getTime()}-week-${weekIndex}`}
+                    className="grid grid-cols-7 gap-1"
+                    role="row"
+                    aria-rowindex={rowStart + weekIndex + 1}
+                  >
+                    {week.map((day, dayIndex) => {
                   const faded = !cal.isSameMonth(day, monthView.monthStart)
                   const isRangeEdge = cal.isRangeEdge(day, selectedRange)
                   const inRange = cal.isInRange(day, selectedRange)
@@ -1615,7 +1798,8 @@ function DateRangePickerCalendarGrid() {
                       key={`${monthView.monthStart.getTime()}-${weekIndex}-${dayIndex}`}
                       role="gridcell"
                       aria-selected={isRangeEdge}
-                      aria-disabled={faded}
+                      aria-rowindex={rowStart + weekIndex + 1}
+                      aria-colindex={dayIndex + 1}
                       tabIndex={isFocused ? 0 : -1}
                       data-date-key={`${day.getTime()}-${monthView.monthStart.getTime()}`}
                       onClick={() => {
@@ -1637,14 +1821,34 @@ function DateRangePickerCalendarGrid() {
                       {format(day, resolvedI18n.format.dayLabel, formatOptions)}
                     </button>
                   )
-                }),
-              )}
+                    })}
+                  </div>
+                ))}
+              </div>
             </div>
           </section>
-        ))}
+        )})}
       </div>
     </div>
     <DateRangePickerTimeWheels />
+    {enableTime && (
+      <div className="mt-3 flex justify-end gap-2 border-t pt-3">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 transition-colors duration-150 hover:border-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={onConfirm}
+          className="rounded border border-blue-600 bg-blue-600 px-3 py-1.5 text-sm text-white transition-colors duration-150 hover:border-blue-700 hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        >
+          OK
+        </button>
+      </div>
+    )}
     </div>
   )
 }

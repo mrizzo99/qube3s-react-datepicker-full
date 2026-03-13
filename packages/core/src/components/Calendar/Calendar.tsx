@@ -61,7 +61,7 @@ export default function Calendar({
     )
     cell?.focus()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cal.currentMonth, gridDays])
+  }, [cal.currentMonth, gridDays, focusDate])
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     const idx = gridDays.findIndex(d => cal.isSameDay(d, focusDate))
@@ -179,7 +179,6 @@ export default function Calendar({
                 key={wi + '-' + di}
                 role="gridcell"
                 aria-selected={!!isActive}
-                aria-disabled={faded}
                 tabIndex={isFocused ? 0 : -1}
                 data-date={day.getTime()}
                 onClick={handleClick}

@@ -316,12 +316,26 @@ export default function RangeCalendar({
 
     return `${first} - ${last}`
   }, [visibleMonths, resolvedI18n.format.monthLabel, formatOptions])
+  const monthRowStarts = useMemo(() => {
+    let rowCursor = 1
+    return visibleMonths.map(monthView => {
+      const start = rowCursor
+      rowCursor += monthView.weeks.length + 1
+      return start
+    })
+  }, [visibleMonths])
+  const totalGridRows = useMemo(
+    () => visibleMonths.reduce((sum, monthView) => sum + monthView.weeks.length + 1, 0),
+    [visibleMonths],
+  )
 
   return (
     <div
       className="inline-block w-fit max-w-[calc(100vw-1rem)] rounded-lg border bg-white p-4 text-gray-900 shadow"
       role="grid"
       aria-labelledby={monthLabelId}
+      aria-colcount={7}
+      aria-rowcount={totalGridRows}
       onKeyDown={handleKeyDown}
       tabIndex={0}
       ref={gridRef}
@@ -395,7 +409,9 @@ export default function RangeCalendar({
       )}
 
       <div ref={monthAnimatorRef} className="flex flex-col gap-4 sm:flex-row sm:gap-3">
-        {visibleMonths.map(monthView => (
+        {visibleMonths.map((monthView, monthIndex) => {
+          const rowStart = monthRowStarts[monthIndex]
+          return (
           <section
             key={monthView.monthStart.getTime()}
             className="w-72 rounded-md border border-gray-200 bg-gray-50/50 p-2 sm:w-64"
@@ -403,17 +419,29 @@ export default function RangeCalendar({
             <div className="mb-1 text-center text-sm font-medium text-gray-700">
               {format(monthView.monthStart, resolvedI18n.format.monthLabel, formatOptions)}
             </div>
-            <div className="mb-1 grid grid-cols-7 text-sm text-gray-600" aria-hidden="true">
-              {monthView.weekdayLabels.map((label, index) => (
-                <div key={`${monthView.monthStart.getTime()}-weekday-${index}`} className="text-center">
-                  {label}
-                </div>
-              ))}
-            </div>
+            <div role="rowgroup" aria-labelledby={monthLabelId}>
+              <div className="mb-1 grid grid-cols-7 text-sm text-gray-600" role="row" aria-rowindex={rowStart}>
+                {monthView.weekdayLabels.map((label, index) => (
+                  <div
+                    key={`${monthView.monthStart.getTime()}-weekday-${index}`}
+                    className="text-center"
+                    role="columnheader"
+                    aria-colindex={index + 1}
+                  >
+                    {label}
+                  </div>
+                ))}
+              </div>
 
-            <div className="grid grid-cols-7 gap-1">
-              {monthView.weeks.map((week, weekIndex) =>
-                week.map((day, dayIndex) => {
+              <div className="flex flex-col gap-1">
+                {monthView.weeks.map((week, weekIndex) => (
+                  <div
+                    key={`${monthView.monthStart.getTime()}-week-${weekIndex}`}
+                    className="grid grid-cols-7 gap-1"
+                    role="row"
+                    aria-rowindex={rowStart + weekIndex + 1}
+                  >
+                    {week.map((day, dayIndex) => {
                   const faded = !cal.isSameMonth(day, monthView.monthStart)
                   const isRangeEdge = !!(selectedRange && cal.isRangeEdge(day, selectedRange))
                   const inRange = selectedRange ? cal.isInRange(day, selectedRange) : false
@@ -430,7 +458,8 @@ export default function RangeCalendar({
                       key={`${monthView.monthStart.getTime()}-${weekIndex}-${dayIndex}`}
                       role="gridcell"
                       aria-selected={isRangeEdge}
-                      aria-disabled={faded}
+                      aria-rowindex={rowStart + weekIndex + 1}
+                      aria-colindex={dayIndex + 1}
                       tabIndex={isFocused ? 0 : -1}
                       data-date-key={`${day.getTime()}-${monthView.monthStart.getTime()}`}
                       onClick={handleClick}
@@ -448,11 +477,13 @@ export default function RangeCalendar({
                       {format(day, resolvedI18n.format.dayLabel, formatOptions)}
                     </button>
                   )
-                }),
-              )}
+                    })}
+                  </div>
+                ))}
+              </div>
             </div>
           </section>
-        ))}
+        )})}
       </div>
     </div>
   )

@@ -10,6 +10,14 @@ const getCurrentMonthDay = (label: string) =>
   screen
     .getAllByRole('gridcell')
     .find(button => button.textContent === label && !button.classList.contains('text-gray-300'))
+const focusableSelector = [
+  'button:not([disabled])',
+  '[href]',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(', ')
 
 describe('DateRangePicker', () => {
   beforeEach(() => vi.setSystemTime(jan102024))
@@ -229,6 +237,72 @@ describe('DateRangePicker', () => {
     expect(screen.getByRole('grid', { name: 'January 2024' })).toBeInTheDocument()
   })
 
+  it('opens the calendar from either input using keyboard keys', async () => {
+    const firstRender = render(<DateRangePicker />)
+    const startInput = screen.getByPlaceholderText('Start date')
+
+    startInput.focus()
+    await userEvent.keyboard('{ArrowDown}')
+    expect(await screen.findByRole('dialog', { name: 'Range calendar' })).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByRole('grid', { name: 'January 2024' })).toHaveFocus())
+
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Range calendar' })).not.toBeInTheDocument()
+    })
+
+    firstRender.unmount()
+    const secondRender = render(<DateRangePicker />)
+    const endInput = screen.getByPlaceholderText('End date')
+    endInput.focus()
+    await userEvent.keyboard('{Enter}')
+    expect(await screen.findByRole('dialog', { name: 'Range calendar' })).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByRole('grid', { name: 'January 2024' })).toHaveFocus())
+
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Range calendar' })).not.toBeInTheDocument()
+    })
+
+    secondRender.unmount()
+    render(<DateRangePicker />)
+    const endInputAfterRemount = screen.getByPlaceholderText('End date')
+    endInputAfterRemount.focus()
+    await userEvent.keyboard(' ')
+    expect(await screen.findByRole('dialog', { name: 'Range calendar' })).toBeInTheDocument()
+  })
+
+  it('traps focus and handles Escape at dialog level', async () => {
+    render(<DateRangePicker />)
+    const startInput = screen.getByPlaceholderText('Start date')
+    await userEvent.click(startInput)
+
+    const dialog = await screen.findByRole('dialog', { name: 'Range calendar' })
+    const grid = screen.getByRole('grid', { name: 'January 2024' })
+    await waitFor(() => expect(grid).toHaveFocus())
+
+    const focusable = Array.from(dialog.querySelectorAll<HTMLElement>(focusableSelector))
+    expect(focusable.length).toBeGreaterThan(1)
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+
+    last.focus()
+    await userEvent.tab()
+    expect(first).toHaveFocus()
+
+    first.focus()
+    await userEvent.tab({ shift: true })
+    expect(last).toHaveFocus()
+
+    screen.getByRole('button', { name: 'Next month' }).focus()
+    await userEvent.keyboard('{Escape}')
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Range calendar' })).not.toBeInTheDocument()
+    })
+    expect(startInput).toHaveFocus()
+  })
+
   it('supports selecting quick preset ranges', async () => {
     const onChange = vi.fn()
 
@@ -270,6 +344,12 @@ describe('DateRangePicker', () => {
     await userEvent.click(day5)
     await userEvent.click(day7)
 
+    expect(onChange).not.toHaveBeenCalled()
+    expect(startInput).toHaveValue('')
+    expect(endInput).toHaveValue('')
+
+    await userEvent.click(screen.getByRole('button', { name: 'OK' }))
+
     expect(startInput).toHaveValue(format(new Date(2024, 0, 5, 8, 30), 'PPP HH:mm'))
     expect(endInput).toHaveValue(format(new Date(2024, 0, 7, 17, 45), 'PPP HH:mm'))
     expect(onChange).toHaveBeenLastCalledWith({
@@ -301,6 +381,11 @@ describe('DateRangePicker', () => {
 
     await userEvent.click(screen.getByRole('option', { name: 'Start hour - Set hour to 10' }))
     await userEvent.click(screen.getByRole('option', { name: 'Start minute - Set minutes to 15' }))
+
+    expect(onChange).not.toHaveBeenCalled()
+    expect(startInput).toHaveValue('')
+
+    await userEvent.click(screen.getByRole('button', { name: 'OK' }))
 
     expect(onChange).toHaveBeenLastCalledWith({
       start: new Date(2024, 0, 5, 10, 15),
@@ -337,8 +422,43 @@ describe('DateRangePicker', () => {
     startMinuteListbox.focus()
     await userEvent.keyboard('{End}')
 
-    expect(startInput).toHaveValue(format(new Date(2024, 0, 5, 14, 59), 'PPP HH:mm'))
     expect(startHourListbox).toHaveAttribute('aria-activedescendant')
     expect(screen.getByRole('option', { selected: true, name: 'Start hour - Set hour to 14' })).toBeInTheDocument()
+    expect(startInput).toHaveValue('')
+    await userEvent.click(screen.getByRole('button', { name: 'OK' }))
+    expect(startInput).toHaveValue(format(new Date(2024, 0, 5, 14, 59), 'PPP HH:mm'))
+  })
+
+  it('cancels time-enabled edits without committing the input values', async () => {
+    const onChange = vi.fn()
+    render(
+      <DateRangePicker
+        onChange={onChange}
+        enableTime
+        timeFormat="24h"
+        defaultStartTime="08:00"
+        defaultEndTime="17:00"
+      />,
+    )
+
+    const startInput = screen.getByPlaceholderText('Start date')
+    const endInput = screen.getByPlaceholderText('End date')
+    await userEvent.click(startInput)
+
+    const day5 = getCurrentMonthDay('5')!
+    const day7 = getCurrentMonthDay('7')!
+    await userEvent.click(day5)
+    await userEvent.click(day7)
+    await userEvent.click(screen.getByRole('option', { name: 'Start minute - Set minutes to 15' }))
+
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Range calendar' })).not.toBeInTheDocument()
+    })
+    expect(onChange).not.toHaveBeenCalled()
+    expect(startInput).toHaveValue('')
+    expect(endInput).toHaveValue('')
+    expect(startInput).toHaveFocus()
   })
 })
