@@ -734,6 +734,12 @@ function DateRangePickerInput({
   const resolvedFormatDescription = formatDescription ?? formatDescriptionText
 
   const dateInputWidthClass = enableTime ? 'w-56' : 'w-40'
+  const handleInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter' || event.key === ' ' || event.key === 'ArrowDown') {
+      event.preventDefault()
+      setOpen(true)
+    }
+  }
 
   return (
     <>
@@ -759,6 +765,7 @@ function DateRangePickerInput({
               className={`${dateInputWidthClass} rounded border border-gray-300 bg-white p-2 text-gray-900 placeholder:text-gray-500 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${inputClassName}`}
               placeholder={resolvedPlaceholderStart}
               onClick={() => setOpen(current => !current)}
+              onKeyDown={handleInputKeyDown}
               value={formattedStart}
               ref={inputRef}
               aria-haspopup={isMobilePresentation ? 'dialog' : 'grid'}
@@ -799,6 +806,7 @@ function DateRangePickerInput({
               className={`${dateInputWidthClass} rounded border border-gray-300 bg-white p-2 text-gray-900 placeholder:text-gray-500 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${inputClassName}`}
               placeholder={resolvedPlaceholderEnd}
               onClick={() => setOpen(current => !current)}
+              onKeyDown={handleInputKeyDown}
               value={formattedEnd}
               aria-describedby={describedById}
             />

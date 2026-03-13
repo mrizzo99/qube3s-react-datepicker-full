@@ -140,6 +140,35 @@ describe('DatePicker', () => {
     expect(screen.getByRole('grid', { name: 'January 2024' })).toBeInTheDocument()
   })
 
+  it('opens the calendar from input keyboard keys', async () => {
+    const { rerender } = render(<DatePicker />)
+    const input = screen.getByRole('textbox')
+
+    input.focus()
+    await userEvent.keyboard('{ArrowDown}')
+    expect(await screen.findByRole('dialog', { name: 'Calendar' })).toBeInTheDocument()
+
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Calendar' })).not.toBeInTheDocument()
+    })
+
+    rerender(<DatePicker />)
+    input.focus()
+    await userEvent.keyboard('{Enter}')
+    expect(await screen.findByRole('dialog', { name: 'Calendar' })).toBeInTheDocument()
+
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Calendar' })).not.toBeInTheDocument()
+    })
+
+    rerender(<DatePicker />)
+    input.focus()
+    await userEvent.keyboard(' ')
+    expect(await screen.findByRole('dialog', { name: 'Calendar' })).toBeInTheDocument()
+  })
+
   it('traps focus and handles Escape at dialog level', async () => {
     render(<DatePicker />)
     const input = screen.getByRole('textbox')

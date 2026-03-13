@@ -237,6 +237,41 @@ describe('DateRangePicker', () => {
     expect(screen.getByRole('grid', { name: 'January 2024' })).toBeInTheDocument()
   })
 
+  it('opens the calendar from either input using keyboard keys', async () => {
+    const firstRender = render(<DateRangePicker />)
+    const startInput = screen.getByPlaceholderText('Start date')
+
+    startInput.focus()
+    await userEvent.keyboard('{ArrowDown}')
+    expect(await screen.findByRole('dialog', { name: 'Range calendar' })).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByRole('grid', { name: 'January 2024' })).toHaveFocus())
+
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Range calendar' })).not.toBeInTheDocument()
+    })
+
+    firstRender.unmount()
+    const secondRender = render(<DateRangePicker />)
+    const endInput = screen.getByPlaceholderText('End date')
+    endInput.focus()
+    await userEvent.keyboard('{Enter}')
+    expect(await screen.findByRole('dialog', { name: 'Range calendar' })).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByRole('grid', { name: 'January 2024' })).toHaveFocus())
+
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Range calendar' })).not.toBeInTheDocument()
+    })
+
+    secondRender.unmount()
+    render(<DateRangePicker />)
+    const endInputAfterRemount = screen.getByPlaceholderText('End date')
+    endInputAfterRemount.focus()
+    await userEvent.keyboard(' ')
+    expect(await screen.findByRole('dialog', { name: 'Range calendar' })).toBeInTheDocument()
+  })
+
   it('traps focus and handles Escape at dialog level', async () => {
     render(<DateRangePicker />)
     const startInput = screen.getByPlaceholderText('Start date')

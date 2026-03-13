@@ -289,6 +289,12 @@ function DatePickerInput({
 
   const resolvedPlaceholder = placeholder ?? placeholderText
   const resolvedFormatDescription = formatDescription ?? formatDescriptionText
+  const handleInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter' || event.key === ' ' || event.key === 'ArrowDown') {
+      event.preventDefault()
+      setOpen(true)
+    }
+  }
 
   return (
     <>
@@ -307,6 +313,7 @@ function DatePickerInput({
         className={`w-48 rounded border border-gray-300 bg-white p-2 text-gray-900 placeholder:text-gray-500 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${inputClassName}`}
         placeholder={resolvedPlaceholder}
         onClick={() => setOpen(current => !current)}
+        onKeyDown={handleInputKeyDown}
         value={formatted}
         ref={inputRef}
         aria-haspopup="grid"
