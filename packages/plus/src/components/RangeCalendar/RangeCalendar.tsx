@@ -22,6 +22,7 @@ export type RangeCalendarProps = {
   showPresets?: boolean
   minDate?: Date
   maxDate?: Date
+  blockWeekends?: boolean
 }
 
 type MonthView = {
@@ -85,6 +86,7 @@ export default function RangeCalendar({
   showPresets = false,
   minDate,
   maxDate,
+  blockWeekends = false,
 }: RangeCalendarProps) {
   const normalizedRange = controlledSelectedRange ?? null
   const resolvedI18n = useMemo(() => resolveCalendarI18n(i18n), [i18n])
@@ -97,6 +99,7 @@ export default function RangeCalendar({
     weekStartsOn: resolvedI18n.weekStartsOn,
     minDate,
     maxDate,
+    blockWeekends,
   })
   const selectedRange = normalizedRange ?? cal.selectedRange
   const selectRange = controlledSelectRange ?? cal.selectRange
@@ -232,6 +235,11 @@ export default function RangeCalendar({
     selectRange(preset.range)
   }
 
+  const commitRange = (range: DateRange) => {
+    if (!cal.isRangeSelectable(range)) return
+    selectRange(range)
+  }
+
   const isPresetActive = (preset: DateRangePreset) => {
     if (!selectedRange?.start || !selectedRange?.end || !preset.range.start || !preset.range.end) {
       return false
@@ -303,7 +311,7 @@ export default function RangeCalendar({
       case 'Enter':
         event.preventDefault()
         if (cal.isDateDisabled(focusDate)) break
-        selectRange(cal.nextRange(focusDate, selectedRange ?? cal.selectedRange))
+        commitRange(cal.nextRange(focusDate, selectedRange ?? cal.selectedRange))
         break
       default:
         break
@@ -466,7 +474,7 @@ export default function RangeCalendar({
                     if (disabled) return
                     const nextRange = cal.nextRange(day, selectedRange ?? cal.selectedRange)
                     setFocusDate(day)
-                    selectRange(nextRange)
+                    commitRange(nextRange)
                   }
 
                   return (

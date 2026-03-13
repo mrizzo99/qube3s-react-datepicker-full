@@ -189,6 +189,7 @@ export type DateRangePickerProps = {
   onChange?: (range: DateRange) => void
   minDate?: Date
   maxDate?: Date
+  blockWeekends?: boolean
   placeholderStart?: string
   placeholderEnd?: string
   formatDescription?: string
@@ -363,6 +364,7 @@ function DateRangePickerRoot({
   onChange,
   minDate,
   maxDate,
+  blockWeekends = false,
   placeholderStart,
   placeholderEnd,
   formatDescription,
@@ -435,6 +437,7 @@ function DateRangePickerRoot({
     weekStartsOn: resolvedI18n.weekStartsOn,
     minDate,
     maxDate,
+    blockWeekends,
   })
 
   const monthLabelId = useMemo(

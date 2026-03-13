@@ -134,6 +134,9 @@ import RangeCalendar from '@plus/components/RangeCalendar'
 // Restrict selection to an allowed window
 <DateRangePicker minDate={new Date(2024, 0, 5)} maxDate={new Date(2024, 0, 20)} />
 
+// Block Saturdays and Sundays
+<DateRangePicker blockWeekends />
+
 // Quick range presets are opt-in
 <DateRangePicker />
 
@@ -162,6 +165,9 @@ import RangeCalendar from '@plus/components/RangeCalendar'
 
 // Inline range calendar with minimum and maximum selectable dates
 <RangeCalendar minDate={new Date(2024, 0, 5)} maxDate={new Date(2024, 0, 20)} />
+
+// Inline business-day-only range calendar
+<RangeCalendar blockWeekends />
 ```
 
 Plus usage (date + time range):
@@ -208,6 +214,7 @@ Multi-month range views
 Range selection bounds (`DateRangePicker` and `RangeCalendar`)
 - `minDate?: Date` blocks dates before the provided minimum.
 - `maxDate?: Date` blocks dates after the provided maximum.
+- `blockWeekends?: boolean` blocks Saturdays and Sundays, including ranges that would span across them.
 - Boundary dates remain selectable.
 - Quick presets that fall outside the allowed window are rendered disabled.
 

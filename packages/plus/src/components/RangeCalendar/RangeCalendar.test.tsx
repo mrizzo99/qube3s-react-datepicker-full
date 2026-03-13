@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {cleanup, render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {vi, describe, it, expect, beforeEach, afterEach} from "vitest";
@@ -175,5 +175,43 @@ describe('RangeCalendar', () => {
     expect(last30Days).toBeDisabled()
     await userEvent.click(last30Days)
     expect(onSelectRange).not.toHaveBeenCalled()
+  })
+
+  it('blocks weekend days and ranges that cross weekends', async () => {
+    const onSelectRange = vi.fn()
+    const ControlledRangeCalendar = () => {
+      const [selectedRange, setSelectedRange] = useState<{ start: Date | null; end: Date | null }>({
+        start: null,
+        end: null,
+      })
+
+      return (
+        <RangeCalendar
+          selectedRange={selectedRange}
+          selectRange={(nextRange) => {
+            setSelectedRange(nextRange)
+            onSelectRange(nextRange)
+          }}
+          blockWeekends
+        />
+      )
+    }
+
+    render(<ControlledRangeCalendar />)
+
+    const day5 = getCurrentMonthDay('5')!
+    const day6 = getDayCell('6')!
+    const day8 = getCurrentMonthDay('8')!
+
+    expect(day6).toHaveAttribute('aria-disabled', 'true')
+
+    await userEvent.click(day6)
+    expect(onSelectRange).not.toHaveBeenCalled()
+
+    await userEvent.click(day5)
+    expect(onSelectRange).toHaveBeenCalledWith({ start: new Date(2024, 0, 5), end: null })
+
+    await userEvent.click(day8)
+    expect(onSelectRange).toHaveBeenCalledTimes(1)
   })
 })

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useCalendar, type UseCalendarOptions } from '@core/headless/useCalendar'
-import { isAfter, isBefore, isSameDay } from 'date-fns'
+import { addDays, isAfter, isBefore, isSameDay, isWeekend } from 'date-fns'
 
 export type DateRange = {
   start: Date | null
@@ -11,6 +11,7 @@ type UseRangeInitial = Date | DateRange | undefined
 export type UseRangeCalendarOptions = UseCalendarOptions & {
   minDate?: Date
   maxDate?: Date
+  blockWeekends?: boolean
 }
 
 const normalizeDate = (value: unknown): Date | null => {
@@ -37,6 +38,7 @@ const normalizeRange = (value: UseRangeInitial): DateRange => {
 export function useRangeCalendar(initial?: UseRangeInitial, options: UseRangeCalendarOptions = {}) {
   const minDate = normalizeDate(options.minDate)
   const maxDate = normalizeDate(options.maxDate)
+  const blockWeekends = options.blockWeekends ?? false
   const hasValidBounds = !(minDate && maxDate && isAfter(minDate, maxDate))
   const normalizedMinDate = hasValidBounds ? minDate : null
   const normalizedMaxDate = hasValidBounds ? maxDate : null
@@ -49,6 +51,7 @@ export function useRangeCalendar(initial?: UseRangeInitial, options: UseRangeCal
   const isDateDisabled = (day: Date) => {
     const dayDate = normalizeDate(day)
     if (!dayDate) return true
+    if (blockWeekends && isWeekend(dayDate)) return true
     if (normalizedMinDate && isBefore(dayDate, normalizedMinDate) && !isSameDay(dayDate, normalizedMinDate)) {
       return true
     }
@@ -61,6 +64,13 @@ export function useRangeCalendar(initial?: UseRangeInitial, options: UseRangeCal
   const isRangeSelectable = (range: DateRange) => {
     if (range.start && isDateDisabled(range.start)) return false
     if (range.end && isDateDisabled(range.end)) return false
+    if (range.start && range.end) {
+      let cursor = range.start
+      while (cursor.getTime() <= range.end.getTime()) {
+        if (isDateDisabled(cursor)) return false
+        cursor = addDays(cursor, 1)
+      }
+    }
     return true
   }
 

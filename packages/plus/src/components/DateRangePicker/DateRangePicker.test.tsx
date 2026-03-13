@@ -371,6 +371,29 @@ describe('DateRangePicker', () => {
     expect(onChange).not.toHaveBeenCalled()
   })
 
+  it('blocks weekend days and ranges that cross weekends', async () => {
+    const onChange = vi.fn()
+
+    render(<DateRangePicker onChange={onChange} blockWeekends />)
+
+    await userEvent.click(screen.getByPlaceholderText('Start date'))
+
+    const day5 = getCurrentMonthDay('5')!
+    const day6 = getDayCell('6')!
+    const day8 = getCurrentMonthDay('8')!
+
+    expect(day6).toHaveAttribute('aria-disabled', 'true')
+
+    await userEvent.click(day6)
+    expect(onChange).not.toHaveBeenCalled()
+
+    await userEvent.click(day5)
+    expect(onChange).toHaveBeenCalledWith({ start: new Date(2024, 0, 5), end: null })
+
+    await userEvent.click(day8)
+    expect(onChange).toHaveBeenCalledTimes(1)
+  })
+
   it('applies default times and date-time formatting when time is enabled', async () => {
     const onChange = vi.fn()
 

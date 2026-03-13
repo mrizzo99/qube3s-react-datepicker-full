@@ -47,6 +47,10 @@ export default function App() {
     start: null,
     end: null
   })
+  const [rangeInputBusinessDays, setRangeInputBusinessDays] = useState<{ start: Date | null; end: Date | null }>({
+    start: null,
+    end: null
+  })
   const [rangeInputMobileSheet, setRangeInputMobileSheet] = useState<{ start: Date | null; end: Date | null }>({
     start: null,
     end: null
@@ -119,6 +123,9 @@ export default function App() {
               </a>
               <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#range-popover-bounded">
                 Range Popover Bounded
+              </a>
+              <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#range-popover-business-days">
+                Range Popover Business Days
               </a>
               <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#range-mobile-sheet">
                 Range Mobile Sheet
@@ -273,6 +280,30 @@ export default function App() {
               <p className="mt-3 text-sm text-[var(--q3-text-disabled)]">
                 {rangeInputBounded.start ? `Start: ${format(rangeInputBounded.start, 'PPP')}` : 'Start: —'}{' '}
                 {rangeInputBounded.end ? `End: ${format(rangeInputBounded.end, 'PPP')}` : 'End: —'}
+              </p>
+            </section>
+
+            <section id="range-popover-business-days" className={panelClass}>
+              <h2 className="text-lg font-semibold">Range selection (popover, business days only)</h2>
+              <p className="mt-1 mb-3 text-sm text-[var(--q3-text-disabled)]">DateRangePicker with weekends blocked across day cells, presets, and full selected spans</p>
+              <DateRangePicker
+                value={rangeInputBusinessDays}
+                onChange={setRangeInputBusinessDays}
+                blockWeekends
+                showPresets
+              >
+                <DateRangePicker.Input />
+                <DateRangePicker.Calendar>
+                  <DateRangePicker.CalendarHeader />
+                  <DateRangePicker.CalendarGrid />
+                </DateRangePicker.Calendar>
+              </DateRangePicker>
+              <p className="mt-2 text-xs text-[var(--q3-text-disabled)]">
+                Try selecting a Saturday or Sunday, or a range that would span across a weekend.
+              </p>
+              <p className="mt-3 text-sm text-[var(--q3-text-disabled)]">
+                {rangeInputBusinessDays.start ? `Start: ${format(rangeInputBusinessDays.start, 'PPP')}` : 'Start: —'}{' '}
+                {rangeInputBusinessDays.end ? `End: ${format(rangeInputBusinessDays.end, 'PPP')}` : 'End: —'}
               </p>
             </section>
 

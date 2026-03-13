@@ -31,6 +31,10 @@ export const BoundedRange: Story = {
   ),
 }
 
+export const BlockWeekends: Story = {
+  render: () => <DateRangePicker blockWeekends showPresets />,
+}
+
 export const ThreeMonthView: Story = {
   render: () => <DateRangePicker numberOfMonths={3} />,
 }
