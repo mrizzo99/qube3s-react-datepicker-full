@@ -309,6 +309,12 @@ describe('DateRangePicker', () => {
     await userEvent.click(day5)
     await userEvent.click(day7)
 
+    expect(onChange).not.toHaveBeenCalled()
+    expect(startInput).toHaveValue('')
+    expect(endInput).toHaveValue('')
+
+    await userEvent.click(screen.getByRole('button', { name: 'OK' }))
+
     expect(startInput).toHaveValue(format(new Date(2024, 0, 5, 8, 30), 'PPP HH:mm'))
     expect(endInput).toHaveValue(format(new Date(2024, 0, 7, 17, 45), 'PPP HH:mm'))
     expect(onChange).toHaveBeenLastCalledWith({
@@ -340,6 +346,11 @@ describe('DateRangePicker', () => {
 
     await userEvent.click(screen.getByRole('option', { name: 'Start hour - Set hour to 10' }))
     await userEvent.click(screen.getByRole('option', { name: 'Start minute - Set minutes to 15' }))
+
+    expect(onChange).not.toHaveBeenCalled()
+    expect(startInput).toHaveValue('')
+
+    await userEvent.click(screen.getByRole('button', { name: 'OK' }))
 
     expect(onChange).toHaveBeenLastCalledWith({
       start: new Date(2024, 0, 5, 10, 15),
@@ -376,8 +387,43 @@ describe('DateRangePicker', () => {
     startMinuteListbox.focus()
     await userEvent.keyboard('{End}')
 
-    expect(startInput).toHaveValue(format(new Date(2024, 0, 5, 14, 59), 'PPP HH:mm'))
     expect(startHourListbox).toHaveAttribute('aria-activedescendant')
     expect(screen.getByRole('option', { selected: true, name: 'Start hour - Set hour to 14' })).toBeInTheDocument()
+    expect(startInput).toHaveValue('')
+    await userEvent.click(screen.getByRole('button', { name: 'OK' }))
+    expect(startInput).toHaveValue(format(new Date(2024, 0, 5, 14, 59), 'PPP HH:mm'))
+  })
+
+  it('cancels time-enabled edits without committing the input values', async () => {
+    const onChange = vi.fn()
+    render(
+      <DateRangePicker
+        onChange={onChange}
+        enableTime
+        timeFormat="24h"
+        defaultStartTime="08:00"
+        defaultEndTime="17:00"
+      />,
+    )
+
+    const startInput = screen.getByPlaceholderText('Start date')
+    const endInput = screen.getByPlaceholderText('End date')
+    await userEvent.click(startInput)
+
+    const day5 = getCurrentMonthDay('5')!
+    const day7 = getCurrentMonthDay('7')!
+    await userEvent.click(day5)
+    await userEvent.click(day7)
+    await userEvent.click(screen.getByRole('option', { name: 'Start minute - Set minutes to 15' }))
+
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Range calendar' })).not.toBeInTheDocument()
+    })
+    expect(onChange).not.toHaveBeenCalled()
+    expect(startInput).toHaveValue('')
+    expect(endInput).toHaveValue('')
+    expect(startInput).toHaveFocus()
   })
 })

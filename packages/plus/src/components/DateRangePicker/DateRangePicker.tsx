@@ -69,6 +69,8 @@ type DateRangePickerContextValue = {
   showPresets: boolean
   presetRanges: DateRangePreset[]
   applyPresetRange: (preset: DateRangePreset) => void
+  onConfirm: () => void
+  onCancel: () => void
   onEscape: () => void
 }
 
@@ -407,11 +409,22 @@ function DateRangePickerRoot({
   const popoverRef = useRef<HTMLDivElement>(null)
   const describedById = useId()
 
+  const committedRange = value ?? internalRange
+  const [draftRange, setDraftRange] = useState<DateRange>(committedRange)
+
   useEffect(() => {
-    if (value !== undefined) setInternalRange(value ?? emptyRange)
+    if (value === undefined) return
+    const nextValue = value ?? emptyRange
+    setInternalRange(nextValue)
+    setDraftRange(nextValue)
   }, [value])
 
-  const selectedRange = value ?? internalRange
+  useEffect(() => {
+    if (!open || !enableTime) return
+    setDraftRange(committedRange)
+  }, [open, enableTime, committedRange])
+
+  const selectedRange = enableTime && open ? draftRange : committedRange
 
   const cal = useRangeCalendar(selectedRange, {
     locale: resolvedI18n.locale,
@@ -518,18 +531,18 @@ function DateRangePickerRoot({
 
   const formattedStart = useMemo(
     () =>
-      selectedRange.start
-        ? format(selectedRange.start, inputValueFormat, formatOptions)
+      committedRange.start
+        ? format(committedRange.start, inputValueFormat, formatOptions)
         : '',
-    [selectedRange.start, inputValueFormat, formatOptions],
+    [committedRange.start, inputValueFormat, formatOptions],
   )
 
   const formattedEnd = useMemo(
     () =>
-      selectedRange.end
-        ? format(selectedRange.end, inputValueFormat, formatOptions)
+      committedRange.end
+        ? format(committedRange.end, inputValueFormat, formatOptions)
         : '',
-    [selectedRange.end, inputValueFormat, formatOptions],
+    [committedRange.end, inputValueFormat, formatOptions],
   )
 
   const placeholderStartText = placeholderStart ?? resolvedI18n.labels.startDatePlaceholder
@@ -541,13 +554,22 @@ function DateRangePickerRoot({
         : 'Date and time format: MM/DD/YYYY hh:mm AM/PM')
       : resolvedI18n.labels.formatDescription)
 
+  const commitRange = (range: DateRange) => {
+    if (value === undefined) setInternalRange(range)
+    onChange?.(range)
+  }
+
   const selectRange = (range: DateRange) => {
     const nextRange = enableTime
       ? coerceRangeWithTime(range, selectedRange, startTimeFallback, endTimeFallback)
       : range
 
-    if (value === undefined) setInternalRange(nextRange)
-    onChange?.(nextRange)
+    if (enableTime) {
+      setDraftRange(nextRange)
+      return
+    }
+
+    commitRange(nextRange)
     if (nextRange.start && nextRange.end && !enableTime) {
       setOpen(false)
       inputRef.current?.focus()
@@ -557,8 +579,12 @@ function DateRangePickerRoot({
   const updateRangeTime = (boundary: 'start' | 'end', parts: TimeParts) => {
     const nextRange = withBoundaryTime(selectedRange, boundary, normalizeTimeParts(parts, normalizedMinuteStep))
     if (nextRange === selectedRange) return
-    if (value === undefined) setInternalRange(nextRange)
-    onChange?.(nextRange)
+    if (enableTime) {
+      setDraftRange(nextRange)
+      return
+    }
+
+    commitRange(nextRange)
   }
 
   const presetRanges = useMemo(
@@ -588,7 +614,27 @@ function DateRangePickerRoot({
     selectRange(preset.range)
   }
 
+  const onConfirm = () => {
+    if (enableTime) {
+      commitRange(draftRange)
+    }
+    setOpen(false)
+    inputRef.current?.focus()
+  }
+
+  const onCancel = () => {
+    if (enableTime) {
+      setDraftRange(committedRange)
+    }
+    setOpen(false)
+    inputRef.current?.focus()
+  }
+
   const onEscape = () => {
+    if (enableTime) {
+      onCancel()
+      return
+    }
     setOpen(false)
     inputRef.current?.focus()
   }
@@ -630,6 +676,8 @@ function DateRangePickerRoot({
     showPresets,
     presetRanges,
     applyPresetRange,
+    onConfirm,
+    onCancel,
     onEscape,
   }
 
@@ -1435,6 +1483,7 @@ function DateRangePickerCalendarGrid() {
     cal,
     selectedRange,
     selectRange,
+    enableTime,
     resolvedI18n,
     formatOptions,
     focusDate,
@@ -1446,6 +1495,8 @@ function DateRangePickerCalendarGrid() {
     showPresets,
     presetRanges,
     applyPresetRange,
+    onConfirm,
+    onCancel,
     onEscape,
   } = useDateRangePickerContext()
 
@@ -1491,10 +1542,6 @@ function DateRangePickerCalendarGrid() {
     () => visibleMonths.reduce((sum, monthView) => sum + monthView.weeks.length + 1, 0),
     [visibleMonths],
   )
-  const isGridDayEnabled = (day: Date) => {
-    const monthOffset = differenceInCalendarMonths(startOfMonth(day), startOfMonth(cal.currentMonth))
-    return monthOffset >= 0 && monthOffset < numberOfMonths
-  }
 
   const monthAnimatorRef = useRef<HTMLDivElement>(null)
   const previousMonthRef = useRef(cal.currentMonth)
@@ -1609,27 +1656,7 @@ function DateRangePickerCalendarGrid() {
         return
       }
 
-      const direction = nextIndex === currentIndex ? 0 : nextIndex > currentIndex ? 1 : -1
-      let nextFocusableIndex = nextIndex
-
-      while (
-        nextFocusableIndex >= 0 &&
-        nextFocusableIndex < visibleRangeDays.length &&
-        !isGridDayEnabled(visibleRangeDays[nextFocusableIndex])
-      ) {
-        if (direction === 0) break
-        nextFocusableIndex += direction
-      }
-
-      if (
-        nextFocusableIndex < 0 ||
-        nextFocusableIndex >= visibleRangeDays.length ||
-        !isGridDayEnabled(visibleRangeDays[nextFocusableIndex])
-      ) {
-        return
-      }
-
-      setFocusDate(visibleRangeDays[nextFocusableIndex])
+      setFocusDate(visibleRangeDays[nextIndex])
     }
 
     switch (event.key) {
@@ -1672,9 +1699,6 @@ function DateRangePickerCalendarGrid() {
       case ' ':
       case 'Enter':
         event.preventDefault()
-        if (!isGridDayEnabled(focusDate)) {
-          break
-        }
         selectRange(cal.nextRange(focusDate, selectedRange))
         break
       default:
@@ -1766,14 +1790,11 @@ function DateRangePickerCalendarGrid() {
                       key={`${monthView.monthStart.getTime()}-${weekIndex}-${dayIndex}`}
                       role="gridcell"
                       aria-selected={isRangeEdge}
-                      aria-disabled={faded}
                       aria-rowindex={rowStart + weekIndex + 1}
                       aria-colindex={dayIndex + 1}
-                      tabIndex={isFocused && !faded ? 0 : -1}
-                      disabled={faded}
+                      tabIndex={isFocused ? 0 : -1}
                       data-date-key={`${day.getTime()}-${monthView.monthStart.getTime()}`}
                       onClick={() => {
-                        if (faded) return
                         const nextRange = cal.nextRange(day, selectedRange)
                         setFocusDate(day)
                         selectRange(nextRange)
@@ -1802,6 +1823,24 @@ function DateRangePickerCalendarGrid() {
       </div>
     </div>
     <DateRangePickerTimeWheels />
+    {enableTime && (
+      <div className="mt-3 flex justify-end gap-2 border-t pt-3">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 transition-colors duration-150 hover:border-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={onConfirm}
+          className="rounded border border-blue-600 bg-blue-600 px-3 py-1.5 text-sm text-white transition-colors duration-150 hover:border-blue-700 hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        >
+          OK
+        </button>
+      </div>
+    )}
     </div>
   )
 }

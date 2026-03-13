@@ -554,17 +554,11 @@ function DatePickerCalendarGrid() {
     [cal.weeks, resolvedI18n.format.weekdayLabel, formatOptions],
   )
 
-  const isGridDayEnabled = (day: Date) => cal.isSameMonth(day, cal.currentMonth)
   const findGridDate = (date: Date) => gridDays.find(d => cal.isSameDay(d, date)) ?? gridDays[0]
-  const findFocusableGridDate = (date: Date) => {
-    const match = findGridDate(date)
-    if (isGridDayEnabled(match)) return match
-    return gridDays.find(day => isGridDayEnabled(day)) ?? match
-  }
 
   useEffect(() => {
-    setFocusDate(previous => findFocusableGridDate(previous))
-    const focusTarget = findFocusableGridDate(focusDate)
+    setFocusDate(previous => findGridDate(previous))
+    const focusTarget = findGridDate(focusDate)
     const cell = gridRef.current?.querySelector<HTMLButtonElement>(
       `button[role="gridcell"][data-date="${focusTarget.getTime()}"]`,
     )
@@ -579,16 +573,7 @@ function DatePickerCalendarGrid() {
 
     const setByIndex = (newIndex: number) => {
       const clamped = Math.max(0, Math.min(gridDays.length - 1, newIndex))
-      const direction = newIndex === currentIndex ? 0 : newIndex > currentIndex ? 1 : -1
-      let nextIndex = clamped
-
-      while (nextIndex >= 0 && nextIndex < gridDays.length && !isGridDayEnabled(gridDays[nextIndex])) {
-        if (direction === 0) break
-        nextIndex += direction
-      }
-
-      if (nextIndex < 0 || nextIndex >= gridDays.length || !isGridDayEnabled(gridDays[nextIndex])) return
-      setFocusDate(gridDays[nextIndex])
+      setFocusDate(gridDays[clamped])
     }
 
     switch (event.key) {
@@ -643,9 +628,6 @@ function DatePickerCalendarGrid() {
       case ' ':
       case 'Enter':
         event.preventDefault()
-        if (!cal.isSameMonth(focusDate, cal.currentMonth)) {
-          break
-        }
         selectDate(focusDate)
         break
       default:
@@ -682,14 +664,9 @@ function DatePickerCalendarGrid() {
                 key={wi + '-' + di}
                 role="gridcell"
                 aria-selected={isActive}
-                aria-disabled={faded}
-                tabIndex={isFocused && !faded ? 0 : -1}
-                disabled={faded}
+                tabIndex={isFocused ? 0 : -1}
                 data-date={day.getTime()}
-                onClick={() => {
-                  if (faded) return
-                  selectDate(day)
-                }}
+                onClick={() => selectDate(day)}
                 className={
                   'rounded border border-transparent p-1 text-gray-900 hover:border-blue-400 focus-visible:border-blue-500 focus-visible:outline-none ' +
                   (isActive ? 'bg-blue-600 text-white ' : '') +
