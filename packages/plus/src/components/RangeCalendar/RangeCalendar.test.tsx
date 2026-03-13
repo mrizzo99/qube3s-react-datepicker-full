@@ -10,6 +10,8 @@ const expectDayGrid = () =>
   screen.getAllByRole('gridcell')
 const getCurrentMonthDay = (dayLabel: string) =>
   screen.getAllByRole('gridcell').find(btn => btn.textContent === dayLabel && !btn.classList.contains('text-gray-300'))
+const getDayCell = (dayLabel: string) =>
+  screen.getAllByRole('gridcell').find(btn => btn.textContent === dayLabel)
 const expectHasClass = (el: HTMLElement, className: string) => expect(el.className.split(' ')).toContain(className)
 
 describe('RangeCalendar', () => {
@@ -128,5 +130,50 @@ describe('RangeCalendar', () => {
       start: new Date(2023, 11, 12),
       end: new Date(2024, 0, 10),
     })
+  })
+
+  it('prevents selecting days outside min and max bounds', async () => {
+    const onSelectRange = vi.fn()
+    render(
+      <RangeCalendar
+        selectRange={onSelectRange}
+        selectedRange={{ start: null, end: null }}
+        minDate={new Date(2024, 0, 5)}
+        maxDate={new Date(2024, 0, 20)}
+      />,
+    )
+
+    const day4 = getDayCell('4')!
+    const day5 = getCurrentMonthDay('5')!
+    const day21 = getDayCell('21')!
+
+    expect(day4).toHaveAttribute('aria-disabled', 'true')
+    expect(day21).toHaveAttribute('aria-disabled', 'true')
+    expect(day5).toHaveAttribute('aria-disabled', 'false')
+
+    await userEvent.click(day4)
+    expect(onSelectRange).not.toHaveBeenCalled()
+
+    await userEvent.click(day5)
+    expect(onSelectRange).toHaveBeenCalledWith({ start: new Date(2024, 0, 5), end: null })
+  })
+
+  it('disables preset ranges outside the allowed bounds', async () => {
+    const onSelectRange = vi.fn()
+    render(
+      <RangeCalendar
+        selectRange={onSelectRange}
+        selectedRange={{ start: null, end: null }}
+        showPresets
+        minDate={new Date(2024, 0, 1)}
+        maxDate={new Date(2024, 0, 10)}
+      />,
+    )
+
+    const last30Days = screen.getByRole('button', { name: 'Last 30 days' })
+
+    expect(last30Days).toBeDisabled()
+    await userEvent.click(last30Days)
+    expect(onSelectRange).not.toHaveBeenCalled()
   })
 })

@@ -187,6 +187,8 @@ export type DateRangePickerProps = {
   children?: React.ReactNode
   value?: DateRange | null
   onChange?: (range: DateRange) => void
+  minDate?: Date
+  maxDate?: Date
   placeholderStart?: string
   placeholderEnd?: string
   formatDescription?: string
@@ -359,6 +361,8 @@ function DateRangePickerRoot({
   children,
   value,
   onChange,
+  minDate,
+  maxDate,
   placeholderStart,
   placeholderEnd,
   formatDescription,
@@ -429,6 +433,8 @@ function DateRangePickerRoot({
   const cal = useRangeCalendar(selectedRange, {
     locale: resolvedI18n.locale,
     weekStartsOn: resolvedI18n.weekStartsOn,
+    minDate,
+    maxDate,
   })
 
   const monthLabelId = useMemo(
@@ -555,6 +561,7 @@ function DateRangePickerRoot({
       : resolvedI18n.labels.formatDescription)
 
   const commitRange = (range: DateRange) => {
+    if (!cal.isRangeSelectable(range)) return
     if (value === undefined) setInternalRange(range)
     onChange?.(range)
   }
@@ -563,6 +570,7 @@ function DateRangePickerRoot({
     const nextRange = enableTime
       ? coerceRangeWithTime(range, selectedRange, startTimeFallback, endTimeFallback)
       : range
+    if (!cal.isRangeSelectable(nextRange)) return
 
     if (enableTime) {
       setDraftRange(nextRange)
@@ -579,6 +587,7 @@ function DateRangePickerRoot({
   const updateRangeTime = (boundary: 'start' | 'end', parts: TimeParts) => {
     const nextRange = withBoundaryTime(selectedRange, boundary, normalizeTimeParts(parts, normalizedMinuteStep))
     if (nextRange === selectedRange) return
+    if (!cal.isRangeSelectable(nextRange)) return
     if (enableTime) {
       setDraftRange(nextRange)
       return
@@ -606,6 +615,7 @@ function DateRangePickerRoot({
   )
 
   const applyPresetRange = (preset: DateRangePreset) => {
+    if (!cal.isRangeSelectable(preset.range)) return
     const anchorDay = preset.range.end ?? preset.range.start
     if (anchorDay) {
       setFocusDate(anchorDay)
@@ -615,7 +625,7 @@ function DateRangePickerRoot({
   }
 
   const onConfirm = () => {
-    if (enableTime) {
+    if (enableTime && cal.isRangeSelectable(draftRange)) {
       commitRange(draftRange)
     }
     setOpen(false)
@@ -1707,6 +1717,7 @@ function DateRangePickerCalendarGrid() {
       case ' ':
       case 'Enter':
         event.preventDefault()
+        if (cal.isDateDisabled(focusDate)) break
         selectRange(cal.nextRange(focusDate, selectedRange))
         break
       default:
@@ -1719,21 +1730,27 @@ function DateRangePickerCalendarGrid() {
       {showPresets && (
         <section aria-label={resolvedI18n.labels.presetsTitle}>
           <div className="flex flex-wrap gap-2">
-            {presetRanges.map(preset => (
-              <button
-                key={preset.key}
-                type="button"
-                onClick={() => applyPresetRange(preset)}
-                className={
-                  'rounded border px-2 py-1 text-xs transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:text-sm ' +
-                  (isPresetActive(preset)
-                    ? 'border-blue-600 bg-blue-600 text-white'
-                    : 'border-gray-300 bg-white text-gray-700 hover:border-blue-400 hover:bg-blue-50')
-                }
-              >
-                {preset.label}
-              </button>
-            ))}
+            {presetRanges.map(preset => {
+              const presetDisabled = !cal.isRangeSelectable(preset.range)
+              return (
+                <button
+                  key={preset.key}
+                  type="button"
+                  disabled={presetDisabled}
+                  onClick={() => applyPresetRange(preset)}
+                  className={
+                    'rounded border px-2 py-1 text-xs transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:text-sm ' +
+                    (presetDisabled
+                      ? 'cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400 '
+                      : isPresetActive(preset)
+                        ? 'border-blue-600 bg-blue-600 text-white'
+                        : 'border-gray-300 bg-white text-gray-700 hover:border-blue-400 hover:bg-blue-50')
+                  }
+                >
+                  {preset.label}
+                </button>
+              )
+            })}
           </div>
         </section>
       )}
@@ -1789,6 +1806,7 @@ function DateRangePickerCalendarGrid() {
                   >
                     {week.map((day, dayIndex) => {
                   const faded = !cal.isSameMonth(day, monthView.monthStart)
+                  const disabled = cal.isDateDisabled(day)
                   const isRangeEdge = cal.isRangeEdge(day, selectedRange)
                   const inRange = cal.isInRange(day, selectedRange)
                   const isFocused = cal.isSameDay(day, focusDate) && cal.isSameMonth(day, focusDate)
@@ -1798,23 +1816,29 @@ function DateRangePickerCalendarGrid() {
                       key={`${monthView.monthStart.getTime()}-${weekIndex}-${dayIndex}`}
                       role="gridcell"
                       aria-selected={isRangeEdge}
+                      aria-disabled={disabled}
                       aria-rowindex={rowStart + weekIndex + 1}
                       aria-colindex={dayIndex + 1}
                       tabIndex={isFocused ? 0 : -1}
                       data-date-key={`${day.getTime()}-${monthView.monthStart.getTime()}`}
                       onClick={() => {
+                        if (disabled) return
                         const nextRange = cal.nextRange(day, selectedRange)
                         setFocusDate(day)
                         selectRange(nextRange)
                       }}
                       className={
-                        'rounded border border-transparent p-1 text-gray-900 transition-colors duration-150 hover:border-blue-400 focus-visible:border-blue-500 focus-visible:outline-none ' +
+                        'rounded border border-transparent p-1 text-gray-900 transition-colors duration-150 focus-visible:border-blue-500 focus-visible:outline-none ' +
                         (isRangeEdge
                           ? 'bg-blue-600 text-white '
                           : inRange
                             ? 'bg-blue-100 text-blue-800 '
                             : '') +
-                        (faded ? 'text-gray-300 ' : 'hover:bg-blue-100 ')
+                        (disabled
+                          ? 'cursor-not-allowed border-transparent bg-gray-100 text-gray-300 '
+                          : faded
+                            ? 'text-gray-300 hover:border-blue-400 '
+                            : 'hover:border-blue-400 hover:bg-blue-100 ')
                       }
                       aria-label={format(day, resolvedI18n.format.dayAriaLabel, formatOptions)}
                     >

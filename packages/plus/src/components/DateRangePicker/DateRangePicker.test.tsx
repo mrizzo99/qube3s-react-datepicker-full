@@ -10,6 +10,8 @@ const getCurrentMonthDay = (label: string) =>
   screen
     .getAllByRole('gridcell')
     .find(button => button.textContent === label && !button.classList.contains('text-gray-300'))
+const getDayCell = (label: string) =>
+  screen.getAllByRole('gridcell').find(button => button.textContent === label)
 const focusableSelector = [
   'button:not([disabled])',
   '[href]',
@@ -319,6 +321,54 @@ describe('DateRangePicker', () => {
       start: new Date(2024, 0, 4),
       end: new Date(2024, 0, 10),
     })
+  })
+
+  it('prevents selecting dates outside min and max bounds', async () => {
+    const onChange = vi.fn()
+
+    render(
+      <DateRangePicker
+        onChange={onChange}
+        minDate={new Date(2024, 0, 5)}
+        maxDate={new Date(2024, 0, 20)}
+      />,
+    )
+
+    await userEvent.click(screen.getByPlaceholderText('Start date'))
+
+    const day4 = getDayCell('4')!
+    const day5 = getCurrentMonthDay('5')!
+    const day21 = getDayCell('21')!
+
+    expect(day4).toHaveAttribute('aria-disabled', 'true')
+    expect(day21).toHaveAttribute('aria-disabled', 'true')
+
+    await userEvent.click(day4)
+    expect(onChange).not.toHaveBeenCalled()
+
+    await userEvent.click(day5)
+    expect(onChange).toHaveBeenCalledWith({ start: new Date(2024, 0, 5), end: null })
+  })
+
+  it('disables quick presets outside the allowed bounds', async () => {
+    const onChange = vi.fn()
+
+    render(
+      <DateRangePicker
+        onChange={onChange}
+        showPresets
+        minDate={new Date(2024, 0, 1)}
+        maxDate={new Date(2024, 0, 10)}
+      />,
+    )
+
+    await userEvent.click(screen.getByPlaceholderText('Start date'))
+
+    const last30Days = screen.getByRole('button', { name: 'Last 30 days' })
+    expect(last30Days).toBeDisabled()
+
+    await userEvent.click(last30Days)
+    expect(onChange).not.toHaveBeenCalled()
   })
 
   it('applies default times and date-time formatting when time is enabled', async () => {

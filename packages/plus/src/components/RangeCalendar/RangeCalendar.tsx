@@ -20,6 +20,8 @@ export type RangeCalendarProps = {
   i18n?: CalendarI18n
   numberOfMonths?: number
   showPresets?: boolean
+  minDate?: Date
+  maxDate?: Date
 }
 
 type MonthView = {
@@ -81,6 +83,8 @@ export default function RangeCalendar({
   i18n,
   numberOfMonths,
   showPresets = false,
+  minDate,
+  maxDate,
 }: RangeCalendarProps) {
   const normalizedRange = controlledSelectedRange ?? null
   const resolvedI18n = useMemo(() => resolveCalendarI18n(i18n), [i18n])
@@ -91,6 +95,8 @@ export default function RangeCalendar({
   const cal = useRangeCalendar(normalizedRange ?? undefined, {
     locale: resolvedI18n.locale,
     weekStartsOn: resolvedI18n.weekStartsOn,
+    minDate,
+    maxDate,
   })
   const selectedRange = normalizedRange ?? cal.selectedRange
   const selectRange = controlledSelectRange ?? cal.selectRange
@@ -217,6 +223,7 @@ export default function RangeCalendar({
   )
 
   const applyPresetRange = (preset: DateRangePreset) => {
+    if (!cal.isRangeSelectable(preset.range)) return
     const anchorDay = preset.range.end ?? preset.range.start
     if (anchorDay) {
       setFocusDate(anchorDay)
@@ -295,6 +302,7 @@ export default function RangeCalendar({
       case ' ':
       case 'Enter':
         event.preventDefault()
+        if (cal.isDateDisabled(focusDate)) break
         selectRange(cal.nextRange(focusDate, selectedRange ?? cal.selectedRange))
         break
       default:
@@ -389,21 +397,27 @@ export default function RangeCalendar({
       {showPresets && (
         <section aria-label={resolvedI18n.labels.presetsTitle} className="mb-3">
           <div className="flex flex-wrap gap-2">
-            {presetRanges.map(preset => (
+            {presetRanges.map(preset => {
+              const presetDisabled = !cal.isRangeSelectable(preset.range)
+              return (
               <button
                 key={preset.key}
                 type="button"
+                disabled={presetDisabled}
                 onClick={() => applyPresetRange(preset)}
                 className={
                   'rounded border px-2 py-1 text-xs transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:text-sm ' +
-                  (isPresetActive(preset)
+                  (presetDisabled
+                    ? 'cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400 '
+                    : isPresetActive(preset)
                     ? 'border-blue-600 bg-blue-600 text-white'
                     : 'border-gray-300 bg-white text-gray-700 hover:border-blue-400 hover:bg-blue-50')
                 }
               >
                 {preset.label}
               </button>
-            ))}
+              )
+            })}
           </div>
         </section>
       )}
@@ -443,11 +457,13 @@ export default function RangeCalendar({
                   >
                     {week.map((day, dayIndex) => {
                   const faded = !cal.isSameMonth(day, monthView.monthStart)
+                  const disabled = cal.isDateDisabled(day)
                   const isRangeEdge = !!(selectedRange && cal.isRangeEdge(day, selectedRange))
                   const inRange = selectedRange ? cal.isInRange(day, selectedRange) : false
                   const isFocused = cal.isSameDay(day, focusDate) && cal.isSameMonth(day, focusDate)
 
                   const handleClick = () => {
+                    if (disabled) return
                     const nextRange = cal.nextRange(day, selectedRange ?? cal.selectedRange)
                     setFocusDate(day)
                     selectRange(nextRange)
@@ -458,19 +474,24 @@ export default function RangeCalendar({
                       key={`${monthView.monthStart.getTime()}-${weekIndex}-${dayIndex}`}
                       role="gridcell"
                       aria-selected={isRangeEdge}
+                      aria-disabled={disabled}
                       aria-rowindex={rowStart + weekIndex + 1}
                       aria-colindex={dayIndex + 1}
                       tabIndex={isFocused ? 0 : -1}
                       data-date-key={`${day.getTime()}-${monthView.monthStart.getTime()}`}
                       onClick={handleClick}
                       className={
-                        'rounded border border-transparent p-1 text-gray-900 transition-colors duration-150 hover:border-blue-400 focus-visible:border-blue-500 focus-visible:outline-none ' +
+                        'rounded border border-transparent p-1 text-gray-900 transition-colors duration-150 focus-visible:border-blue-500 focus-visible:outline-none ' +
                         (isRangeEdge
                           ? 'bg-blue-600 text-white '
                           : inRange
                             ? 'bg-blue-100 text-blue-800 '
                             : '') +
-                        (faded ? 'text-gray-300 ' : 'hover:bg-blue-100 ')
+                        (disabled
+                          ? 'cursor-not-allowed border-transparent bg-gray-100 text-gray-300 '
+                          : faded
+                            ? 'text-gray-300 hover:border-blue-400 '
+                            : 'hover:border-blue-400 hover:bg-blue-100 ')
                       }
                       aria-label={format(day, resolvedI18n.format.dayAriaLabel, formatOptions)}
                     >

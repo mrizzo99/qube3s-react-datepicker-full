@@ -131,6 +131,9 @@ import RangeCalendar from '@plus/components/RangeCalendar'
 // 3-month popover range view
 <DateRangePicker numberOfMonths={3} />
 
+// Restrict selection to an allowed window
+<DateRangePicker minDate={new Date(2024, 0, 5)} maxDate={new Date(2024, 0, 20)} />
+
 // Quick range presets are opt-in
 <DateRangePicker />
 
@@ -156,6 +159,9 @@ import RangeCalendar from '@plus/components/RangeCalendar'
 
 // 3-month inline range view
 <RangeCalendar numberOfMonths={3} />
+
+// Inline range calendar with minimum and maximum selectable dates
+<RangeCalendar minDate={new Date(2024, 0, 5)} maxDate={new Date(2024, 0, 20)} />
 ```
 
 Plus usage (date + time range):
@@ -198,6 +204,12 @@ Multi-month range views
 - Use `numberOfMonths={2}` or `numberOfMonths={3}` for side-by-side multi-month views.
 - Values are clamped to `1..3`.
 - On small screens, month panels stack vertically; on larger screens, they render side-by-side.
+
+Range selection bounds (`DateRangePicker` and `RangeCalendar`)
+- `minDate?: Date` blocks dates before the provided minimum.
+- `maxDate?: Date` blocks dates after the provided maximum.
+- Boundary dates remain selectable.
+- Quick presets that fall outside the allowed window are rendered disabled.
 
 Internationalization (i18n)
 ```tsx

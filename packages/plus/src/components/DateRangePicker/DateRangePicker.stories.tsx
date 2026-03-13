@@ -21,6 +21,16 @@ export const TwoMonthView: Story = {
   render: () => <DateRangePicker numberOfMonths={2} />,
 }
 
+export const BoundedRange: Story = {
+  render: () => (
+    <DateRangePicker
+      minDate={new Date(2024, 0, 5)}
+      maxDate={new Date(2024, 0, 20)}
+      showPresets
+    />
+  ),
+}
+
 export const ThreeMonthView: Story = {
   render: () => <DateRangePicker numberOfMonths={3} />,
 }

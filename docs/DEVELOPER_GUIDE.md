@@ -101,6 +101,7 @@ Note: you can also pass `icon={<img src="/calendar.png" ... />}` for assets in `
 - Exposes composable subcomponents: `DateRangePicker.Input`, `DateRangePicker.Calendar`, `DateRangePicker.CalendarHeader`, `DateRangePicker.CalendarGrid`.
 - Root owns controlled/uncontrolled state and context; subcomponents reuse range behavior without duplicating logic.
 - Multi-month range views are enabled with `numberOfMonths` (default `1`, max `3`).
+- Range selection bounds are available with `minDate` and `maxDate`; dates outside the window are non-selectable and out-of-range presets are disabled.
 - Date + time mode is opt-in with `enableTime` and supports `12h` and `24h` wheel layouts.
 - Popover behavior: `portal` defaults to `true`; use `portalContainer` to customize mount target.
 
@@ -131,6 +132,14 @@ Example: 2-month range picker
 <DateRangePicker numberOfMonths={2} />
 ```
 
+Example: bounded range picker
+```tsx
+<DateRangePicker
+  minDate={new Date(2024, 0, 5)}
+  maxDate={new Date(2024, 0, 20)}
+/>
+```
+
 Example: inline (non-portal) popover rendering
 ```tsx
 <DateRangePicker portal={false} />
@@ -144,6 +153,14 @@ Example: 2-month inline range calendar
 Example: 3-month inline range calendar
 ```tsx
 <RangeCalendar numberOfMonths={3} />
+```
+
+Example: bounded inline range calendar
+```tsx
+<RangeCalendar
+  minDate={new Date(2024, 0, 5)}
+  maxDate={new Date(2024, 0, 20)}
+/>
 ```
 
 Example: image icon with range input

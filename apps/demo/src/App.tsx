@@ -1,7 +1,7 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import DatePicker from '@core/components/DatePicker'
 import Calendar from '@core/components/Calendar'
-import { format } from 'date-fns'
+import { addDays, format, startOfDay } from 'date-fns'
 import DateRangePicker from '@plus/components/DateRangePicker'
 import RangeCalendar from '@plus/components/RangeCalendar'
 import { esI18n } from '@core/i18n-presets'
@@ -12,6 +12,14 @@ const panelClass =
   'relative z-0 rounded-xl border border-[var(--q3-border)] bg-[color:rgb(17_24_39_/_0.85)] p-5 shadow-[0_8px_24px_rgba(2,6,23,0.35)] backdrop-blur focus-within:z-20'
 
 export default function App() {
+  const { boundedRangeMinDate, boundedRangeMaxDate } = useMemo(() => {
+    const today = startOfDay(new Date())
+    return {
+      boundedRangeMinDate: addDays(today, -7),
+      boundedRangeMaxDate: addDays(today, 7),
+    }
+  }, [])
+
   const [inlineSelectedDate, setInlineSelectedDate] = useState<Date | null>(null)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [selectedDateEs, setSelectedDateEs] = useState<Date | null>(null)
@@ -32,6 +40,10 @@ export default function App() {
     end: null
   })
   const [rangeInputPresets, setRangeInputPresets] = useState<{ start: Date | null; end: Date | null }>({
+    start: null,
+    end: null
+  })
+  const [rangeInputBounded, setRangeInputBounded] = useState<{ start: Date | null; end: Date | null }>({
     start: null,
     end: null
   })
@@ -104,6 +116,9 @@ export default function App() {
               </a>
               <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#range-popover-presets">
                 Range Popover Presets
+              </a>
+              <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#range-popover-bounded">
+                Range Popover Bounded
               </a>
               <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#range-mobile-sheet">
                 Range Mobile Sheet
@@ -233,6 +248,31 @@ export default function App() {
               <p className="mt-3 text-sm text-[var(--q3-text-disabled)]">
                 {rangeInputPresets.start ? `Start: ${format(rangeInputPresets.start, 'PPP')}` : 'Start: —'}{' '}
                 {rangeInputPresets.end ? `End: ${format(rangeInputPresets.end, 'PPP')}` : 'End: —'}
+              </p>
+            </section>
+
+            <section id="range-popover-bounded" className={panelClass}>
+              <h2 className="text-lg font-semibold">Range selection (popover, bounded window)</h2>
+              <p className="mt-1 mb-3 text-sm text-[var(--q3-text-disabled)]">DateRangePicker with a dynamic 7-day window before and after today, plus disabled out-of-range presets</p>
+              <DateRangePicker
+                value={rangeInputBounded}
+                onChange={setRangeInputBounded}
+                minDate={boundedRangeMinDate}
+                maxDate={boundedRangeMaxDate}
+                showPresets
+              >
+                <DateRangePicker.Input />
+                <DateRangePicker.Calendar>
+                  <DateRangePicker.CalendarHeader />
+                  <DateRangePicker.CalendarGrid />
+                </DateRangePicker.Calendar>
+              </DateRangePicker>
+              <p className="mt-2 text-xs text-[var(--q3-text-disabled)]">
+                Allowed window: {format(boundedRangeMinDate, 'PPP')} to {format(boundedRangeMaxDate, 'PPP')}
+              </p>
+              <p className="mt-3 text-sm text-[var(--q3-text-disabled)]">
+                {rangeInputBounded.start ? `Start: ${format(rangeInputBounded.start, 'PPP')}` : 'Start: —'}{' '}
+                {rangeInputBounded.end ? `End: ${format(rangeInputBounded.end, 'PPP')}` : 'End: —'}
               </p>
             </section>
 
