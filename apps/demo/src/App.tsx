@@ -1,8 +1,9 @@
 import React, { useState } from 'react'
 import DatePicker from '@core/components/DatePicker'
 import Calendar from '@core/components/Calendar'
-import { format } from 'date-fns'
+import { addDays, format, subDays } from 'date-fns'
 import DateRangePicker from '@plus/components/DateRangePicker'
+import PlusDatePicker from '@plus/components/DatePicker'
 import RangeCalendar from '@plus/components/RangeCalendar'
 import { esI18n } from '@core/i18n-presets'
 import qube3sLogoPng from '../public/brand/qube3s-logo.png'
@@ -15,6 +16,7 @@ export default function App() {
   const [inlineSelectedDate, setInlineSelectedDate] = useState<Date | null>(null)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [selectedDateEs, setSelectedDateEs] = useState<Date | null>(null)
+  const [plusSelectedDate, setPlusSelectedDate] = useState<Date | null>(null)
   const [range, setRange] = useState<{ start: Date | null; end: Date | null }>({
     start: null,
     end: null
@@ -55,6 +57,9 @@ export default function App() {
     start: null,
     end: null
   })
+  const today = new Date()
+  const plusMinDate = subDays(today, 7)
+  const plusMaxDate = addDays(today, 10)
 
   return (
     <div className="min-h-screen bg-[var(--q3-bg)] text-[var(--q3-text-primary)]">
@@ -92,6 +97,9 @@ export default function App() {
               </a>
               <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#single-es">
                 Single Date ES Locale
+              </a>
+              <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#single-plus-constraints">
+                Single Date Plus Constraints
               </a>
               <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#range-inline-2">
                 Range Inline 2-Month
@@ -181,6 +189,30 @@ export default function App() {
                 {selectedDateEs
                   ? `Selected: ${format(selectedDateEs, 'PPP', { locale: esI18n.locale })}`
                   : 'Choose a date'}
+              </p>
+            </section>
+
+            <section id="single-plus-constraints" className={panelClass}>
+              <h2 className="text-lg font-semibold">Single date (popover, Plus constraints)</h2>
+              <p className="mt-1 mb-3 text-sm text-[var(--q3-text-disabled)]">Plus DatePicker with min/max bounds and weekend blocking</p>
+              <PlusDatePicker
+                value={plusSelectedDate}
+                onChange={setPlusSelectedDate}
+                minDate={plusMinDate}
+                maxDate={plusMaxDate}
+                blockWeekends
+              >
+                <PlusDatePicker.Input />
+                <PlusDatePicker.Calendar>
+                  <PlusDatePicker.CalendarHeader />
+                  <PlusDatePicker.CalendarGrid />
+                </PlusDatePicker.Calendar>
+              </PlusDatePicker>
+              <p className="mt-2 text-xs text-[var(--q3-text-disabled)]">
+                Allowed window: {format(plusMinDate, 'PPP')} to {format(plusMaxDate, 'PPP')}, excluding Saturdays and Sundays.
+              </p>
+              <p className="mt-3 text-sm text-[var(--q3-text-disabled)]">
+                {plusSelectedDate ? `Selected: ${format(plusSelectedDate, 'PPP')}` : 'Choose an allowed business day'}
               </p>
             </section>
 
