@@ -8,9 +8,12 @@ This core repo is a headless-first datepicker built with Vite, React, TypeScript
 - `packages/core/src/headless/useCalendar.ts` – Headless calendar state and derived values (single-date).
 - `packages/core/src/components/Calendar` – Visual calendar that consumes the headless hook (single-date).
 - `packages/core/src/components/DatePicker` – Compound single-date picker (`Root/Input/Calendar/Header/Grid`).
+- `packages/core/src/components/Calendar/Calendar.tsx` – Shared inline calendar implementation; now also exposes a themed factory for Plus-only system adapters.
 - `packages/core/src/components/DatePicker/createDatePicker.tsx` – Shared single-date picker factory used by core and Plus variants.
 - `packages/plus/src/headless/useRangeCalendar.ts` – Range-aware hook that composes the core hook.
 - `packages/plus/src/components/DatePicker` – Plus single-date picker with date constraints.
+- `packages/plus/src/adapters` – Plus-only system adapters that restyle existing picker behavior for external React UI systems.
+- `packages/plus/src/adapters/shadcn` – First system adapter; exports a ShadCN-style single-date picker built on the shared Plus behavior.
 - `packages/plus/src/components/RangeCalendar` – Range-capable calendar UI.
 - `packages/plus/src/components/DateRangePicker` – Compound range picker (`Root/Input/Calendar/Header/Grid`).
 - `tailwind.config.js`, `apps/demo/src/index.css` – Tailwind wiring (base/components/utilities only).
@@ -138,6 +141,97 @@ Example: async validation
   validationBehavior="blocking"
 />
 ```
+
+## System adapters (Plus only)
+- System adapters are premium integrations that map the existing picker behavior onto a target React UI system without duplicating date logic.
+- All adapters live under `packages/plus/src/adapters`, not `packages/core`, so they stay part of the Plus surface area.
+- The adapter pattern for single-date pickers is:
+  - keep state, selection, portal, focus, keyboard, and async validation in `createDatePicker`
+  - keep Plus-only rules such as `minDate`, `maxDate`, and `blockWeekends` in the shared Plus prop resolver
+  - let each adapter provide only view concerns: slot class names, icons, and default composition
+- The same rule now applies to inline calendar surfaces:
+  - keep headless single-date behavior in the Core `Calendar`
+  - expose adapter theming through a shared calendar factory
+  - publish the themed inline calendar only from Plus adapters
+- This keeps every adapter behaviorally equivalent to the Plus picker. If we fix a bug in the shared factory or Plus prop resolver, every adapter inherits the fix.
+- For future adapters, the rule is: no adapter-specific calendar math, validation state machine, or popover state machine. Those stay in the shared layers.
+
+Recommended adapter shape
+- Export a named adapter from `packages/plus/src/adapters/<system>`.
+- Keep the public props as close as possible to the Plus component it wraps.
+- Preserve the same compound API (`Input`, `Calendar`, `CalendarHeader`, `CalendarGrid`) so consumers can swap between the stock Plus picker and an adapter with minimal code churn.
+- Restrict adapter work to presentation defaults and system-specific affordances.
+
+### ShadCN adapter
+- ShadCN now covers the full Plus component surface:
+  - `shadcn.Calendar` for the Core inline calendar surface
+  - `shadcn.DatePicker`
+  - `shadcn.DateRangePicker`
+  - `shadcn.RangeCalendar`
+- `shadcn.Calendar` covers the Core inline calendar for Plus customers who mix Core and Plus components in the same screen.
+- `shadcn.DatePicker` reuses the Plus single-date prop resolver, so all Plus features still apply:
+  - `minDate`
+  - `maxDate`
+  - `blockWeekends`
+  - async validation props
+- `shadcn.DateRangePicker` and `shadcn.RangeCalendar` keep the existing range behavior model, including:
+  - presets
+  - multi-month layouts
+  - async validation on `DateRangePicker`
+  - date + time mode on `DateRangePicker`
+  - mobile sheet presentation on `DateRangePicker`
+- The ShadCN adapters supply ShadCN-oriented slot themes using Tailwind tokens commonly present in ShadCN projects, such as `bg-background`, `border-input`, `bg-popover`, `text-foreground`, and `ring-ring`.
+- Because ShadCN is not a runtime component package, these adapters do not depend on external ShadCN imports. They ship styling defaults that line up with a standard ShadCN token setup.
+
+Example:
+```tsx
+import { shadcn } from '@plus/adapters'
+
+<shadcn.Calendar />
+
+<shadcn.DatePicker
+  minDate={new Date(2024, 0, 5)}
+  maxDate={new Date(2024, 0, 20)}
+  blockWeekends
+>
+  <shadcn.DatePicker.Input />
+  <shadcn.DatePicker.Calendar>
+    <shadcn.DatePicker.CalendarHeader />
+    <shadcn.DatePicker.CalendarGrid />
+  </shadcn.DatePicker.Calendar>
+</shadcn.DatePicker>
+
+<shadcn.DateRangePicker showPresets numberOfMonths={2} enableTime />
+
+<shadcn.RangeCalendar showPresets numberOfMonths={2} />
+```
+
+When to add a new adapter
+- Add one when a target system has a recognizable design language or token model that customers expect out of the box.
+- Do not add one just to expose a few extra `className` hooks. Small styling needs should stay at the component level; adapters are for opinionated system-level presentation defaults.
+
+### Adapter maintenance
+- Treat adapters as compatibility layers, not one-off style presets.
+- Keep behavior and visuals separate:
+  - shared factories and headless hooks own state, focus, keyboard handling, selection logic, validation flow, and popover/sheet behavior
+  - adapters own slot classes, token usage, icons, spacing, and visual defaults
+- Prefer semantic slots over scattered class strings. If an upstream system changes its look, update the adapter theme or factory contract once instead of editing behavior components directly.
+- Maintain adapters against a declared target design generation. If a library makes a meaningful visual break, prefer adding a new adapter generation or compatibility option instead of silently restyling the existing one.
+- Keep a small compatibility note for each adapter:
+  - target system name
+  - expected token model
+  - supported design/version generation
+  - known intentional differences
+- Review upstream releases intentionally. Adapter drift is most likely when a system changes tokens, density, radius, interactive states, or overlay patterns.
+- Keep preview environments honest:
+  - demo and Storybook must load the semantic tokens the target adapter expects
+  - otherwise the adapter may appear broken or partially styled even when the slot mapping is correct
+- Use multiple testing layers:
+  - behavior tests to prove shared picker/calendar logic still works
+  - adapter-specific tests to prove the themed slots render as expected
+  - Storybook stories and, if added later, visual regression checks to catch design drift
+- Avoid hardcoding brand colors when the target system already exposes semantic tokens. Token-driven adapters are more resilient to upstream changes than fixed-color replicas.
+- Keep adapter changes opt-in for customers. If an upstream system changes substantially, do not surprise existing Plus users with a silent redesign when a versioned adapter or migration path would be safer.
 
 ## Date range picker compound API (plus `packages/plus/src/components/DateRangePicker/DateRangePicker.tsx`)
 - Exposes composable subcomponents: `DateRangePicker.Input`, `DateRangePicker.Calendar`, `DateRangePicker.CalendarHeader`, `DateRangePicker.CalendarGrid`.

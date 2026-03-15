@@ -13,6 +13,8 @@ import { resolveCalendarI18n, type CalendarI18n } from '@core/i18n'
 import { useRangeCalendar, type DateRange } from '../../headless/useRangeCalendar'
 import { getDateRangePresets, type DateRangePreset } from '../../presets/dateRangePresets'
 
+const cx = (...values: Array<string | false | null | undefined>) => values.filter(Boolean).join(' ')
+
 export type RangeCalendarProps = {
   selectedRange?: DateRange | null
   selectRange?: (range: DateRange) => void
@@ -21,6 +23,73 @@ export type RangeCalendarProps = {
   numberOfMonths?: number
   showPresets?: boolean
 }
+
+export type RangeCalendarDaySlotState = {
+  rangeEdge: boolean
+  inRange: boolean
+  faded: boolean
+  focused: boolean
+}
+
+export type RangeCalendarTheme = {
+  containerClassName?: string
+  headerClassName?: string
+  headerNavGroupClassName?: string
+  headerNavButtonClassName?: string
+  monthLabelClassName?: string
+  presetsSectionClassName?: string
+  presetsListClassName?: string
+  presetButtonClassName?: (active: boolean) => string
+  monthsViewportClassName?: string
+  monthPanelClassName?: string
+  monthPanelTitleClassName?: string
+  weekdayRowClassName?: string
+  weekdayCellClassName?: string
+  weekRowsClassName?: string
+  weekRowClassName?: string
+  dayButtonClassName?: (state: RangeCalendarDaySlotState) => string
+  icons?: {
+    prevYear?: React.ReactNode
+    prevMonth?: React.ReactNode
+    nextMonth?: React.ReactNode
+    nextYear?: React.ReactNode
+  }
+}
+
+const defaultRangeCalendarTheme: RangeCalendarTheme = {
+  containerClassName: 'inline-block w-fit max-w-[calc(100vw-1rem)] rounded-lg border bg-white p-4 text-gray-900 shadow',
+  headerClassName: 'mb-3 flex items-center justify-between gap-3',
+  headerNavGroupClassName: 'flex gap-1',
+  headerNavButtonClassName:
+    'inline-flex h-8 w-8 items-center justify-center rounded border border-transparent text-gray-700 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
+  monthLabelClassName: 'text-center text-sm font-semibold text-gray-900 sm:text-base',
+  presetsSectionClassName: 'mb-3',
+  presetsListClassName: 'flex flex-wrap gap-2',
+  presetButtonClassName: active =>
+    cx(
+      'rounded border px-2 py-1 text-xs transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:text-sm',
+      active
+        ? 'border-blue-600 bg-blue-600 text-white'
+        : 'border-gray-300 bg-white text-gray-700 hover:border-blue-400 hover:bg-blue-50',
+    ),
+  monthsViewportClassName: 'flex flex-col gap-4 sm:flex-row sm:gap-3',
+  monthPanelClassName: 'w-72 rounded-md border border-gray-200 bg-gray-50/50 p-2 sm:w-64',
+  monthPanelTitleClassName: 'mb-1 text-center text-sm font-medium text-gray-700',
+  weekdayRowClassName: 'mb-1 grid grid-cols-7 text-sm text-gray-600',
+  weekdayCellClassName: 'text-center',
+  weekRowsClassName: 'flex flex-col gap-1',
+  weekRowClassName: 'grid grid-cols-7 gap-1',
+  dayButtonClassName: ({ rangeEdge, inRange, faded }) =>
+    cx(
+      'rounded border border-transparent p-1 text-gray-900 transition-colors duration-150 hover:border-blue-400 focus-visible:border-blue-500 focus-visible:outline-none',
+      rangeEdge ? 'bg-blue-600 text-white' : inRange ? 'bg-blue-100 text-blue-800' : '',
+      faded ? 'text-gray-300' : 'hover:bg-blue-100',
+    ),
+}
+
+const RangeCalendarThemeContext = React.createContext<RangeCalendarTheme>(defaultRangeCalendarTheme)
+
+const useRangeCalendarTheme = () => React.useContext(RangeCalendarThemeContext)
 
 type MonthView = {
   monthStart: Date
@@ -74,7 +143,7 @@ const getVisibleRangeDays = (
   return days
 }
 
-export default function RangeCalendar({
+function RangeCalendarRoot({
   selectedRange: controlledSelectedRange,
   selectRange: controlledSelectRange,
   onEscape,
@@ -82,6 +151,7 @@ export default function RangeCalendar({
   numberOfMonths,
   showPresets = false,
 }: RangeCalendarProps) {
+  const theme = useRangeCalendarTheme()
   const normalizedRange = controlledSelectedRange ?? null
   const resolvedI18n = useMemo(() => resolveCalendarI18n(i18n), [i18n])
   const formatOptions = useMemo(
@@ -105,7 +175,10 @@ export default function RangeCalendar({
   const gridRef = useRef<HTMLDivElement>(null)
 
   const weekOptions = useMemo(
-    () => ({ locale: resolvedI18n.locale, weekStartsOn: resolvedI18n.weekStartsOn }),
+    () => ({
+      locale: resolvedI18n.locale,
+      weekStartsOn: (resolvedI18n.weekStartsOn ?? 0) as 0 | 1 | 2 | 3 | 4 | 5 | 6,
+    }),
     [resolvedI18n.locale, resolvedI18n.weekStartsOn],
   )
 
@@ -331,7 +404,7 @@ export default function RangeCalendar({
 
   return (
     <div
-      className="inline-block w-fit max-w-[calc(100vw-1rem)] rounded-lg border bg-white p-4 text-gray-900 shadow"
+      className={theme.containerClassName}
       role="grid"
       aria-labelledby={monthLabelId}
       aria-colcount={7}
@@ -340,66 +413,65 @@ export default function RangeCalendar({
       tabIndex={0}
       ref={gridRef}
     >
-      <header className="mb-3 flex items-center justify-between gap-3">
-        <div className="flex gap-1">
+      <header className={theme.headerClassName}>
+        <div className={theme.headerNavGroupClassName}>
           <button
+            className={theme.headerNavButtonClassName}
             onClick={() => {
               cal.prevYear()
               setFocusDate(previous => addMonths(previous, -12))
             }}
             aria-label={resolvedI18n.labels.prevYear}
           >
-            «
+            {theme.icons?.prevYear ?? '«'}
           </button>
           <button
+            className={theme.headerNavButtonClassName}
             onClick={() => {
               cal.prev()
               setFocusDate(previous => addMonths(previous, -1))
             }}
             aria-label={resolvedI18n.labels.prevMonth}
           >
-            ←
+            {theme.icons?.prevMonth ?? '←'}
           </button>
         </div>
-        <div id={monthLabelId} className="text-center text-sm font-semibold text-gray-900 sm:text-base">
+        <div id={monthLabelId} className={theme.monthLabelClassName}>
           {headerLabel}
         </div>
-        <div className="flex gap-1">
+        <div className={theme.headerNavGroupClassName}>
           <button
+            className={theme.headerNavButtonClassName}
             onClick={() => {
               cal.next()
               setFocusDate(previous => addMonths(previous, 1))
             }}
             aria-label={resolvedI18n.labels.nextMonth}
           >
-            →
+            {theme.icons?.nextMonth ?? '→'}
           </button>
           <button
+            className={theme.headerNavButtonClassName}
             onClick={() => {
               cal.nextYear()
               setFocusDate(previous => addMonths(previous, 12))
             }}
             aria-label={resolvedI18n.labels.nextYear}
           >
-            »
+            {theme.icons?.nextYear ?? '»'}
           </button>
         </div>
       </header>
 
       {showPresets && (
-        <section aria-label={resolvedI18n.labels.presetsTitle} className="mb-3">
-          <div className="flex flex-wrap gap-2">
+        <section aria-label={resolvedI18n.labels.presetsTitle} className={theme.presetsSectionClassName}>
+          <div className={theme.presetsListClassName}>
             {presetRanges.map(preset => (
               <button
                 key={preset.key}
                 type="button"
                 onClick={() => applyPresetRange(preset)}
-                className={
-                  'rounded border px-2 py-1 text-xs transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:text-sm ' +
-                  (isPresetActive(preset)
-                    ? 'border-blue-600 bg-blue-600 text-white'
-                    : 'border-gray-300 bg-white text-gray-700 hover:border-blue-400 hover:bg-blue-50')
-                }
+                className={theme.presetButtonClassName?.(isPresetActive(preset))}
               >
                 {preset.label}
               </button>
@@ -408,23 +480,23 @@ export default function RangeCalendar({
         </section>
       )}
 
-      <div ref={monthAnimatorRef} className="flex flex-col gap-4 sm:flex-row sm:gap-3">
+      <div ref={monthAnimatorRef} className={theme.monthsViewportClassName}>
         {visibleMonths.map((monthView, monthIndex) => {
           const rowStart = monthRowStarts[monthIndex]
           return (
           <section
             key={monthView.monthStart.getTime()}
-            className="w-72 rounded-md border border-gray-200 bg-gray-50/50 p-2 sm:w-64"
+            className={theme.monthPanelClassName}
           >
-            <div className="mb-1 text-center text-sm font-medium text-gray-700">
+            <div className={theme.monthPanelTitleClassName}>
               {format(monthView.monthStart, resolvedI18n.format.monthLabel, formatOptions)}
             </div>
             <div role="rowgroup" aria-labelledby={monthLabelId}>
-              <div className="mb-1 grid grid-cols-7 text-sm text-gray-600" role="row" aria-rowindex={rowStart}>
+              <div className={theme.weekdayRowClassName} role="row" aria-rowindex={rowStart}>
                 {monthView.weekdayLabels.map((label, index) => (
                   <div
                     key={`${monthView.monthStart.getTime()}-weekday-${index}`}
-                    className="text-center"
+                    className={theme.weekdayCellClassName}
                     role="columnheader"
                     aria-colindex={index + 1}
                   >
@@ -433,11 +505,11 @@ export default function RangeCalendar({
                 ))}
               </div>
 
-              <div className="flex flex-col gap-1">
+              <div className={theme.weekRowsClassName}>
                 {monthView.weeks.map((week, weekIndex) => (
                   <div
                     key={`${monthView.monthStart.getTime()}-week-${weekIndex}`}
-                    className="grid grid-cols-7 gap-1"
+                    className={theme.weekRowClassName}
                     role="row"
                     aria-rowindex={rowStart + weekIndex + 1}
                   >
@@ -463,15 +535,12 @@ export default function RangeCalendar({
                       tabIndex={isFocused ? 0 : -1}
                       data-date-key={`${day.getTime()}-${monthView.monthStart.getTime()}`}
                       onClick={handleClick}
-                      className={
-                        'rounded border border-transparent p-1 text-gray-900 transition-colors duration-150 hover:border-blue-400 focus-visible:border-blue-500 focus-visible:outline-none ' +
-                        (isRangeEdge
-                          ? 'bg-blue-600 text-white '
-                          : inRange
-                            ? 'bg-blue-100 text-blue-800 '
-                            : '') +
-                        (faded ? 'text-gray-300 ' : 'hover:bg-blue-100 ')
-                      }
+                      className={theme.dayButtonClassName?.({
+                        rangeEdge: isRangeEdge,
+                        inRange,
+                        faded,
+                        focused: isFocused,
+                      }) ?? ''}
                       aria-label={format(day, resolvedI18n.format.dayAriaLabel, formatOptions)}
                     >
                       {format(day, resolvedI18n.format.dayLabel, formatOptions)}
@@ -488,3 +557,17 @@ export default function RangeCalendar({
     </div>
   )
 }
+
+export function createRangeCalendar(theme: RangeCalendarTheme = defaultRangeCalendarTheme) {
+  return function ThemedRangeCalendar(props: RangeCalendarProps) {
+    return (
+      <RangeCalendarThemeContext.Provider value={theme}>
+        <RangeCalendarRoot {...props} />
+      </RangeCalendarThemeContext.Provider>
+    )
+  }
+}
+
+const RangeCalendar = createRangeCalendar()
+
+export default RangeCalendar

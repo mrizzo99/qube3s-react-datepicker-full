@@ -30,6 +30,8 @@ import { resolveCalendarI18n, type CalendarI18n } from '@core/i18n'
 import { useRangeCalendar, type DateRange } from '../../headless/useRangeCalendar'
 import { getDateRangePresets, type DateRangePreset } from '../../presets/dateRangePresets'
 
+const cx = (...values: Array<string | false | null | undefined>) => values.filter(Boolean).join(' ')
+
 type TimeParts = {
   hours: number
   minutes: number
@@ -41,8 +43,8 @@ type DateRangePickerContextValue = {
   selectedRange: DateRange
   selectRange: (range: DateRange) => void
   updateRangeTime: (boundary: 'start' | 'end', parts: TimeParts) => void
-  inputRef: React.RefObject<HTMLInputElement | null>
-  containerRef: React.RefObject<HTMLDivElement | null>
+  inputRef: React.MutableRefObject<HTMLInputElement | null>
+  containerRef: React.MutableRefObject<HTMLDivElement | null>
   formatDescriptionId: string
   validationMessageId: string
   describedById: string
@@ -66,8 +68,8 @@ type DateRangePickerContextValue = {
   cal: ReturnType<typeof useRangeCalendar>
   focusDate: Date
   setFocusDate: React.Dispatch<React.SetStateAction<Date>>
-  gridRef: React.RefObject<HTMLDivElement | null>
-  popoverRef: React.RefObject<HTMLDivElement | null>
+  gridRef: React.MutableRefObject<HTMLDivElement | null>
+  popoverRef: React.MutableRefObject<HTMLDivElement | null>
   monthLabelId: string
   numberOfMonths: number
   portal: boolean
@@ -116,6 +118,150 @@ const focusableSelector = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(', ')
 
+export type DateRangePickerDaySlotState = {
+  rangeEdge: boolean
+  inRange: boolean
+  faded: boolean
+  focused: boolean
+}
+
+export type DateRangePickerTimeWheelState = {
+  disabled: boolean
+  selected: boolean
+}
+
+export type DateRangePickerTheme = {
+  rootClassName?: string
+  inputLayoutClassName?: string
+  inputFieldsGroupClassName?: string
+  inputFieldClassName?: string
+  inputLabelClassName?: string
+  inputGroupClassName?: string
+  inputClassName?: string
+  triggerClassName?: string
+  validationMessageClassName?: string
+  validationMessageInvalidClassName?: string
+  validationMessageValidatingClassName?: string
+  mobilePopoverShellClassName?: string
+  mobileBackdropClassName?: string
+  mobileSheetClassName?: string
+  mobileSheetHandleWrapClassName?: string
+  mobileSheetHandleClassName?: string
+  desktopPopoverShellClassName?: string
+  desktopPopoverPanelClassName?: string
+  headerClassName?: string
+  headerNavGroupClassName?: string
+  headerNavButtonClassName?: string
+  monthLabelClassName?: string
+  timeWheelColumnClassName?: string
+  timeWheelTitleClassName?: string
+  timeWheelListClassName?: (disabled: boolean) => string
+  timeWheelOptionClassName?: (state: DateRangePickerTimeWheelState) => string
+  timeBoundarySectionClassName?: string
+  timeBoundaryHeaderClassName?: string
+  timeBoundaryIconWrapClassName?: string
+  timeBoundaryGridClassName?: string
+  timeSectionClassName?: string
+  timeSectionTitleClassName?: string
+  presetsSectionClassName?: string
+  presetsListClassName?: string
+  presetButtonClassName?: (active: boolean) => string
+  monthsViewportClassName?: string
+  monthPanelClassName?: string
+  monthPanelTitleClassName?: string
+  weekdayRowClassName?: string
+  weekdayCellClassName?: string
+  weekRowsClassName?: string
+  weekRowClassName?: string
+  dayButtonClassName?: (state: DateRangePickerDaySlotState) => string
+  actionsClassName?: string
+  cancelButtonClassName?: string
+  confirmButtonClassName?: string
+  icons?: {
+    calendar?: React.ReactNode
+    clock?: React.ReactNode
+    prevYear?: React.ReactNode
+    prevMonth?: React.ReactNode
+    nextMonth?: React.ReactNode
+    nextYear?: React.ReactNode
+  }
+}
+
+const defaultDateRangePickerTheme: DateRangePickerTheme = {
+  rootClassName: 'relative inline-flex flex-col gap-2',
+  inputLayoutClassName: 'flex flex-wrap items-end gap-3',
+  inputFieldsGroupClassName: 'flex flex-wrap gap-3',
+  inputFieldClassName: 'flex flex-col gap-1',
+  inputLabelClassName: 'text-sm font-medium text-gray-700',
+  inputGroupClassName: 'inline-flex items-center gap-1',
+  inputClassName:
+    'rounded border border-gray-300 bg-white p-2 text-gray-900 placeholder:text-gray-500 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
+  triggerClassName:
+    'inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
+  validationMessageClassName: 'text-sm',
+  validationMessageInvalidClassName: 'text-red-600',
+  validationMessageValidatingClassName: 'text-gray-600',
+  mobilePopoverShellClassName: 'fixed inset-0 z-[var(--rdp-z-popover,1000)] flex items-end justify-center',
+  mobileBackdropClassName: 'absolute inset-0 bg-gray-900/45 transition-opacity duration-200',
+  mobileSheetClassName:
+    'relative max-h-[90vh] w-full overflow-y-auto rounded-t-2xl border border-gray-200 bg-white p-4 text-gray-900 shadow-xl',
+  mobileSheetHandleWrapClassName: 'mb-3 flex justify-center py-1',
+  mobileSheetHandleClassName: 'h-1.5 w-12 rounded-full bg-gray-300',
+  desktopPopoverShellClassName: 'rounded bg-white shadow',
+  desktopPopoverPanelClassName: 'max-w-[calc(100vw-1rem)] rounded-lg border bg-white p-4 text-gray-900 shadow',
+  headerClassName: 'mb-3 flex items-center justify-between gap-3',
+  headerNavGroupClassName: 'flex gap-1',
+  headerNavButtonClassName:
+    'inline-flex h-8 w-8 items-center justify-center rounded border border-transparent text-gray-700 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
+  monthLabelClassName: 'text-center text-sm font-semibold text-gray-900 sm:text-base',
+  timeWheelColumnClassName: 'flex w-16 flex-none flex-col gap-1',
+  timeWheelTitleClassName: 'text-xs font-medium text-gray-600',
+  timeWheelListClassName: disabled =>
+    cx('h-16 overflow-y-auto rounded border p-1', disabled ? 'cursor-not-allowed bg-gray-100' : 'bg-white'),
+  timeWheelOptionClassName: ({ selected }) =>
+    cx(
+      'w-full rounded px-2 py-1 text-left text-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
+      selected ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-blue-50',
+    ),
+  timeBoundarySectionClassName: 'rounded-md border border-gray-200 bg-gray-50/70 p-2',
+  timeBoundaryHeaderClassName: 'mb-2 flex items-center gap-2 text-sm font-medium text-gray-700',
+  timeBoundaryIconWrapClassName: 'inline-flex h-4 w-4 items-center justify-center overflow-hidden text-gray-500',
+  timeBoundaryGridClassName: 'flex gap-2',
+  timeSectionClassName: 'mt-2 border-t pt-3',
+  timeSectionTitleClassName: 'mb-2 text-sm font-semibold text-gray-800',
+  presetsSectionClassName: '',
+  presetsListClassName: 'flex flex-wrap gap-2',
+  presetButtonClassName: active =>
+    cx(
+      'rounded border px-2 py-1 text-xs transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:text-sm',
+      active
+        ? 'border-blue-600 bg-blue-600 text-white'
+        : 'border-gray-300 bg-white text-gray-700 hover:border-blue-400 hover:bg-blue-50',
+    ),
+  monthsViewportClassName: 'flex flex-col gap-4 sm:flex-row sm:gap-3',
+  monthPanelClassName: 'w-72 rounded-md border border-gray-200 bg-gray-50/50 p-2 sm:w-64',
+  monthPanelTitleClassName: 'mb-1 text-center text-sm font-medium text-gray-700',
+  weekdayRowClassName: 'mb-1 grid grid-cols-7 text-sm text-gray-600',
+  weekdayCellClassName: 'text-center',
+  weekRowsClassName: 'flex flex-col gap-1',
+  weekRowClassName: 'grid grid-cols-7 gap-1',
+  dayButtonClassName: ({ rangeEdge, inRange, faded }) =>
+    cx(
+      'rounded border border-transparent p-1 text-gray-900 transition-colors duration-150 hover:border-blue-400 focus-visible:border-blue-500 focus-visible:outline-none',
+      rangeEdge ? 'bg-blue-600 text-white' : inRange ? 'bg-blue-100 text-blue-800' : '',
+      faded ? 'text-gray-300' : 'hover:bg-blue-100',
+    ),
+  actionsClassName: 'mt-3 flex justify-end gap-2 border-t pt-3',
+  cancelButtonClassName:
+    'rounded border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 transition-colors duration-150 hover:border-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
+  confirmButtonClassName:
+    'rounded border border-blue-600 bg-blue-600 px-3 py-1.5 text-sm text-white transition-colors duration-150 hover:border-blue-700 hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
+}
+
+const DateRangePickerThemeContext = createContext<DateRangePickerTheme>(defaultDateRangePickerTheme)
+
+const useDateRangePickerTheme = () => useContext(DateRangePickerThemeContext)
+
 const getFocusableElements = (root: HTMLElement) =>
   Array.from(root.querySelectorAll<HTMLElement>(focusableSelector)).filter(
     element =>
@@ -142,9 +288,9 @@ const normalizeIconNode = (icon: React.ReactNode, iconClassName = 'h-4 w-4 objec
   )
 }
 
-const renderPickerIcon = (icon?: React.ReactNode) => (
+const renderPickerIcon = (icon: React.ReactNode | undefined, fallbackIcon?: React.ReactNode) => (
   <span className="inline-flex h-4 w-4 items-center justify-center overflow-hidden" aria-hidden="true">
-    {icon ? normalizeIconNode(icon) : <DefaultCalendarIcon />}
+    {icon ? normalizeIconNode(icon) : fallbackIcon ?? <DefaultCalendarIcon />}
   </span>
 )
 
@@ -414,6 +560,7 @@ function DateRangePickerRoot({
   portalContainer = null,
   mobile,
 }: DateRangePickerProps) {
+  const theme = useDateRangePickerTheme()
   const resolvedI18n = useMemo(() => resolveCalendarI18n(i18n), [i18n])
   const formatOptions = useMemo(
     () => ({ locale: resolvedI18n.locale }),
@@ -844,7 +991,7 @@ function DateRangePickerRoot({
     <DateRangePickerContext.Provider value={contextValue}>
       <div
         ref={containerRef}
-        className="relative inline-flex flex-col gap-2"
+        className={theme.rootClassName ?? defaultDateRangePickerTheme.rootClassName}
         style={open ? { zIndex: 'var(--rdp-z-popover, 1000)' } : undefined}
       >
         {children ?? (
@@ -871,6 +1018,7 @@ function DateRangePickerInput({
   placeholderEnd,
   formatDescription,
 }: DateRangePickerInputProps) {
+  const theme = useDateRangePickerTheme()
   const inputIdBase = useId()
   const startInputId = `${inputIdBase}-start`
   const endInputId = `${inputIdBase}-end`
@@ -907,27 +1055,27 @@ function DateRangePickerInput({
 
   return (
     <>
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="flex flex-wrap gap-3">
-          <div className="flex flex-col gap-1">
-            <label htmlFor={startInputId} className="text-sm font-medium text-gray-700">
+      <div className={theme.inputLayoutClassName}>
+        <div className={theme.inputFieldsGroupClassName}>
+          <div className={theme.inputFieldClassName}>
+            <label htmlFor={startInputId} className={theme.inputLabelClassName}>
               {resolvedPlaceholderStart}
             </label>
-            <div className="inline-flex items-center gap-1">
+            <div className={theme.inputGroupClassName}>
               {iconPosition === 'left' && (
                 <button
                   type="button"
                   onClick={() => setOpen(current => !current)}
                   aria-label={iconAriaLabel}
-                  className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
+                  className={cx(theme.triggerClassName, triggerClassName)}
                 >
-                  {renderPickerIcon(icon)}
+                  {renderPickerIcon(icon, theme.icons?.calendar)}
                 </button>
               )}
               <input
                 id={startInputId}
                 readOnly
-                className={`${dateInputWidthClass} rounded border border-gray-300 bg-white p-2 text-gray-900 placeholder:text-gray-500 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${inputClassName}`}
+                className={cx(dateInputWidthClass, theme.inputClassName, inputClassName)}
                 placeholder={resolvedPlaceholderStart}
                 onClick={() => setOpen(current => !current)}
                 onKeyDown={handleInputKeyDown}
@@ -944,33 +1092,33 @@ function DateRangePickerInput({
                   type="button"
                   onClick={() => setOpen(current => !current)}
                   aria-label={iconAriaLabel}
-                  className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
+                  className={cx(theme.triggerClassName, triggerClassName)}
                 >
-                  {renderPickerIcon(icon)}
+                  {renderPickerIcon(icon, theme.icons?.calendar)}
                 </button>
               )}
             </div>
           </div>
 
-          <div className="flex flex-col gap-1">
-            <label htmlFor={endInputId} className="text-sm font-medium text-gray-700">
+          <div className={theme.inputFieldClassName}>
+            <label htmlFor={endInputId} className={theme.inputLabelClassName}>
               {resolvedPlaceholderEnd}
             </label>
-            <div className="inline-flex items-center gap-1">
+            <div className={theme.inputGroupClassName}>
               {iconPosition === 'left' && (
                 <button
                   type="button"
                   onClick={() => setOpen(current => !current)}
                   aria-label={iconAriaLabel}
-                  className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
+                  className={cx(theme.triggerClassName, triggerClassName)}
                 >
-                  {renderPickerIcon(icon)}
+                  {renderPickerIcon(icon, theme.icons?.calendar)}
                 </button>
               )}
               <input
                 id={endInputId}
                 readOnly
-                className={`${dateInputWidthClass} rounded border border-gray-300 bg-white p-2 text-gray-900 placeholder:text-gray-500 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${inputClassName}`}
+                className={cx(dateInputWidthClass, theme.inputClassName, inputClassName)}
                 placeholder={resolvedPlaceholderEnd}
                 onClick={() => setOpen(current => !current)}
                 onKeyDown={handleInputKeyDown}
@@ -984,9 +1132,9 @@ function DateRangePickerInput({
                   type="button"
                   onClick={() => setOpen(current => !current)}
                   aria-label={iconAriaLabel}
-                  className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
+                  className={cx(theme.triggerClassName, triggerClassName)}
                 >
-                  {renderPickerIcon(icon)}
+                  {renderPickerIcon(icon, theme.icons?.calendar)}
                 </button>
               )}
             </div>
@@ -995,7 +1143,13 @@ function DateRangePickerInput({
         {validationState !== 'idle' && (
           <span
             id={validationMessageId}
-            className={`text-sm ${validationState === 'invalid' ? 'text-red-600' : 'text-gray-600'} ${validationMessageClassName}`.trim()}
+            className={cx(
+              theme.validationMessageClassName,
+              validationState === 'invalid'
+                ? theme.validationMessageInvalidClassName
+                : theme.validationMessageValidatingClassName,
+              validationMessageClassName,
+            )}
             aria-live="polite"
           >
             {validationMessage}
@@ -1015,6 +1169,7 @@ function DateRangePickerCalendar({
   className = '',
   popoverClassName = '',
 }: DateRangePickerCalendarProps) {
+  const theme = useDateRangePickerTheme()
   const {
     open,
     resolvedI18n,
@@ -1245,11 +1400,11 @@ function DateRangePickerCalendar({
   if (shouldUseAnchorPosition && !hasPosition) return null
 
   const content = isMobilePresentation ? (
-    <div className={`fixed inset-0 z-[var(--rdp-z-popover,1000)] flex items-end justify-center ${popoverClassName}`}>
+    <div className={cx(theme.mobilePopoverShellClassName, popoverClassName)}>
       <button
         type="button"
         aria-label="Close range calendar"
-        className="absolute inset-0 bg-gray-900/45 transition-opacity duration-200"
+        className={theme.mobileBackdropClassName}
         style={{ opacity: Math.max(0.2, 1 - sheetDragOffset / 280) }}
         onClick={onEscape}
       />
@@ -1260,21 +1415,21 @@ function DateRangePickerCalendar({
         aria-label={resolvedI18n.labels.rangeCalendar}
         tabIndex={-1}
         onKeyDown={handleDialogKeyDown}
-        className={`relative max-h-[90vh] w-full overflow-y-auto rounded-t-2xl border border-gray-200 bg-white p-4 text-gray-900 shadow-xl ${className}`}
+        className={cx(theme.mobileSheetClassName, className)}
         style={{
           transform: `translateY(${sheetDragOffset}px)`,
           transition: isSheetDragging ? 'none' : 'transform 220ms cubic-bezier(0.22, 1, 0.36, 1)',
         }}
       >
         <div
-          className="mb-3 flex justify-center py-1"
+          className={theme.mobileSheetHandleWrapClassName}
           onPointerDown={handleSheetPointerDown}
           onPointerMove={handleSheetPointerMove}
           onPointerUp={handleSheetPointerEnd}
           onPointerCancel={handleSheetPointerEnd}
           data-testid="range-sheet-handle"
         >
-          <div className="h-1.5 w-12 rounded-full bg-gray-300" aria-hidden="true" />
+          <div className={theme.mobileSheetHandleClassName} aria-hidden="true" />
         </div>
         {children ?? (
           <>
@@ -1287,14 +1442,18 @@ function DateRangePickerCalendar({
   ) : (
     <div
       ref={popoverRef}
-      className={`${shouldPortal ? 'absolute' : 'absolute left-0 top-full mt-2'} rounded bg-white shadow ${popoverClassName}`}
+      className={cx(
+        shouldPortal ? 'absolute' : 'absolute left-0 top-full mt-2',
+        theme.desktopPopoverShellClassName,
+        popoverClassName,
+      )}
       style={shouldPortal ? { left: position.left, top: position.top, zIndex: 'var(--rdp-z-popover, 1000)' } : { zIndex: 'var(--rdp-z-popover, 1000)' }}
       role="dialog"
       aria-label={resolvedI18n.labels.rangeCalendar}
       tabIndex={-1}
       onKeyDown={handleDialogKeyDown}
     >
-      <div className={`max-w-[calc(100vw-1rem)] rounded-lg border bg-white p-4 text-gray-900 shadow ${className}`}>
+      <div className={cx(theme.desktopPopoverPanelClassName, className)}>
         {children ?? (
           <>
             <DateRangePickerCalendarHeader />
@@ -1316,6 +1475,7 @@ function DateRangePickerCalendar({
 }
 
 function DateRangePickerCalendarHeader() {
+  const theme = useDateRangePickerTheme()
   const { cal, resolvedI18n, formatOptions, numberOfMonths, monthLabelId, setFocusDate } = useDateRangePickerContext()
 
   const visibleMonths = useMemo(
@@ -1338,48 +1498,52 @@ function DateRangePickerCalendarHeader() {
   }, [visibleMonths, resolvedI18n.format.monthLabel, formatOptions])
 
   return (
-    <header className="mb-3 flex items-center justify-between gap-3">
-      <div className="flex gap-1">
+    <header className={theme.headerClassName}>
+      <div className={theme.headerNavGroupClassName}>
         <button
+          className={theme.headerNavButtonClassName}
           onClick={() => {
             cal.prevYear()
             setFocusDate(previous => addMonths(previous, -12))
           }}
           aria-label={resolvedI18n.labels.prevYear}
         >
-          «
+          {theme.icons?.prevYear ?? '«'}
         </button>
         <button
+          className={theme.headerNavButtonClassName}
           onClick={() => {
             cal.prev()
             setFocusDate(previous => addMonths(previous, -1))
           }}
           aria-label={resolvedI18n.labels.prevMonth}
         >
-          ←
+          {theme.icons?.prevMonth ?? '←'}
         </button>
       </div>
-      <div id={monthLabelId} className="text-center text-sm font-semibold text-gray-900 sm:text-base">
+      <div id={monthLabelId} className={theme.monthLabelClassName}>
         {headerLabel}
       </div>
-      <div className="flex gap-1">
+      <div className={theme.headerNavGroupClassName}>
         <button
+          className={theme.headerNavButtonClassName}
           onClick={() => {
             cal.next()
             setFocusDate(previous => addMonths(previous, 1))
           }}
           aria-label={resolvedI18n.labels.nextMonth}
         >
-          →
+          {theme.icons?.nextMonth ?? '→'}
         </button>
         <button
+          className={theme.headerNavButtonClassName}
           onClick={() => {
             cal.nextYear()
             setFocusDate(previous => addMonths(previous, 12))
           }}
           aria-label={resolvedI18n.labels.nextYear}
         >
-          »
+          {theme.icons?.nextYear ?? '»'}
         </button>
       </div>
     </header>
@@ -1409,6 +1573,7 @@ function TimeWheelColumn<T extends string | number>({
   disabled = false,
   onChange,
 }: TimeWheelColumnProps<T>) {
+  const theme = useDateRangePickerTheme()
   const optionIdBase = useId()
   const selectedRef = useRef<HTMLButtonElement>(null)
 
@@ -1466,10 +1631,10 @@ function TimeWheelColumn<T extends string | number>({
   }
 
   return (
-    <div className="flex w-16 flex-none flex-col gap-1">
-      <div className="text-xs font-medium text-gray-600">{title}</div>
+    <div className={theme.timeWheelColumnClassName}>
+      <div className={theme.timeWheelTitleClassName}>{title}</div>
       <div
-        className={`h-16 overflow-y-auto rounded border p-1 ${disabled ? 'cursor-not-allowed bg-gray-100' : 'bg-white'}`}
+        className={theme.timeWheelListClassName?.(disabled)}
         onKeyDown={handleKeyDown}
         role="listbox"
         tabIndex={disabled ? -1 : 0}
@@ -1492,12 +1657,10 @@ function TimeWheelColumn<T extends string | number>({
               disabled={disabled}
               onClick={() => onChange(option.value)}
               aria-label={`${ariaLabel} - ${option.ariaLabel}`}
-              className={
-                'w-full rounded px-2 py-1 text-left text-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ' +
-                (isSelected
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-700 hover:bg-blue-50')
-              }
+              className={theme.timeWheelOptionClassName?.({
+                disabled,
+                selected: isSelected,
+              })}
             >
               {option.label}
             </button>
@@ -1523,6 +1686,7 @@ const toTwentyFourHour = (hour12: number, meridiem: 'AM' | 'PM') => {
 }
 
 function DateRangePickerTimeWheels() {
+  const theme = useDateRangePickerTheme()
   const {
     enableTime,
     timeFormat,
@@ -1573,17 +1737,17 @@ function DateRangePickerTimeWheels() {
     const meridiem = getMeridiem(parts.hours)
     const hour12 = getTwelveHour(parts.hours)
     const titlePrefix = boundary === 'start' ? 'Start' : 'End'
-    const iconNode = timeLabelIcon ? normalizeIconNode(timeLabelIcon) : <DefaultClockIcon />
+    const iconNode = timeLabelIcon ? normalizeIconNode(timeLabelIcon) : theme.icons?.clock ?? <DefaultClockIcon />
 
     return (
-      <section className="rounded-md border border-gray-200 bg-gray-50/70 p-2">
-        <div className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700">
-          <span className={`inline-flex h-4 w-4 items-center justify-center overflow-hidden text-gray-500 ${timeLabelIconClassName}`} aria-hidden="true">
+      <section className={theme.timeBoundarySectionClassName}>
+        <div className={theme.timeBoundaryHeaderClassName}>
+          <span className={cx(theme.timeBoundaryIconWrapClassName, timeLabelIconClassName)} aria-hidden="true">
             {iconNode}
           </span>
           <span>{titlePrefix} time</span>
         </div>
-        <div className="flex gap-2">
+        <div className={theme.timeBoundaryGridClassName}>
           {timeFormat === '24h' ? (
             <>
               <TimeWheelColumn
@@ -1652,8 +1816,8 @@ function DateRangePickerTimeWheels() {
     : 'not selected'
 
   return (
-    <section className="mt-2 border-t pt-3" aria-label="Time range selectors" aria-describedby={summaryId}>
-      <div className="mb-2 text-sm font-semibold text-gray-800">Time range</div>
+    <section className={theme.timeSectionClassName} aria-label="Time range selectors" aria-describedby={summaryId}>
+      <div className={theme.timeSectionTitleClassName}>Time range</div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {renderBoundaryWheels('start', startParts, !selectedRange.start)}
         {renderBoundaryWheels('end', endParts, !selectedRange.end)}
@@ -1666,6 +1830,7 @@ function DateRangePickerTimeWheels() {
 }
 
 function DateRangePickerCalendarGrid() {
+  const theme = useDateRangePickerTheme()
   const {
     cal,
     selectedRange,
@@ -1688,7 +1853,10 @@ function DateRangePickerCalendarGrid() {
   } = useDateRangePickerContext()
 
   const weekOptions = useMemo(
-    () => ({ locale: resolvedI18n.locale, weekStartsOn: resolvedI18n.weekStartsOn }),
+    () => ({
+      locale: resolvedI18n.locale,
+      weekStartsOn: (resolvedI18n.weekStartsOn ?? 0) as 0 | 1 | 2 | 3 | 4 | 5 | 6,
+    }),
     [resolvedI18n.locale, resolvedI18n.weekStartsOn],
   )
 
@@ -1896,19 +2064,14 @@ function DateRangePickerCalendarGrid() {
   return (
     <div className="flex flex-col gap-3">
       {showPresets && (
-        <section aria-label={resolvedI18n.labels.presetsTitle}>
-          <div className="flex flex-wrap gap-2">
+        <section aria-label={resolvedI18n.labels.presetsTitle} className={theme.presetsSectionClassName}>
+          <div className={theme.presetsListClassName}>
             {presetRanges.map(preset => (
               <button
                 key={preset.key}
                 type="button"
                 onClick={() => applyPresetRange(preset)}
-                className={
-                  'rounded border px-2 py-1 text-xs transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:text-sm ' +
-                  (isPresetActive(preset)
-                    ? 'border-blue-600 bg-blue-600 text-white'
-                    : 'border-gray-300 bg-white text-gray-700 hover:border-blue-400 hover:bg-blue-50')
-                }
+                className={theme.presetButtonClassName?.(isPresetActive(preset))}
               >
                 {preset.label}
               </button>
@@ -1928,7 +2091,7 @@ function DateRangePickerCalendarGrid() {
       >
       <div
         ref={monthAnimatorRef}
-        className="flex flex-col gap-4 sm:flex-row sm:gap-3"
+        className={theme.monthsViewportClassName}
         onPointerDown={handleMonthViewportPointerDown}
         onPointerUp={handleMonthViewportPointerUp}
         onPointerCancel={() => { monthSwipeStartRef.current = null }}
@@ -1939,17 +2102,17 @@ function DateRangePickerCalendarGrid() {
           return (
           <section
             key={monthView.monthStart.getTime()}
-            className="w-72 rounded-md border border-gray-200 bg-gray-50/50 p-2 sm:w-64"
+            className={theme.monthPanelClassName}
           >
-            <div className="mb-1 text-center text-sm font-medium text-gray-700">
+            <div className={theme.monthPanelTitleClassName}>
               {format(monthView.monthStart, resolvedI18n.format.monthLabel, formatOptions)}
             </div>
             <div role="rowgroup" aria-labelledby={monthLabelId}>
-              <div className="mb-1 grid grid-cols-7 text-sm text-gray-600" role="row" aria-rowindex={rowStart}>
+              <div className={theme.weekdayRowClassName} role="row" aria-rowindex={rowStart}>
                 {monthView.weekdayLabels.map((label, index) => (
                   <div
                     key={`${monthView.monthStart.getTime()}-weekday-${index}`}
-                    className="text-center"
+                    className={theme.weekdayCellClassName}
                     role="columnheader"
                     aria-colindex={index + 1}
                   >
@@ -1958,17 +2121,17 @@ function DateRangePickerCalendarGrid() {
                 ))}
               </div>
 
-              <div className="flex flex-col gap-1">
+              <div className={theme.weekRowsClassName}>
                 {monthView.weeks.map((week, weekIndex) => (
                   <div
                     key={`${monthView.monthStart.getTime()}-week-${weekIndex}`}
-                    className="grid grid-cols-7 gap-1"
+                    className={theme.weekRowClassName}
                     role="row"
                     aria-rowindex={rowStart + weekIndex + 1}
                   >
                     {week.map((day, dayIndex) => {
                   const faded = !cal.isSameMonth(day, monthView.monthStart)
-                  const isRangeEdge = cal.isRangeEdge(day, selectedRange)
+                  const isRangeEdge = !!cal.isRangeEdge(day, selectedRange)
                   const inRange = cal.isInRange(day, selectedRange)
                   const isFocused = cal.isSameDay(day, focusDate) && cal.isSameMonth(day, focusDate)
 
@@ -1986,15 +2149,12 @@ function DateRangePickerCalendarGrid() {
                         setFocusDate(day)
                         selectRange(nextRange)
                       }}
-                      className={
-                        'rounded border border-transparent p-1 text-gray-900 transition-colors duration-150 hover:border-blue-400 focus-visible:border-blue-500 focus-visible:outline-none ' +
-                        (isRangeEdge
-                          ? 'bg-blue-600 text-white '
-                          : inRange
-                            ? 'bg-blue-100 text-blue-800 '
-                            : '') +
-                        (faded ? 'text-gray-300 ' : 'hover:bg-blue-100 ')
-                      }
+                      className={theme.dayButtonClassName?.({
+                        rangeEdge: isRangeEdge,
+                        inRange,
+                        faded,
+                        focused: isFocused,
+                      }) ?? ''}
                       aria-label={format(day, resolvedI18n.format.dayAriaLabel, formatOptions)}
                     >
                       {format(day, resolvedI18n.format.dayLabel, formatOptions)}
@@ -2011,18 +2171,18 @@ function DateRangePickerCalendarGrid() {
     </div>
     <DateRangePickerTimeWheels />
     {enableTime && (
-      <div className="mt-3 flex justify-end gap-2 border-t pt-3">
+      <div className={theme.actionsClassName}>
         <button
           type="button"
           onClick={onCancel}
-          className="rounded border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 transition-colors duration-150 hover:border-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          className={theme.cancelButtonClassName}
         >
           Cancel
         </button>
         <button
           type="button"
           onClick={onConfirm}
-          className="rounded border border-blue-600 bg-blue-600 px-3 py-1.5 text-sm text-white transition-colors duration-150 hover:border-blue-700 hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          className={theme.confirmButtonClassName}
         >
           OK
         </button>
@@ -2078,10 +2238,21 @@ type DateRangePickerCompoundComponent = React.FC<DateRangePickerProps> & {
   CalendarGrid: typeof DateRangePickerCalendarGrid
 }
 
-const DateRangePicker = DateRangePickerRoot as DateRangePickerCompoundComponent
-DateRangePicker.Input = DateRangePickerInput
-DateRangePicker.Calendar = DateRangePickerCalendar
-DateRangePicker.CalendarHeader = DateRangePickerCalendarHeader
-DateRangePicker.CalendarGrid = DateRangePickerCalendarGrid
+export function createDateRangePicker(theme: DateRangePickerTheme = defaultDateRangePickerTheme) {
+  const ThemedDateRangePicker = ((props: DateRangePickerProps) => (
+    <DateRangePickerThemeContext.Provider value={theme}>
+      <DateRangePickerRoot {...props} />
+    </DateRangePickerThemeContext.Provider>
+  )) as DateRangePickerCompoundComponent
+
+  ThemedDateRangePicker.Input = DateRangePickerInput
+  ThemedDateRangePicker.Calendar = DateRangePickerCalendar
+  ThemedDateRangePicker.CalendarHeader = DateRangePickerCalendarHeader
+  ThemedDateRangePicker.CalendarGrid = DateRangePickerCalendarGrid
+
+  return ThemedDateRangePicker
+}
+
+const DateRangePicker = createDateRangePicker()
 
 export default DateRangePicker

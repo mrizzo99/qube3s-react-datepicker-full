@@ -5,12 +5,15 @@ import { addDays, format, subDays } from 'date-fns'
 import DateRangePicker from '@plus/components/DateRangePicker'
 import PlusDatePicker from '@plus/components/DatePicker'
 import RangeCalendar from '@plus/components/RangeCalendar'
+import { shadcn } from '@plus/adapters'
 import { esI18n } from '@core/i18n-presets'
 import qube3sLogoPng from '../public/brand/qube3s-logo.png'
 import qube3sCubePng from '../public/brand/qube3s-cube.png'
 
 const panelClass =
   'relative z-0 rounded-xl border border-[var(--q3-border)] bg-[color:rgb(17_24_39_/_0.85)] p-5 shadow-[0_8px_24px_rgba(2,6,23,0.35)] backdrop-blur focus-within:z-20'
+const shadcnSurfaceClass =
+  'rounded-2xl border border-slate-200 bg-slate-50 p-4 text-slate-900 shadow-[0_18px_48px_rgba(15,23,42,0.08)]'
 
 export default function App() {
   const [inlineSelectedDate, setInlineSelectedDate] = useState<Date | null>(null)
@@ -59,6 +62,16 @@ export default function App() {
     end: null
   })
   const [rangeInputDateTime24h, setRangeInputDateTime24h] = useState<{ start: Date | null; end: Date | null }>({
+    start: null,
+    end: null
+  })
+  const [shadcnSelectedDate, setShadcnSelectedDate] = useState<Date | null>(null)
+  const [shadcnInlineDate, setShadcnInlineDate] = useState<Date | null>(null)
+  const [shadcnRange, setShadcnRange] = useState<{ start: Date | null; end: Date | null }>({
+    start: null,
+    end: null
+  })
+  const [shadcnInlineRange, setShadcnInlineRange] = useState<{ start: Date | null; end: Date | null }>({
     start: null,
     end: null
   })
@@ -157,6 +170,9 @@ export default function App() {
               </a>
               <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#range-datetime-24h">
                 Range DateTime 24h
+              </a>
+              <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#shadcn-adapters">
+                ShadCN Adapters
               </a>
             </nav>
             <div className="mb-5 flex items-center gap-3 rounded-lg border border-[var(--q3-border)] bg-[color:rgb(11_18_32_/_0.35)] px-3 py-2">
@@ -457,6 +473,70 @@ export default function App() {
                 {rangeInputDateTime24h.start ? `Start: ${format(rangeInputDateTime24h.start, 'PPP HH:mm')}` : 'Start: —'}{' '}
                 {rangeInputDateTime24h.end ? `End: ${format(rangeInputDateTime24h.end, 'PPP HH:mm')}` : 'End: —'}
               </p>
+            </section>
+
+            <section id="shadcn-adapters" className={panelClass}>
+              <h2 className="text-lg font-semibold">ShadCN adapter system</h2>
+              <p className="mt-1 mb-4 max-w-3xl text-sm text-[var(--q3-text-disabled)]">
+                Plus-only adapter coverage for the full component surface: Core inline calendar, Plus single-date picker,
+                inline range calendar, and range picker.
+              </p>
+              <div className="space-y-4">
+                <div className={shadcnSurfaceClass}>
+                  <h3 className="text-base font-semibold">Inline calendar</h3>
+                  <p className="mt-1 mb-3 text-sm text-slate-500">`shadcn.Calendar` adapter for the Core `Calendar` surface.</p>
+                  <shadcn.Calendar selectedDate={shadcnInlineDate} selectDate={setShadcnInlineDate} />
+                  <p className="mt-3 text-sm text-slate-500">
+                    {shadcnInlineDate ? `Selected: ${format(shadcnInlineDate, 'PPP')}` : 'Choose a date'}
+                  </p>
+                </div>
+
+                <div className={shadcnSurfaceClass}>
+                  <h3 className="text-base font-semibold">Single date picker</h3>
+                  <p className="mt-1 mb-3 text-sm text-slate-500">`shadcn.DatePicker` with Plus business-day constraints.</p>
+                  <shadcn.DatePicker
+                    value={shadcnSelectedDate}
+                    onChange={setShadcnSelectedDate}
+                    minDate={plusMinDate}
+                    maxDate={plusMaxDate}
+                    blockWeekends
+                  />
+                  <p className="mt-3 text-sm text-slate-500">
+                    {shadcnSelectedDate ? `Selected: ${format(shadcnSelectedDate, 'PPP')}` : 'Choose an allowed business day'}
+                  </p>
+                </div>
+
+                <div className={shadcnSurfaceClass}>
+                  <h3 className="text-base font-semibold">Inline range calendar</h3>
+                  <p className="mt-1 mb-3 text-sm text-slate-500">`shadcn.RangeCalendar` with presets and two visible months.</p>
+                  <div className="overflow-x-auto pb-1">
+                    <shadcn.RangeCalendar selectedRange={shadcnInlineRange} selectRange={setShadcnInlineRange} numberOfMonths={2} showPresets />
+                  </div>
+                  <p className="mt-3 text-sm text-slate-500">
+                    {shadcnInlineRange.start ? `Start: ${format(shadcnInlineRange.start, 'PPP')}` : 'Start: —'}{' '}
+                    {shadcnInlineRange.end ? `End: ${format(shadcnInlineRange.end, 'PPP')}` : 'End: —'}
+                  </p>
+                </div>
+
+                <div className={shadcnSurfaceClass}>
+                  <h3 className="text-base font-semibold">Range picker</h3>
+                  <p className="mt-1 mb-3 text-sm text-slate-500">`shadcn.DateRangePicker` with presets, time wheels, and two months.</p>
+                  <shadcn.DateRangePicker
+                    value={shadcnRange}
+                    onChange={setShadcnRange}
+                    showPresets
+                    enableTime
+                    numberOfMonths={2}
+                    timeFormat="12h"
+                    defaultStartTime="09:00 AM"
+                    defaultEndTime="05:00 PM"
+                  />
+                  <p className="mt-3 text-sm text-slate-500">
+                    {shadcnRange.start ? `Start: ${format(shadcnRange.start, 'PPP hh:mm a')}` : 'Start: —'}{' '}
+                    {shadcnRange.end ? `End: ${format(shadcnRange.end, 'PPP hh:mm a')}` : 'End: —'}
+                  </p>
+                </div>
+              </div>
             </section>
           </div>
         </main>

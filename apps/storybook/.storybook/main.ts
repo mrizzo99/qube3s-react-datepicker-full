@@ -10,6 +10,7 @@ const config: StorybookConfig = {
   stories: [
     `${repoRoot}/packages/core/src/components/**/*.stories.@(ts|tsx)`,
     `${repoRoot}/packages/plus/src/components/**/*.stories.@(ts|tsx)`,
+    `${repoRoot}/packages/plus/src/adapters/**/*.stories.@(ts|tsx)`,
   ],
   addons: ['@chromatic-com/storybook', '@storybook/addon-docs'],
 
