@@ -40,3 +40,17 @@ export const BoundedBusinessDays: Story = {
     />
   ),
 }
+
+export const AsyncValidationBlocking: Story = {
+  render: () => (
+    <DatePicker
+      validateAsync={async (date) => {
+        await new Promise(resolve => window.setTimeout(resolve, 700))
+        if (date.getDay() === 0) {
+          return { valid: false, message: 'Server rejected Sundays for this workflow.' }
+        }
+        return { valid: true }
+      }}
+    />
+  ),
+}

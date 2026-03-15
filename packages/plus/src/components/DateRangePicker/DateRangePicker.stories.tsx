@@ -41,6 +41,22 @@ export const ControlledComposable: Story = {
   },
 }
 
+export const AsyncValidationBlocking: Story = {
+  render: () => (
+    <DateRangePicker
+      validateAsync={async (range) => {
+        await new Promise(resolve => window.setTimeout(resolve, 700))
+        if (!range.start || !range.end) return { valid: true }
+        const lengthInDays = Math.round((range.end.getTime() - range.start.getTime()) / 86400000) + 1
+        if (lengthInDays > 5) {
+          return { valid: false, message: 'Server rejected ranges longer than 5 days.' }
+        }
+        return { valid: true }
+      }}
+    />
+  ),
+}
+
 export const SpanishI18n: Story = {
   render: () => <DateRangePicker i18n={esI18n} />,
 }

@@ -2,9 +2,20 @@ import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { format } from 'date-fns'
+import type { AsyncValidationResult } from '@core/asyncValidation'
 import DatePicker from './DatePicker'
 
 const jan102024 = new Date('2024-01-10T12:00:00Z')
+
+const createDeferred = <T,>() => {
+  let resolve!: (value: T) => void
+  let reject!: (reason?: unknown) => void
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res
+    reject = rej
+  })
+  return { promise, resolve, reject }
+}
 
 const getCurrentMonthDay = (label: string) =>
   screen
@@ -97,5 +108,56 @@ describe('Plus DatePicker', () => {
     await userEvent.keyboard('{ArrowRight}{ArrowRight}')
     await userEvent.keyboard('{Enter}')
     expect(onChange).toHaveBeenCalledWith(expect.any(Date))
+  })
+
+  it('keeps the calendar open while plus async validation is pending and shows server errors', async () => {
+    const onChange = vi.fn()
+    const deferred = createDeferred<AsyncValidationResult>()
+
+    render(
+      <DatePicker
+        onChange={onChange}
+        validateAsync={() => deferred.promise}
+      />,
+    )
+
+    const input = screen.getByRole('textbox')
+    await userEvent.click(input)
+    await userEvent.click(getCurrentMonthDay('5')!)
+
+    expect(screen.getByRole('dialog', { name: 'Calendar' })).toBeInTheDocument()
+    expect(screen.getByText('Validating selection...')).toBeInTheDocument()
+    expect(onChange).not.toHaveBeenCalled()
+
+    deferred.resolve({ valid: false, message: 'Date is no longer available.' })
+
+    await screen.findByText('Date is no longer available.')
+    expect(screen.getByRole('dialog', { name: 'Calendar' })).toBeInTheDocument()
+    expect(input).toHaveAttribute('aria-invalid', 'true')
+  })
+
+  it('supports optimistic async validation for plus datepicker with uncontrolled rollback on failure', async () => {
+    const onChange = vi.fn()
+    const deferred = createDeferred<AsyncValidationResult>()
+
+    render(
+      <DatePicker
+        onChange={onChange}
+        validateAsync={() => deferred.promise}
+        validationBehavior="optimistic"
+      />,
+    )
+
+    const input = screen.getByRole('textbox')
+    await userEvent.click(input)
+    await userEvent.click(getCurrentMonthDay('5')!)
+
+    expect(onChange).toHaveBeenCalledWith(expect.any(Date))
+    expect(input).toHaveValue(format(new Date(2024, 0, 5), 'PPP'))
+
+    deferred.resolve({ valid: false, message: 'Server rejected that date.' })
+
+    await screen.findByText('Server rejected that date.')
+    expect(input).toHaveValue('')
   })
 })
