@@ -61,7 +61,7 @@ describe('DatePicker', () => {
 
     const rectSpy = vi
       .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
-      .mockImplementation(function getRect() {
+      .mockImplementation(function getRect(this: HTMLElement) {
         const className = typeof this.className === 'string' ? this.className : ''
         if (this.getAttribute('role') === 'dialog') {
           return {

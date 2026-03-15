@@ -19,6 +19,8 @@ import type {
   AsyncValidationStateChange,
 } from '../../asyncValidation'
 
+const cx = (...values: Array<string | false | null | undefined>) => values.filter(Boolean).join(' ')
+
 type DatePickerContextValue = {
   open: boolean
   setOpen: React.Dispatch<React.SetStateAction<boolean>>
@@ -93,9 +95,9 @@ const normalizeIconNode = (icon: React.ReactNode, iconClassName = 'h-4 w-4 objec
   )
 }
 
-const renderPickerIcon = (icon?: React.ReactNode) => (
+const renderPickerIcon = (icon: React.ReactNode | undefined, fallbackIcon?: React.ReactNode) => (
   <span className="inline-flex h-4 w-4 items-center justify-center overflow-hidden" aria-hidden="true">
-    {icon ? normalizeIconNode(icon) : <DefaultCalendarIcon />}
+    {icon ? normalizeIconNode(icon) : fallbackIcon ?? <DefaultCalendarIcon />}
   </span>
 )
 
@@ -156,6 +158,74 @@ export type DatePickerCalendarProps = {
   popoverClassName?: string
 }
 
+export type DatePickerDaySlotState = {
+  active: boolean
+  disabled: boolean
+  faded: boolean
+  focused: boolean
+}
+
+export type DatePickerAdapterTheme = {
+  rootClassName?: string
+  inputLayoutClassName?: string
+  inputGroupClassName?: string
+  inputClassName?: string
+  triggerClassName?: string
+  validationMessageClassName?: string
+  validationMessageInvalidClassName?: string
+  validationMessageValidatingClassName?: string
+  popoverShellClassName?: string
+  popoverPanelClassName?: string
+  headerClassName?: string
+  headerNavGroupClassName?: string
+  headerNavButtonClassName?: string
+  monthLabelClassName?: string
+  weekdayRowClassName?: string
+  weekdayCellClassName?: string
+  gridClassName?: string
+  dayButtonClassName?: (state: DatePickerDaySlotState) => string
+  icons?: {
+    calendar?: React.ReactNode
+    prevYear?: React.ReactNode
+    prevMonth?: React.ReactNode
+    nextMonth?: React.ReactNode
+    nextYear?: React.ReactNode
+  }
+}
+
+const defaultDatePickerAdapterTheme: DatePickerAdapterTheme = {
+  rootClassName: 'relative inline-flex items-center gap-1',
+  inputLayoutClassName: 'inline-flex flex-wrap items-center gap-3',
+  inputGroupClassName: 'inline-flex items-center gap-1',
+  inputClassName:
+    'w-48 rounded border border-gray-300 bg-white p-2 text-gray-900 placeholder:text-gray-500 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
+  triggerClassName:
+    'inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
+  validationMessageClassName: 'text-sm',
+  validationMessageInvalidClassName: 'text-red-600',
+  validationMessageValidatingClassName: 'text-gray-600',
+  popoverShellClassName: 'rounded bg-white shadow',
+  popoverPanelClassName: 'w-72 rounded-lg border bg-white p-4 text-gray-900 shadow',
+  headerClassName: 'mb-2 flex justify-between',
+  headerNavGroupClassName: 'flex gap-1',
+  headerNavButtonClassName:
+    'inline-flex h-8 w-8 items-center justify-center rounded border border-transparent text-gray-700 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
+  monthLabelClassName: 'font-semibold text-gray-900',
+  weekdayRowClassName: 'mb-1 grid grid-cols-7 text-sm text-gray-600',
+  weekdayCellClassName: 'text-center',
+  gridClassName: 'grid grid-cols-7 gap-1',
+  dayButtonClassName: ({ active, disabled, faded }) =>
+    cx(
+      'rounded border border-transparent p-1 text-gray-900 focus-visible:border-blue-500 focus-visible:outline-none',
+      disabled
+        ? 'cursor-not-allowed border-transparent bg-gray-100 text-gray-300'
+        : cx(
+          'hover:border-blue-400',
+          active ? 'bg-blue-600 text-white' : faded ? 'text-gray-300 hover:bg-transparent' : 'hover:bg-blue-100',
+        ),
+    ),
+}
+
 type DatePickerCompoundComponent<TRootProps> = React.FC<TRootProps> & {
   Input: React.FC<DatePickerInputProps>
   Calendar: React.FC<DatePickerCalendarProps>
@@ -165,6 +235,7 @@ type DatePickerCompoundComponent<TRootProps> = React.FC<TRootProps> & {
 
 export function createDatePicker<TRootProps>(
   useResolvedProps: (props: TRootProps) => DatePickerResolvedProps,
+  theme: DatePickerAdapterTheme = defaultDatePickerAdapterTheme,
 ) {
   const DatePickerContext = createContext<DatePickerContextValue | null>(null)
 
@@ -428,7 +499,7 @@ export function createDatePicker<TRootProps>(
       <DatePickerContext.Provider value={contextValue}>
         <div
           ref={containerRef}
-          className="relative inline-flex items-center gap-1"
+          className={theme.rootClassName ?? defaultDatePickerAdapterTheme.rootClassName}
           style={open ? { zIndex: 'var(--rdp-z-popover, 1000)' } : undefined}
         >
           {children ?? (
@@ -480,21 +551,21 @@ export function createDatePicker<TRootProps>(
 
     return (
       <>
-        <div className="inline-flex flex-wrap items-center gap-3">
-          <div className="inline-flex items-center gap-1">
+        <div className={theme.inputLayoutClassName ?? defaultDatePickerAdapterTheme.inputLayoutClassName}>
+          <div className={theme.inputGroupClassName ?? defaultDatePickerAdapterTheme.inputGroupClassName}>
             {iconPosition === 'left' && (
               <button
                 type="button"
                 onClick={() => setOpen(current => !current)}
                 aria-label={iconAriaLabel}
-                className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
+                className={cx(theme.triggerClassName, triggerClassName)}
               >
-                {renderPickerIcon(icon)}
+                {renderPickerIcon(icon, theme.icons?.calendar)}
               </button>
             )}
             <input
               readOnly
-              className={`w-48 rounded border border-gray-300 bg-white p-2 text-gray-900 placeholder:text-gray-500 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${inputClassName}`}
+              className={cx(theme.inputClassName, inputClassName)}
               placeholder={resolvedPlaceholder}
               onClick={() => setOpen(current => !current)}
               onKeyDown={handleInputKeyDown}
@@ -511,16 +582,22 @@ export function createDatePicker<TRootProps>(
                 type="button"
                 onClick={() => setOpen(current => !current)}
                 aria-label={iconAriaLabel}
-                className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
+                className={cx(theme.triggerClassName, triggerClassName)}
               >
-                {renderPickerIcon(icon)}
+                {renderPickerIcon(icon, theme.icons?.calendar)}
               </button>
             )}
           </div>
           {validationState !== 'idle' && (
             <span
               id={validationMessageId}
-              className={`text-sm ${validationState === 'invalid' ? 'text-red-600' : 'text-gray-600'} ${validationMessageClassName}`.trim()}
+              className={cx(
+                theme.validationMessageClassName,
+                validationState === 'invalid'
+                  ? theme.validationMessageInvalidClassName
+                  : theme.validationMessageValidatingClassName,
+                validationMessageClassName,
+              )}
               aria-live="polite"
             >
               {validationMessage}
@@ -687,14 +764,18 @@ export function createDatePicker<TRootProps>(
     const content = (
       <div
         ref={popoverRef}
-        className={`${portal ? 'absolute' : 'absolute left-0 top-full mt-2'} rounded bg-white shadow ${popoverClassName}`}
+        className={cx(
+          portal ? 'absolute' : 'absolute left-0 top-full mt-2',
+          theme.popoverShellClassName,
+          popoverClassName,
+        )}
         style={portal ? { left: position.left, top: position.top, zIndex: 'var(--rdp-z-popover, 1000)' } : { zIndex: 'var(--rdp-z-popover, 1000)' }}
         role="dialog"
         aria-label={resolvedI18n.labels.calendar}
         tabIndex={-1}
         onKeyDown={handleDialogKeyDown}
       >
-        <div className={`w-72 rounded-lg border bg-white p-4 text-gray-900 shadow ${className}`}>
+        <div className={cx(theme.popoverPanelClassName, className)}>
           {children ?? (
             <>
               <DatePickerCalendarHeader />
@@ -719,17 +800,25 @@ export function createDatePicker<TRootProps>(
     const { cal, resolvedI18n, formatOptions, monthLabelId } = useDatePickerContext()
 
     return (
-      <header className="mb-2 flex justify-between">
-        <div className="flex gap-1">
-          <button onClick={cal.prevYear} aria-label={resolvedI18n.labels.prevYear}>«</button>
-          <button onClick={cal.prev} aria-label={resolvedI18n.labels.prevMonth}>←</button>
+      <header className={theme.headerClassName}>
+        <div className={theme.headerNavGroupClassName}>
+          <button className={theme.headerNavButtonClassName} onClick={cal.prevYear} aria-label={resolvedI18n.labels.prevYear}>
+            {theme.icons?.prevYear ?? '«'}
+          </button>
+          <button className={theme.headerNavButtonClassName} onClick={cal.prev} aria-label={resolvedI18n.labels.prevMonth}>
+            {theme.icons?.prevMonth ?? '←'}
+          </button>
         </div>
-        <div id={monthLabelId} className="font-semibold text-gray-900">
+        <div id={monthLabelId} className={theme.monthLabelClassName}>
           {format(cal.currentMonth, resolvedI18n.format.monthLabel, formatOptions)}
         </div>
-        <div className="flex gap-1">
-          <button onClick={cal.next} aria-label={resolvedI18n.labels.nextMonth}>→</button>
-          <button onClick={cal.nextYear} aria-label={resolvedI18n.labels.nextYear}>»</button>
+        <div className={theme.headerNavGroupClassName}>
+          <button className={theme.headerNavButtonClassName} onClick={cal.next} aria-label={resolvedI18n.labels.nextMonth}>
+            {theme.icons?.nextMonth ?? '→'}
+          </button>
+          <button className={theme.headerNavButtonClassName} onClick={cal.nextYear} aria-label={resolvedI18n.labels.nextYear}>
+            {theme.icons?.nextYear ?? '»'}
+          </button>
         </div>
       </header>
     )
@@ -849,15 +938,15 @@ export function createDatePicker<TRootProps>(
         ref={gridRef}
         data-initial-focus="true"
       >
-        <div className="mb-1 grid grid-cols-7 text-sm text-gray-600" aria-hidden="true">
+        <div className={theme.weekdayRowClassName} aria-hidden="true">
           {weekdayLabels.map((label, index) => (
-            <div key={index} className="text-center">
+            <div key={index} className={theme.weekdayCellClassName}>
               {label}
             </div>
           ))}
         </div>
 
-        <div className="grid grid-cols-7 gap-1">
+        <div className={theme.gridClassName}>
           {cal.weeks.map((week, wi) =>
             week.map((day, di) => {
               const faded = !cal.isSameMonth(day, cal.currentMonth)
@@ -877,15 +966,12 @@ export function createDatePicker<TRootProps>(
                     if (disabled) return
                     selectDate(day)
                   }}
-                  className={
-                    'rounded border border-transparent p-1 text-gray-900 hover:border-blue-400 focus-visible:border-blue-500 focus-visible:outline-none ' +
-                    (isActive ? 'bg-blue-600 text-white ' : '') +
-                    (disabled
-                      ? 'cursor-not-allowed border-transparent bg-gray-100 text-gray-300 '
-                      : faded
-                        ? 'text-gray-300 '
-                        : 'hover:bg-blue-100 ')
-                  }
+                  className={theme.dayButtonClassName?.({
+                    active: isActive,
+                    disabled,
+                    faded,
+                    focused: isFocused,
+                  })}
                   aria-label={format(day, resolvedI18n.format.dayAriaLabel, formatOptions)}
                 >
                   {format(day, resolvedI18n.format.dayLabel, formatOptions)}
