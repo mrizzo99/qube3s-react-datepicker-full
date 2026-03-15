@@ -12,6 +12,12 @@ import { createPortal } from 'react-dom'
 import { addMonths, format } from 'date-fns'
 import { resolveCalendarI18n, type CalendarI18n } from '../../i18n'
 import { useCalendar } from '../../headless/useCalendar'
+import type {
+  AsyncValidationBehavior,
+  AsyncValidationResult,
+  AsyncValidationState,
+  AsyncValidationStateChange,
+} from '../../asyncValidation'
 
 type DatePickerContextValue = {
   open: boolean
@@ -20,6 +26,8 @@ type DatePickerContextValue = {
   selectDate: (date: Date) => void
   inputRef: React.MutableRefObject<HTMLInputElement | null>
   containerRef: React.MutableRefObject<HTMLDivElement | null>
+  formatDescriptionId: string
+  validationMessageId: string
   describedById: string
   formatted: string
   placeholderText: string
@@ -36,6 +44,9 @@ type DatePickerContextValue = {
   portalContainer: HTMLElement | null
   onEscape: () => void
   isDateDisabled: (date: Date) => boolean
+  validationState: AsyncValidationState
+  validationMessage: string
+  validationMessageClassName: string
 }
 
 const visuallyHidden = {
@@ -89,6 +100,21 @@ const renderPickerIcon = (icon?: React.ReactNode) => (
 )
 
 const defaultIsDateDisabled = () => false
+const defaultValidatingMessage = 'Validating selection...'
+
+const normalizeValidationResult = (result: AsyncValidationResult): AsyncValidationResult => {
+  if (result.valid) return result
+  return {
+    valid: false,
+    message: result.message || 'Validation failed.',
+    code: result.code,
+  }
+}
+
+const getValidationErrorMessage = (error: unknown) => {
+  if (error instanceof Error && error.message) return error.message
+  return 'Validation failed.'
+}
 
 export type DatePickerBaseProps = {
   children?: React.ReactNode
@@ -101,7 +127,16 @@ export type DatePickerBaseProps = {
   portalContainer?: HTMLElement | null
 }
 
-export type DatePickerResolvedProps = DatePickerBaseProps & {
+export type DatePickerAsyncValidationProps = {
+  validateAsync?: (date: Date) => Promise<AsyncValidationResult>
+  validationBehavior?: AsyncValidationBehavior
+  validationState?: AsyncValidationState
+  validationMessage?: string
+  validationMessageClassName?: string
+  onValidationStateChange?: (detail: AsyncValidationStateChange<Date>) => void
+}
+
+export type DatePickerResolvedProps = DatePickerBaseProps & DatePickerAsyncValidationProps & {
   isDateDisabled?: (date: Date) => boolean
 }
 
@@ -150,6 +185,12 @@ export function createDatePicker<TRootProps>(
       portal = true,
       portalContainer = null,
       isDateDisabled,
+      validateAsync,
+      validationBehavior = 'blocking',
+      validationState,
+      validationMessage,
+      validationMessageClassName = '',
+      onValidationStateChange,
     } = useResolvedProps(props)
 
     const resolvedI18n = useMemo(() => resolveCalendarI18n(i18n), [i18n])
@@ -159,11 +200,16 @@ export function createDatePicker<TRootProps>(
     )
     const [open, setOpen] = useState(false)
     const [internalDate, setInternalDate] = useState<Date | null>(value ?? null)
+    const [pendingDate, setPendingDate] = useState<Date | null>(null)
+    const [internalValidationState, setInternalValidationState] = useState<AsyncValidationState>('idle')
+    const [internalValidationMessage, setInternalValidationMessage] = useState('')
     const containerRef = useRef<HTMLDivElement | null>(null)
     const inputRef = useRef<HTMLInputElement | null>(null)
     const gridRef = useRef<HTMLDivElement | null>(null)
     const popoverRef = useRef<HTMLDivElement | null>(null)
-    const describedById = useId()
+    const formatDescriptionId = useId()
+    const validationMessageId = useId()
+    const validationRequestRef = useRef(0)
     const resolvedIsDateDisabled = useMemo(
       () => isDateDisabled ?? defaultIsDateDisabled,
       [isDateDisabled],
@@ -173,7 +219,8 @@ export function createDatePicker<TRootProps>(
       if (value !== undefined) setInternalDate(value ?? null)
     }, [value])
 
-    const selectedDate = value ?? internalDate
+    const committedDate = value ?? internalDate
+    const selectedDate = pendingDate ?? committedDate
 
     const cal = useCalendar(selectedDate ?? undefined, {
       locale: resolvedI18n.locale,
@@ -185,8 +232,51 @@ export function createDatePicker<TRootProps>(
       [cal.currentMonth],
     )
 
-    const activeDate = selectedDate ?? cal.currentMonth
+    const activeDate = committedDate ?? cal.currentMonth
     const [focusDate, setFocusDate] = useState<Date>(activeDate)
+
+    const emitValidationStateChange = (
+      nextState: AsyncValidationState,
+      candidate: Date | null,
+      message = '',
+      code?: string,
+    ) => {
+      onValidationStateChange?.({
+        state: nextState,
+        candidate,
+        message: message || undefined,
+        code,
+      })
+    }
+
+    const setValidationFeedback = (
+      nextState: AsyncValidationState,
+      candidate: Date | null,
+      message = '',
+      code?: string,
+    ) => {
+      setInternalValidationState(nextState)
+      setInternalValidationMessage(message)
+      emitValidationStateChange(nextState, candidate, message, code)
+    }
+
+    const closePicker = () => {
+      setOpen(false)
+      inputRef.current?.focus()
+    }
+
+    const commitDate = (date: Date) => {
+      if (value === undefined) setInternalDate(date)
+      onChange?.(date)
+    }
+
+    const rollbackOptimisticDate = (previousDate: Date | null) => {
+      if (value === undefined) {
+        setInternalDate(previousDate)
+      } else if (previousDate) {
+        onChange?.(previousDate)
+      }
+    }
 
     useEffect(() => {
       if (!open) return
@@ -224,28 +314,84 @@ export function createDatePicker<TRootProps>(
       return () => window.cancelAnimationFrame(frame)
     }, [open, portal])
 
+    useEffect(() => {
+      if (!open && internalValidationState !== 'validating') {
+        setPendingDate(null)
+      }
+    }, [open, internalValidationState])
+
     const formatted = useMemo(
       () =>
-        selectedDate
-          ? format(selectedDate, resolvedI18n.format.inputValue, formatOptions)
+        committedDate
+          ? format(committedDate, resolvedI18n.format.inputValue, formatOptions)
           : '',
-      [selectedDate, resolvedI18n.format.inputValue, formatOptions],
+      [committedDate, resolvedI18n.format.inputValue, formatOptions],
     )
 
     const placeholderText = placeholder ?? resolvedI18n.labels.selectDatePlaceholder
     const formatDescriptionText = formatDescription ?? resolvedI18n.labels.formatDescription
+    const resolvedValidationState = validationState ?? internalValidationState
+    const resolvedValidationMessage = validationMessage
+      ?? (resolvedValidationState === 'validating'
+        ? (internalValidationMessage || defaultValidatingMessage)
+        : internalValidationMessage)
+    const describedById = resolvedValidationState === 'idle'
+      ? formatDescriptionId
+      : `${formatDescriptionId} ${validationMessageId}`
 
-    const selectDate = (date: Date) => {
+    const selectDate = async (date: Date) => {
       if (resolvedIsDateDisabled(date)) return
-      if (value === undefined) setInternalDate(date)
-      onChange?.(date)
-      setOpen(false)
-      inputRef.current?.focus()
+      const previousDate = committedDate
+      const requestId = validationRequestRef.current + 1
+      validationRequestRef.current = requestId
+
+      if (!validateAsync) {
+        setPendingDate(null)
+        setValidationFeedback('idle', null)
+        commitDate(date)
+        closePicker()
+        return
+      }
+
+      setPendingDate(date)
+      setValidationFeedback('validating', date, defaultValidatingMessage)
+
+      if (validationBehavior === 'optimistic') {
+        commitDate(date)
+        closePicker()
+      }
+
+      let validationResult: AsyncValidationResult
+      try {
+        validationResult = normalizeValidationResult(await validateAsync(date))
+      } catch (error) {
+        validationResult = {
+          valid: false,
+          message: getValidationErrorMessage(error),
+        }
+      }
+
+      if (validationRequestRef.current !== requestId) return
+
+      if (validationResult.valid) {
+        setPendingDate(null)
+        setValidationFeedback('idle', null)
+        if (validationBehavior === 'blocking') {
+          commitDate(date)
+          closePicker()
+        }
+        return
+      }
+
+      setValidationFeedback('invalid', date, validationResult.message, validationResult.code)
+      if (validationBehavior === 'optimistic') {
+        setPendingDate(null)
+        rollbackOptimisticDate(previousDate)
+      }
     }
 
     const onEscape = () => {
-      setOpen(false)
-      inputRef.current?.focus()
+      closePicker()
     }
 
     const contextValue: DatePickerContextValue = {
@@ -255,6 +401,8 @@ export function createDatePicker<TRootProps>(
       selectDate,
       inputRef,
       containerRef,
+      formatDescriptionId,
+      validationMessageId,
       describedById,
       formatted,
       placeholderText,
@@ -271,6 +419,9 @@ export function createDatePicker<TRootProps>(
       portalContainer,
       onEscape,
       isDateDisabled: resolvedIsDateDisabled,
+      validationState: resolvedValidationState,
+      validationMessage: resolvedValidationMessage,
+      validationMessageClassName,
     }
 
     return (
@@ -307,10 +458,15 @@ export function createDatePicker<TRootProps>(
       open,
       setOpen,
       inputRef,
+      formatDescriptionId,
+      validationMessageId,
       describedById,
       formatted,
       placeholderText,
       formatDescriptionText,
+      validationState,
+      validationMessage,
+      validationMessageClassName,
     } = useDatePickerContext()
 
     const resolvedPlaceholder = placeholder ?? placeholderText
@@ -324,39 +480,54 @@ export function createDatePicker<TRootProps>(
 
     return (
       <>
-        {iconPosition === 'left' && (
-          <button
-            type="button"
-            onClick={() => setOpen(current => !current)}
-            aria-label={iconAriaLabel}
-            className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
-          >
-            {renderPickerIcon(icon)}
-          </button>
-        )}
-        <input
-          readOnly
-          className={`w-48 rounded border border-gray-300 bg-white p-2 text-gray-900 placeholder:text-gray-500 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${inputClassName}`}
-          placeholder={resolvedPlaceholder}
-          onClick={() => setOpen(current => !current)}
-          onKeyDown={handleInputKeyDown}
-          value={formatted}
-          ref={inputRef}
-          aria-haspopup="grid"
-          aria-expanded={open}
-          aria-describedby={describedById}
-        />
-        {iconPosition === 'right' && (
-          <button
-            type="button"
-            onClick={() => setOpen(current => !current)}
-            aria-label={iconAriaLabel}
-            className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
-          >
-            {renderPickerIcon(icon)}
-          </button>
-        )}
-        <span id={describedById} style={visuallyHidden}>
+        <div className="inline-flex flex-wrap items-center gap-3">
+          <div className="inline-flex items-center gap-1">
+            {iconPosition === 'left' && (
+              <button
+                type="button"
+                onClick={() => setOpen(current => !current)}
+                aria-label={iconAriaLabel}
+                className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
+              >
+                {renderPickerIcon(icon)}
+              </button>
+            )}
+            <input
+              readOnly
+              className={`w-48 rounded border border-gray-300 bg-white p-2 text-gray-900 placeholder:text-gray-500 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${inputClassName}`}
+              placeholder={resolvedPlaceholder}
+              onClick={() => setOpen(current => !current)}
+              onKeyDown={handleInputKeyDown}
+              value={formatted}
+              ref={inputRef}
+              aria-haspopup="grid"
+              aria-expanded={open}
+              aria-describedby={describedById}
+              aria-invalid={validationState === 'invalid'}
+              aria-busy={validationState === 'validating'}
+            />
+            {iconPosition === 'right' && (
+              <button
+                type="button"
+                onClick={() => setOpen(current => !current)}
+                aria-label={iconAriaLabel}
+                className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
+              >
+                {renderPickerIcon(icon)}
+              </button>
+            )}
+          </div>
+          {validationState !== 'idle' && (
+            <span
+              id={validationMessageId}
+              className={`text-sm ${validationState === 'invalid' ? 'text-red-600' : 'text-gray-600'} ${validationMessageClassName}`.trim()}
+              aria-live="polite"
+            >
+              {validationMessage}
+            </span>
+          )}
+        </div>
+        <span id={formatDescriptionId} style={visuallyHidden}>
           {resolvedFormatDescription}
         </span>
       </>

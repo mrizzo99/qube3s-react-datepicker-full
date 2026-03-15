@@ -17,6 +17,7 @@ export default function App() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [selectedDateEs, setSelectedDateEs] = useState<Date | null>(null)
   const [plusSelectedDate, setPlusSelectedDate] = useState<Date | null>(null)
+  const [asyncSelectedDate, setAsyncSelectedDate] = useState<Date | null>(null)
   const [range, setRange] = useState<{ start: Date | null; end: Date | null }>({
     start: null,
     end: null
@@ -34,6 +35,10 @@ export default function App() {
     end: null
   })
   const [rangeInputPresets, setRangeInputPresets] = useState<{ start: Date | null; end: Date | null }>({
+    start: null,
+    end: null
+  })
+  const [rangeInputAsync, setRangeInputAsync] = useState<{ start: Date | null; end: Date | null }>({
     start: null,
     end: null
   })
@@ -60,6 +65,22 @@ export default function App() {
   const today = new Date()
   const plusMinDate = subDays(today, 7)
   const plusMaxDate = addDays(today, 10)
+  const validateDemoDateAsync = async (date: Date) => {
+    await new Promise(resolve => window.setTimeout(resolve, 700))
+    if (date.getDay() === 0) {
+      return { valid: false as const, message: 'Demo server rejects Sundays.' }
+    }
+    return { valid: true as const }
+  }
+  const validateDemoRangeAsync = async (range: { start: Date | null; end: Date | null }) => {
+    await new Promise(resolve => window.setTimeout(resolve, 700))
+    if (!range.start || !range.end) return { valid: true as const }
+    const lengthInDays = Math.round((range.end.getTime() - range.start.getTime()) / 86400000) + 1
+    if (lengthInDays > 5) {
+      return { valid: false as const, message: 'Demo server rejects ranges longer than 5 days.' }
+    }
+    return { valid: true as const }
+  }
 
   return (
     <div className="min-h-screen bg-[var(--q3-bg)] text-[var(--q3-text-primary)]">
@@ -101,6 +122,9 @@ export default function App() {
               <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#single-plus-constraints">
                 Single Date Plus Constraints
               </a>
+              <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#single-plus-async-validation">
+                Single Date Plus Async Validation
+              </a>
               <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#range-inline-2">
                 Range Inline 2-Month
               </a>
@@ -112,6 +136,9 @@ export default function App() {
               </a>
               <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#range-popover-presets">
                 Range Popover Presets
+              </a>
+              <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#range-async-validation">
+                Range Async Validation
               </a>
               <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#range-mobile-sheet">
                 Range Mobile Sheet
@@ -216,6 +243,24 @@ export default function App() {
               </p>
             </section>
 
+            <section id="single-plus-async-validation" className={panelClass}>
+              <h2 className="text-lg font-semibold">Single date (Plus async validation)</h2>
+              <p className="mt-1 mb-3 text-sm text-[var(--q3-text-disabled)]">Plus DatePicker with blocking async validation and inline status feedback</p>
+              <PlusDatePicker value={asyncSelectedDate} onChange={setAsyncSelectedDate} validateAsync={validateDemoDateAsync}>
+                <PlusDatePicker.Input />
+                <PlusDatePicker.Calendar>
+                  <PlusDatePicker.CalendarHeader />
+                  <PlusDatePicker.CalendarGrid />
+                </PlusDatePicker.Calendar>
+              </PlusDatePicker>
+              <p className="mt-2 text-xs text-[var(--q3-text-disabled)]">
+                Demo rule: Sundays are rejected after a short simulated server round trip.
+              </p>
+              <p className="mt-3 text-sm text-[var(--q3-text-disabled)]">
+                {asyncSelectedDate ? `Selected: ${format(asyncSelectedDate, 'PPP')}` : 'Choose a non-Sunday date'}
+              </p>
+            </section>
+
             <section id="range-inline-2" className={panelClass}>
               <h2 className="text-lg font-semibold">Range selection (inline, 2 months)</h2>
               <p className="mt-1 mb-3 text-sm text-[var(--q3-text-disabled)]">RangeCalendar component</p>
@@ -265,6 +310,29 @@ export default function App() {
               <p className="mt-3 text-sm text-[var(--q3-text-disabled)]">
                 {rangeInputPresets.start ? `Start: ${format(rangeInputPresets.start, 'PPP')}` : 'Start: —'}{' '}
                 {rangeInputPresets.end ? `End: ${format(rangeInputPresets.end, 'PPP')}` : 'End: —'}
+              </p>
+            </section>
+
+            <section id="range-async-validation" className={panelClass}>
+              <h2 className="text-lg font-semibold">Range selection (async validation)</h2>
+              <p className="mt-1 mb-3 text-sm text-[var(--q3-text-disabled)]">DateRangePicker with blocking async validation for completed ranges</p>
+              <DateRangePicker
+                value={rangeInputAsync}
+                onChange={setRangeInputAsync}
+                validateAsync={validateDemoRangeAsync}
+              >
+                <DateRangePicker.Input />
+                <DateRangePicker.Calendar>
+                  <DateRangePicker.CalendarHeader />
+                  <DateRangePicker.CalendarGrid />
+                </DateRangePicker.Calendar>
+              </DateRangePicker>
+              <p className="mt-2 text-xs text-[var(--q3-text-disabled)]">
+                Demo rule: completed ranges longer than 5 days are rejected after a short simulated server round trip.
+              </p>
+              <p className="mt-3 text-sm text-[var(--q3-text-disabled)]">
+                {rangeInputAsync.start ? `Start: ${format(rangeInputAsync.start, 'PPP')}` : 'Start: —'}{' '}
+                {rangeInputAsync.end ? `End: ${format(rangeInputAsync.end, 'PPP')}` : 'End: —'}
               </p>
             </section>
 

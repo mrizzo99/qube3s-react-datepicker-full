@@ -2,9 +2,20 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { format } from 'date-fns'
+import type { AsyncValidationResult } from '@core/asyncValidation'
 import DateRangePicker from './DateRangePicker'
 
 const jan102024 = new Date('2024-01-10T12:00:00Z')
+
+const createDeferred = <T,>() => {
+  let resolve!: (value: T) => void
+  let reject!: (reason?: unknown) => void
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res
+    reject = rej
+  })
+  return { promise, resolve, reject }
+}
 
 const getCurrentMonthDay = (label: string) =>
   screen
@@ -319,6 +330,68 @@ describe('DateRangePicker', () => {
       start: new Date(2024, 0, 4),
       end: new Date(2024, 0, 10),
     })
+  })
+
+  it('keeps the range calendar open while blocking async validation is pending and shows errors for rejected ranges', async () => {
+    const onChange = vi.fn()
+    const deferred = createDeferred<AsyncValidationResult>()
+
+    render(
+      <DateRangePicker
+        onChange={onChange}
+        validateAsync={() => deferred.promise}
+      />,
+    )
+
+    await userEvent.click(screen.getByPlaceholderText('Start date'))
+    await userEvent.click(getCurrentMonthDay('5')!)
+    await userEvent.click(getCurrentMonthDay('7')!)
+
+    expect(onChange).toHaveBeenCalledTimes(1)
+    expect(screen.getByRole('dialog', { name: 'Range calendar' })).toBeInTheDocument()
+    expect(screen.getByText('Validating selection...')).toBeInTheDocument()
+
+    deferred.resolve({ valid: false, message: 'Selected range is not available.' })
+
+    await waitFor(() => {
+      expect(screen.getByText('Selected range is not available.')).toBeInTheDocument()
+    })
+    expect(screen.getByRole('dialog', { name: 'Range calendar' })).toBeInTheDocument()
+    expect(onChange).toHaveBeenCalledTimes(1)
+    expect(screen.getByPlaceholderText('End date')).toHaveValue('')
+  })
+
+  it('supports optimistic async validation with uncontrolled rollback on failed range validation', async () => {
+    const onChange = vi.fn()
+    const deferred = createDeferred<AsyncValidationResult>()
+
+    render(
+      <DateRangePicker
+        onChange={onChange}
+        validateAsync={() => deferred.promise}
+        validationBehavior="optimistic"
+      />,
+    )
+
+    await userEvent.click(screen.getByPlaceholderText('Start date'))
+    await userEvent.click(getCurrentMonthDay('5')!)
+    await userEvent.click(getCurrentMonthDay('7')!)
+
+    expect(onChange).toHaveBeenCalledTimes(2)
+    expect(screen.getByPlaceholderText('Start date')).toHaveValue(format(new Date(2024, 0, 5), 'PPP'))
+    expect(screen.getByPlaceholderText('End date')).toHaveValue(format(new Date(2024, 0, 7), 'PPP'))
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Range calendar' })).not.toBeInTheDocument()
+    })
+
+    deferred.resolve({ valid: false, message: 'Server rejected that range.' })
+
+    await waitFor(() => {
+      expect(screen.getByText('Server rejected that range.')).toBeInTheDocument()
+    })
+    expect(screen.getByPlaceholderText('Start date')).toHaveValue(format(new Date(2024, 0, 5), 'PPP'))
+    expect(screen.getByPlaceholderText('End date')).toHaveValue('')
   })
 
   it('applies default times and date-time formatting when time is enabled', async () => {

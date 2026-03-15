@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { isAfter, isBefore, isSameDay, isWeekend } from 'date-fns'
 import {
   createDatePicker,
+  type DatePickerAsyncValidationProps,
   type DatePickerBaseProps,
   type DatePickerCalendarProps,
   type DatePickerInputProps,
@@ -12,7 +13,7 @@ const normalizeDate = (value: unknown): Date | null => {
   return null
 }
 
-export type DatePickerProps = DatePickerBaseProps & {
+export type DatePickerProps = DatePickerBaseProps & DatePickerAsyncValidationProps & {
   minDate?: Date
   maxDate?: Date
   blockWeekends?: boolean

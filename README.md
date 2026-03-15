@@ -42,6 +42,8 @@ From inside the project folder:
 
 npm install
 
+Note: this repo intentionally commits `package-lock.json`. It is used for reproducible local installs, `npm ci` in CI, and stable test/build behavior. The lockfile helps the repo itself; it does not lock dependency versions for consumers of the published package.
+
 🟦 Run the dev environment (Vite)
 
 Demo app lives at `apps/demo` and renders both core and plus examples:
@@ -59,6 +61,31 @@ npm run test --Vitest
 
 If want to see vitest run in browser run
 npm run test:browser
+
+Why `npm run test:browser` currently runs only two tests:
+- `npm run test` runs the main jsdom Vitest suite from `vitest.config.ts`, which includes the repo's standard `*.test.ts` and `*.test.tsx` files.
+- `npm run test:browser` uses `vitest.browser.config.ts`, which intentionally includes only `*.browser.test.ts` and `*.browser.test.tsx`.
+- At the moment, the only files matching that browser pattern are the Plus async validation browser tests for `DatePicker` and `DateRangePicker`.
+- This split is intentional: browser mode is slower and is reserved for cases that benefit from a real browser runtime.
+
+Browser tests require a Playwright browser install the first time:
+npm run test:browser:install
+
+Run only the async validation contract and component tests:
+npm run test:async-validation
+
+Run only the async validation browser tests:
+npm run test:async-validation:browser
+
+Run the verification suite used by CI:
+npm run verify
+  Will result in the following being run:
+  vitest run
+    This is the normal jsdom/component test suite, including your regular component tests and the async adapter test.
+  npm run test:async-validation:browser
+    This runs the two browser-only tests.
+  vite build
+    This verifies the production build still succeeds.
 
 🟩 Run Storybook (Storybook 10)
 
@@ -129,6 +156,16 @@ import DatePicker from '@plus/components/DatePicker'
     <DatePicker.CalendarGrid />
   </DatePicker.Calendar>
 </DatePicker>
+
+// Optional async server validation (only runs when validateAsync is provided)
+<DatePicker
+  validateAsync={async (date) => {
+    const response = await validateDateOnServer(date)
+    return response.ok
+      ? { valid: true }
+      : { valid: false, message: response.message }
+  }}
+/>
 ```
 
 Plus usage (range):
@@ -162,6 +199,16 @@ import RangeCalendar from '@plus/components/RangeCalendar'
 
 // Enable quick presets (Today, Last 7 days, Last 30 days, This Quarter, Year to Date)
 <DateRangePicker showPresets />
+
+// Async server validation for completed ranges
+<DateRangePicker
+  validateAsync={async (range) => {
+    const response = await validateRangeOnServer(range)
+    return response.ok
+      ? { valid: true }
+      : { valid: false, message: response.message }
+  }}
+/>
 
 // Mobile sheet presentation (phase 1)
 <DateRangePicker mobile={{ enabled: true, mode: 'auto' }} />
@@ -209,6 +256,104 @@ import ClockIcon from './ClockIcon'
 ```
 
 Date + time wheels are a Plus feature and are only available on `DateRangePicker`.
+
+Async validation (Plus `DatePicker` and `DateRangePicker` only)
+- `validateAsync` receives the candidate date or completed range and must resolve to `{ valid: true }` or `{ valid: false, message, code? }`.
+- `validationBehavior?: 'blocking' | 'optimistic'` defaults to `'blocking'`.
+- `validationState?: 'idle' | 'validating' | 'invalid'` and `validationMessage?: string` let you override the built-in status UI.
+- `onValidationStateChange` reports validation lifecycle updates with the candidate value and any error metadata.
+- Validation remains fully optional; no async work happens unless you pass `validateAsync`.
+- In `'blocking'`, the picker waits for server approval before committing and closing.
+- In `'optimistic'`, the picker commits immediately; uncontrolled usage rolls back on failure, and controlled usage can respond to `onValidationStateChange`.
+
+`validateAsync` contract
+- Single-date `DatePicker` receives one `Date`.
+- `DateRangePicker` receives a completed `{ start: Date | null; end: Date | null }` range.
+- Your function should convert that candidate into whatever HTTP request your backend expects, then map the server response back to:
+  - `{ valid: true }`
+  - `{ valid: false, message: string, code?: string }`
+
+Recommended server response shape
+```ts
+type ServerValidationResponse = {
+  valid: boolean
+  message?: string
+  code?: string
+}
+```
+
+Example: single-date adapter
+```tsx
+<DatePicker
+  validateAsync={async (date) => {
+    const response = await fetch('/api/validate-date', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date: date.toISOString() }),
+    })
+
+    const result = await response.json() as {
+      valid: boolean
+      message?: string
+      code?: string
+    }
+
+    return result.valid
+      ? { valid: true }
+      : { valid: false, message: result.message ?? 'Date is not available.', code: result.code }
+  }}
+/>
+```
+
+Example: range adapter
+```tsx
+<DateRangePicker
+  validateAsync={async (range) => {
+    const response = await fetch('/api/validate-range', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        start: range.start?.toISOString() ?? null,
+        end: range.end?.toISOString() ?? null,
+      }),
+    })
+
+    const result = await response.json() as {
+      valid: boolean
+      message?: string
+      code?: string
+    }
+
+    return result.valid
+      ? { valid: true }
+      : { valid: false, message: result.message ?? 'Range is not available.', code: result.code }
+  }}
+/>
+```
+
+Testing async validation
+- Async validation coverage is split across three layers:
+  - adapter contract tests in `packages/plus/src/testing/asyncValidationHttp.test.ts`
+  - jsdom component tests in `packages/plus/src/components/DatePicker/DatePicker.test.tsx` and `packages/plus/src/components/DateRangePicker/DateRangePicker.test.tsx`
+  - Playwright-backed browser tests in `packages/plus/src/components/DatePicker/DatePicker.browser.test.tsx` and `packages/plus/src/components/DateRangePicker/DateRangePicker.browser.test.tsx`
+- The adapter tests use `msw` to mock HTTP responses and verify request payloads plus server-response mapping.
+- The component tests verify pending state, blocking vs optimistic behavior, inline errors, and uncontrolled rollback behavior.
+- The browser tests exercise the rendered UI with real `fetch`-based `validateAsync` adapters, which gives end-to-end coverage of the client contract without introducing a standalone mock-server package.
+
+How to run the async validation tests
+- Install Chromium for Playwright once: `npm run test:browser:install`
+- Run adapter + jsdom coverage: `npm run test:async-validation`
+- Run browser coverage for Plus `DatePicker` and `DateRangePicker`: `npm run test:async-validation:browser`
+- Run the full verification suite: `npm run verify`
+- If you add more `*.browser.test.ts` or `*.browser.test.tsx` files later, `npm run test:browser` will pick them up automatically.
+
+Routine regression protection
+- CI is defined in [ci.yml](/Users/mikerizzo/git/qube3s-react-datepicker-full/.github/workflows/ci.yml).
+- On every push and pull request, CI runs:
+  - `npm ci`
+  - `npm run test:browser:install -- --with-deps`
+  - `npm run verify`
+- `npm run verify` runs the full jsdom suite, the async validation browser tests, and the production build so async validation regressions fail the same verification job as build regressions.
 
 Mobile presentation options (`DateRangePicker` only)
 - `mobile.enabled`: turns on mobile presentation logic (defaults to `false`).

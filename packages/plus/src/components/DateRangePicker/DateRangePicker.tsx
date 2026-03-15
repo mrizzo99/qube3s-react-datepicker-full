@@ -20,6 +20,12 @@ import {
   startOfMonth,
   startOfWeek,
 } from 'date-fns'
+import type {
+  AsyncValidationBehavior,
+  AsyncValidationResult,
+  AsyncValidationState,
+  AsyncValidationStateChange,
+} from '@core/asyncValidation'
 import { resolveCalendarI18n, type CalendarI18n } from '@core/i18n'
 import { useRangeCalendar, type DateRange } from '../../headless/useRangeCalendar'
 import { getDateRangePresets, type DateRangePreset } from '../../presets/dateRangePresets'
@@ -37,12 +43,17 @@ type DateRangePickerContextValue = {
   updateRangeTime: (boundary: 'start' | 'end', parts: TimeParts) => void
   inputRef: React.RefObject<HTMLInputElement | null>
   containerRef: React.RefObject<HTMLDivElement | null>
+  formatDescriptionId: string
+  validationMessageId: string
   describedById: string
   formattedStart: string
   formattedEnd: string
   placeholderStartText: string
   placeholderEndText: string
   formatDescriptionText: string
+  validationState: AsyncValidationState
+  validationMessage: string
+  validationMessageClassName: string
   enableTime: boolean
   timeFormat: '12h' | '24h'
   minuteStep: number
@@ -95,6 +106,7 @@ const DEFAULT_MOBILE_BREAKPOINT = 768
 const SWIPE_MONTH_THRESHOLD = 48
 const SWIPE_CLOSE_THRESHOLD = 56
 const SHEET_CLOSE_RATIO_THRESHOLD = 0.22
+const defaultValidatingMessage = 'Validating selection...'
 const focusableSelector = [
   'button:not([disabled])',
   '[href]',
@@ -187,6 +199,12 @@ export type DateRangePickerProps = {
   children?: React.ReactNode
   value?: DateRange | null
   onChange?: (range: DateRange) => void
+  validateAsync?: (range: DateRange) => Promise<AsyncValidationResult>
+  validationBehavior?: AsyncValidationBehavior
+  validationState?: AsyncValidationState
+  validationMessage?: string
+  validationMessageClassName?: string
+  onValidationStateChange?: (detail: AsyncValidationStateChange<DateRange>) => void
   placeholderStart?: string
   placeholderEnd?: string
   formatDescription?: string
@@ -236,6 +254,20 @@ export type DateRangePickerCalendarProps = {
 
 const DEFAULT_START_TIME: TimeParts = { hours: 9, minutes: 0 }
 const DEFAULT_END_TIME: TimeParts = { hours: 17, minutes: 0 }
+
+const normalizeValidationResult = (result: AsyncValidationResult): AsyncValidationResult => {
+  if (result.valid) return result
+  return {
+    valid: false,
+    message: result.message || 'Validation failed.',
+    code: result.code,
+  }
+}
+
+const getValidationErrorMessage = (error: unknown) => {
+  if (error instanceof Error && error.message) return error.message
+  return 'Validation failed.'
+}
 
 const normalizeMinuteStep = (value: number | undefined) => {
   if (!value || Number.isNaN(value)) return 1
@@ -359,6 +391,12 @@ function DateRangePickerRoot({
   children,
   value,
   onChange,
+  validateAsync,
+  validationBehavior = 'blocking',
+  validationState,
+  validationMessage,
+  validationMessageClassName = '',
+  onValidationStateChange,
   placeholderStart,
   placeholderEnd,
   formatDescription,
@@ -403,14 +441,18 @@ function DateRangePickerRoot({
   const swipeToCloseGesture = mobile?.gestures?.swipeToClose ?? true
   const [autoMobileMatch, setAutoMobileMatch] = useState(false)
   const [internalRange, setInternalRange] = useState<DateRange>(value ?? emptyRange)
+  const [draftRange, setDraftRange] = useState<DateRange>(value ?? emptyRange)
+  const [internalValidationState, setInternalValidationState] = useState<AsyncValidationState>('idle')
+  const [internalValidationMessage, setInternalValidationMessage] = useState('')
   const containerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const gridRef = useRef<HTMLDivElement>(null)
   const popoverRef = useRef<HTMLDivElement>(null)
-  const describedById = useId()
+  const formatDescriptionId = useId()
+  const validationMessageId = useId()
+  const validationRequestRef = useRef(0)
 
   const committedRange = value ?? internalRange
-  const [draftRange, setDraftRange] = useState<DateRange>(committedRange)
 
   useEffect(() => {
     if (value === undefined) return
@@ -420,11 +462,13 @@ function DateRangePickerRoot({
   }, [value])
 
   useEffect(() => {
-    if (!open || !enableTime) return
+    if (!open) return
     setDraftRange(committedRange)
-  }, [open, enableTime, committedRange])
+  }, [open, committedRange])
 
-  const selectedRange = enableTime && open ? draftRange : committedRange
+  const selectedRange = open && (enableTime || internalValidationState !== 'idle')
+    ? draftRange
+    : committedRange
 
   const cal = useRangeCalendar(selectedRange, {
     locale: resolvedI18n.locale,
@@ -438,6 +482,48 @@ function DateRangePickerRoot({
 
   const anchorDate = selectedRange.start ?? selectedRange.end ?? cal.currentMonth
   const [focusDate, setFocusDate] = useState<Date>(anchorDate)
+  const emitValidationStateChange = (
+    nextState: AsyncValidationState,
+    candidate: DateRange | null,
+    message = '',
+    code?: string,
+  ) => {
+    onValidationStateChange?.({
+      state: nextState,
+      candidate,
+      message: message || undefined,
+      code,
+    })
+  }
+
+  const setValidationFeedback = (
+    nextState: AsyncValidationState,
+    candidate: DateRange | null,
+    message = '',
+    code?: string,
+  ) => {
+    setInternalValidationState(nextState)
+    setInternalValidationMessage(message)
+    emitValidationStateChange(nextState, candidate, message, code)
+  }
+
+  const closePicker = () => {
+    setOpen(false)
+    inputRef.current?.focus()
+  }
+
+  const commitRange = (range: DateRange) => {
+    if (value === undefined) setInternalRange(range)
+    onChange?.(range)
+  }
+
+  const rollbackOptimisticRange = (previousRange: DateRange) => {
+    if (value === undefined) {
+      setInternalRange(previousRange)
+    } else {
+      onChange?.(previousRange)
+    }
+  }
 
   useEffect(() => {
     if (!mobileEnabled || mobileMode !== 'auto') {
@@ -524,6 +610,12 @@ function DateRangePickerRoot({
   }, [open, portal])
 
   useEffect(() => {
+    if (!open && internalValidationState !== 'validating') {
+      setDraftRange(committedRange)
+    }
+  }, [open, internalValidationState, committedRange])
+
+  useEffect(() => {
     if (!open) return
     const nextFocus = selectedRange.start ?? selectedRange.end ?? new Date()
     setFocusDate(nextFocus)
@@ -553,13 +645,67 @@ function DateRangePickerRoot({
         ? 'Date and time format: MM/DD/YYYY HH:mm'
         : 'Date and time format: MM/DD/YYYY hh:mm AM/PM')
       : resolvedI18n.labels.formatDescription)
+  const resolvedValidationState = validationState ?? internalValidationState
+  const resolvedValidationMessage = validationMessage
+    ?? (resolvedValidationState === 'validating'
+      ? (internalValidationMessage || defaultValidatingMessage)
+      : internalValidationMessage)
+  const describedById = resolvedValidationState === 'idle'
+    ? formatDescriptionId
+    : `${formatDescriptionId} ${validationMessageId}`
 
-  const commitRange = (range: DateRange) => {
-    if (value === undefined) setInternalRange(range)
-    onChange?.(range)
+  const maybeValidateRange = async (
+    nextRange: DateRange,
+    previousRange: DateRange,
+    options: { closeOnSuccess: boolean; closeImmediatelyOnOptimistic: boolean },
+  ) => {
+    if (!nextRange.start || !nextRange.end || !validateAsync) {
+      commitRange(nextRange)
+      if (options.closeOnSuccess) closePicker()
+      setValidationFeedback('idle', null)
+      return
+    }
+
+    const requestId = validationRequestRef.current + 1
+    validationRequestRef.current = requestId
+    setDraftRange(nextRange)
+    setValidationFeedback('validating', nextRange, defaultValidatingMessage)
+
+    if (validationBehavior === 'optimistic') {
+      commitRange(nextRange)
+      if (options.closeImmediatelyOnOptimistic) closePicker()
+    }
+
+    let validationResult: AsyncValidationResult
+    try {
+      validationResult = normalizeValidationResult(await validateAsync(nextRange))
+    } catch (error) {
+      validationResult = {
+        valid: false,
+        message: getValidationErrorMessage(error),
+      }
+    }
+
+    if (validationRequestRef.current !== requestId) return
+
+    if (validationResult.valid) {
+      setValidationFeedback('idle', null)
+      if (validationBehavior === 'blocking') {
+        commitRange(nextRange)
+        if (options.closeOnSuccess) closePicker()
+      }
+      return
+    }
+
+    setValidationFeedback('invalid', nextRange, validationResult.message, validationResult.code)
+    if (validationBehavior === 'optimistic') {
+      rollbackOptimisticRange(previousRange)
+      setDraftRange(previousRange)
+    }
   }
 
   const selectRange = (range: DateRange) => {
+    const previousRange = committedRange
     const nextRange = enableTime
       ? coerceRangeWithTime(range, selectedRange, startTimeFallback, endTimeFallback)
       : range
@@ -569,11 +715,16 @@ function DateRangePickerRoot({
       return
     }
 
-    commitRange(nextRange)
-    if (nextRange.start && nextRange.end && !enableTime) {
-      setOpen(false)
-      inputRef.current?.focus()
+    if (!nextRange.start || !nextRange.end) {
+      setValidationFeedback('idle', null)
+      commitRange(nextRange)
+      return
     }
+
+    void maybeValidateRange(nextRange, previousRange, {
+      closeOnSuccess: true,
+      closeImmediatelyOnOptimistic: true,
+    })
   }
 
   const updateRangeTime = (boundary: 'start' | 'end', parts: TimeParts) => {
@@ -584,6 +735,7 @@ function DateRangePickerRoot({
       return
     }
 
+    setValidationFeedback('idle', null)
     commitRange(nextRange)
   }
 
@@ -615,19 +767,22 @@ function DateRangePickerRoot({
   }
 
   const onConfirm = () => {
-    if (enableTime) {
-      commitRange(draftRange)
+    if (!enableTime) {
+      closePicker()
+      return
     }
-    setOpen(false)
-    inputRef.current?.focus()
+
+    void maybeValidateRange(draftRange, committedRange, {
+      closeOnSuccess: true,
+      closeImmediatelyOnOptimistic: true,
+    })
   }
 
   const onCancel = () => {
     if (enableTime) {
       setDraftRange(committedRange)
     }
-    setOpen(false)
-    inputRef.current?.focus()
+    closePicker()
   }
 
   const onEscape = () => {
@@ -635,8 +790,7 @@ function DateRangePickerRoot({
       onCancel()
       return
     }
-    setOpen(false)
-    inputRef.current?.focus()
+    closePicker()
   }
 
   const contextValue: DateRangePickerContextValue = {
@@ -647,12 +801,17 @@ function DateRangePickerRoot({
     updateRangeTime,
     inputRef,
     containerRef,
+    formatDescriptionId,
+    validationMessageId,
     describedById,
     formattedStart,
     formattedEnd,
     placeholderStartText,
     placeholderEndText,
     formatDescriptionText,
+    validationState: resolvedValidationState,
+    validationMessage: resolvedValidationMessage,
+    validationMessageClassName,
     enableTime,
     timeFormat,
     minuteStep: normalizedMinuteStep,
@@ -719,12 +878,17 @@ function DateRangePickerInput({
     open,
     setOpen,
     inputRef,
+    formatDescriptionId,
+    validationMessageId,
     describedById,
     formattedStart,
     formattedEnd,
     placeholderStartText,
     placeholderEndText,
     formatDescriptionText,
+    validationState,
+    validationMessage,
+    validationMessageClassName,
     enableTime,
     isMobilePresentation,
   } = useDateRangePickerContext()
@@ -743,88 +907,103 @@ function DateRangePickerInput({
 
   return (
     <>
-      <div className="flex flex-wrap gap-3">
-        <div className="flex flex-col gap-1">
-          <label htmlFor={startInputId} className="text-sm font-medium text-gray-700">
-            {resolvedPlaceholderStart}
-          </label>
-          <div className="inline-flex items-center gap-1">
-            {iconPosition === 'left' && (
-              <button
-                type="button"
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="flex flex-wrap gap-3">
+          <div className="flex flex-col gap-1">
+            <label htmlFor={startInputId} className="text-sm font-medium text-gray-700">
+              {resolvedPlaceholderStart}
+            </label>
+            <div className="inline-flex items-center gap-1">
+              {iconPosition === 'left' && (
+                <button
+                  type="button"
+                  onClick={() => setOpen(current => !current)}
+                  aria-label={iconAriaLabel}
+                  className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
+                >
+                  {renderPickerIcon(icon)}
+                </button>
+              )}
+              <input
+                id={startInputId}
+                readOnly
+                className={`${dateInputWidthClass} rounded border border-gray-300 bg-white p-2 text-gray-900 placeholder:text-gray-500 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${inputClassName}`}
+                placeholder={resolvedPlaceholderStart}
                 onClick={() => setOpen(current => !current)}
-                aria-label={iconAriaLabel}
-                className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
-              >
-                {renderPickerIcon(icon)}
-              </button>
-            )}
-            <input
-              id={startInputId}
-              readOnly
-              className={`${dateInputWidthClass} rounded border border-gray-300 bg-white p-2 text-gray-900 placeholder:text-gray-500 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${inputClassName}`}
-              placeholder={resolvedPlaceholderStart}
-              onClick={() => setOpen(current => !current)}
-              onKeyDown={handleInputKeyDown}
-              value={formattedStart}
-              ref={inputRef}
-              aria-haspopup={isMobilePresentation ? 'dialog' : 'grid'}
-              aria-expanded={open}
-              aria-describedby={describedById}
-            />
-            {iconPosition === 'right' && (
-              <button
-                type="button"
-                onClick={() => setOpen(current => !current)}
-                aria-label={iconAriaLabel}
-                className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
-              >
-                {renderPickerIcon(icon)}
-              </button>
-            )}
+                onKeyDown={handleInputKeyDown}
+                value={formattedStart}
+                ref={inputRef}
+                aria-haspopup={isMobilePresentation ? 'dialog' : 'grid'}
+                aria-expanded={open}
+                aria-describedby={describedById}
+                aria-invalid={validationState === 'invalid'}
+                aria-busy={validationState === 'validating'}
+              />
+              {iconPosition === 'right' && (
+                <button
+                  type="button"
+                  onClick={() => setOpen(current => !current)}
+                  aria-label={iconAriaLabel}
+                  className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
+                >
+                  {renderPickerIcon(icon)}
+                </button>
+              )}
+            </div>
           </div>
-        </div>
 
-        <div className="flex flex-col gap-1">
-          <label htmlFor={endInputId} className="text-sm font-medium text-gray-700">
-            {resolvedPlaceholderEnd}
-          </label>
-          <div className="inline-flex items-center gap-1">
-            {iconPosition === 'left' && (
-              <button
-                type="button"
+          <div className="flex flex-col gap-1">
+            <label htmlFor={endInputId} className="text-sm font-medium text-gray-700">
+              {resolvedPlaceholderEnd}
+            </label>
+            <div className="inline-flex items-center gap-1">
+              {iconPosition === 'left' && (
+                <button
+                  type="button"
+                  onClick={() => setOpen(current => !current)}
+                  aria-label={iconAriaLabel}
+                  className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
+                >
+                  {renderPickerIcon(icon)}
+                </button>
+              )}
+              <input
+                id={endInputId}
+                readOnly
+                className={`${dateInputWidthClass} rounded border border-gray-300 bg-white p-2 text-gray-900 placeholder:text-gray-500 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${inputClassName}`}
+                placeholder={resolvedPlaceholderEnd}
                 onClick={() => setOpen(current => !current)}
-                aria-label={iconAriaLabel}
-                className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
-              >
-                {renderPickerIcon(icon)}
-              </button>
-            )}
-            <input
-              id={endInputId}
-              readOnly
-              className={`${dateInputWidthClass} rounded border border-gray-300 bg-white p-2 text-gray-900 placeholder:text-gray-500 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${inputClassName}`}
-              placeholder={resolvedPlaceholderEnd}
-              onClick={() => setOpen(current => !current)}
-              onKeyDown={handleInputKeyDown}
-              value={formattedEnd}
-              aria-describedby={describedById}
-            />
-            {iconPosition === 'right' && (
-              <button
-                type="button"
-                onClick={() => setOpen(current => !current)}
-                aria-label={iconAriaLabel}
-                className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
-              >
-                {renderPickerIcon(icon)}
-              </button>
-            )}
+                onKeyDown={handleInputKeyDown}
+                value={formattedEnd}
+                aria-describedby={describedById}
+                aria-invalid={validationState === 'invalid'}
+                aria-busy={validationState === 'validating'}
+              />
+              {iconPosition === 'right' && (
+                <button
+                  type="button"
+                  onClick={() => setOpen(current => !current)}
+                  aria-label={iconAriaLabel}
+                  className={`inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${triggerClassName}`}
+                >
+                  {renderPickerIcon(icon)}
+                </button>
+              )}
+            </div>
           </div>
         </div>
+        {validationState !== 'idle' && (
+          <span
+            id={validationMessageId}
+            className={`text-sm ${validationState === 'invalid' ? 'text-red-600' : 'text-gray-600'} ${validationMessageClassName}`.trim()}
+            aria-live="polite"
+          >
+            {validationMessage}
+          </span>
+        )}
       </div>
 
-      <span id={describedById} style={visuallyHidden}>
+      <span id={formatDescriptionId} style={visuallyHidden}>
         {resolvedFormatDescription}
       </span>
     </>

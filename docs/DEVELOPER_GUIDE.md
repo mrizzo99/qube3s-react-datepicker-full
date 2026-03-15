@@ -106,6 +106,7 @@ Note: you can also pass `icon={<img src="/calendar.png" ... />}` for assets in `
   - `minDate?: Date`
   - `maxDate?: Date`
   - `blockWeekends?: boolean`
+- Adds optional async validation when `validateAsync` is supplied, with blocking and optimistic modes sharing the same status model.
 - Disabled dates remain focusable for grid navigation, but are rendered unavailable and cannot be selected by click or keyboard.
 
 Example:
@@ -125,11 +126,25 @@ import DatePicker from '@plus/components/DatePicker'
 </DatePicker>
 ```
 
+Example: async validation
+```tsx
+<DatePicker
+  validateAsync={async (date) => {
+    const response = await validateDateOnServer(date)
+    return response.ok
+      ? { valid: true }
+      : { valid: false, message: response.message }
+  }}
+  validationBehavior="blocking"
+/>
+```
+
 ## Date range picker compound API (plus `packages/plus/src/components/DateRangePicker/DateRangePicker.tsx`)
 - Exposes composable subcomponents: `DateRangePicker.Input`, `DateRangePicker.Calendar`, `DateRangePicker.CalendarHeader`, `DateRangePicker.CalendarGrid`.
 - Root owns controlled/uncontrolled state and context; subcomponents reuse range behavior without duplicating logic.
 - Multi-month range views are enabled with `numberOfMonths` (default `1`, max `3`).
 - Date + time mode is opt-in with `enableTime` and supports `12h` and `24h` wheel layouts.
+- Async validation is supported for completed ranges and time-confirmed drafts through `validateAsync`.
 - Popover behavior: `portal` defaults to `true`; use `portalContainer` to customize mount target.
 
 Example:
@@ -219,6 +234,169 @@ Date + time props on `DateRangePicker`
 - `defaultStartTime?: string` / `defaultEndTime?: string` – accepts `HH:mm` or `hh:mm AM/PM`.
 - `timeLabelIcon?: React.ReactNode` – replaces the default clock icon used in Start/End time headings.
 - `timeLabelIconClassName?: string` – className applied to the icon wrapper for easy theming.
+
+Async validation props on Plus `DatePicker` and `DateRangePicker`
+- `validateAsync` – async function that resolves to `{ valid: true }` or `{ valid: false, message, code? }`.
+- Async validation is completely optional and stays inactive unless `validateAsync` is provided.
+- `validationBehavior?: 'blocking' | 'optimistic'` – blocking waits before commit; optimistic commits immediately and rolls back uncontrolled state on failure.
+- `validationState?: 'idle' | 'validating' | 'invalid'` – optional external override for the validation UI state.
+- `validationMessage?: string` – optional external override for the displayed validation text.
+- `onValidationStateChange` – receives `{ state, candidate, message?, code? }` whenever validation starts, fails, or clears.
+- `validationMessageClassName?: string` – customizes the inline validation text shown beside the trigger/input group.
+
+When validation runs
+- `DatePicker` calls `validateAsync(date)` for the candidate date the user just chose.
+- `DateRangePicker` calls `validateAsync(range)` once the range is complete, or when a date+time draft is confirmed.
+- The component does not make HTTP calls on its own; `validateAsync` is your adapter from picker state to your backend.
+- In `blocking` mode, commit and close wait for a successful validation result.
+- In `optimistic` mode, the picker commits immediately and then reports failures through the validation state model. Uncontrolled usage rolls back automatically; controlled usage should react to `onValidationStateChange`.
+
+Expected return shape
+- `validateAsync` must always resolve to one of:
+  - `{ valid: true }`
+  - `{ valid: false, message: string, code?: string }`
+- `message` is what the component displays to the user when validation fails.
+- `code` is optional metadata you can use for analytics, logging, or custom controlled-state handling.
+
+Recommended server response shape
+```ts
+type ServerValidationResponse = {
+  valid: boolean
+  message?: string
+  code?: string
+}
+```
+
+The picker does not require your server to return this exact JSON shape over the wire, but using the same fields keeps the adapter trivial. Any HTTP status can work as long as `validateAsync` maps the server response back into the picker contract.
+
+Example: single-date server adapter
+```tsx
+<DatePicker
+  validateAsync={async (date) => {
+    const response = await fetch('/api/validate-date', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        date: date.toISOString(),
+      }),
+    })
+
+    const result = await response.json() as {
+      valid: boolean
+      message?: string
+      code?: string
+    }
+
+    return result.valid
+      ? { valid: true }
+      : {
+          valid: false,
+          message: result.message ?? 'Date is not available.',
+          code: result.code,
+        }
+  }}
+/>
+```
+
+Example: range server adapter
+```tsx
+<DateRangePicker
+  validateAsync={async (range) => {
+    const response = await fetch('/api/validate-range', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        start: range.start?.toISOString() ?? null,
+        end: range.end?.toISOString() ?? null,
+      }),
+    })
+
+    const result = await response.json() as {
+      valid: boolean
+      message?: string
+      code?: string
+    }
+
+    return result.valid
+      ? { valid: true }
+      : {
+          valid: false,
+          message: result.message ?? 'Range is not available.',
+          code: result.code,
+        }
+  }}
+/>
+```
+
+Example: async range validation
+```tsx
+<DateRangePicker
+  validateAsync={async (range) => {
+    const response = await validateRangeOnServer(range)
+    return response.ok
+      ? { valid: true }
+      : { valid: false, message: response.message }
+  }}
+  validationBehavior="optimistic"
+/>
+```
+
+Testing the async validation API
+- The recommended split is:
+  - adapter contract tests for HTTP request and response mapping
+  - jsdom component tests for picker state behavior
+  - browser tests for one real UI + `fetch` path per picker
+- This repo implements that split with:
+  - `packages/plus/src/testing/asyncValidationHttp.ts` – reusable `fetch` adapters for single-date and range validation
+  - `packages/plus/src/testing/asyncValidationHttp.test.ts` – `msw`-backed contract tests
+  - `packages/plus/src/components/DatePicker/DatePicker.test.tsx` – Plus single-date async validation behavior in jsdom
+  - `packages/plus/src/components/DateRangePicker/DateRangePicker.test.tsx` – range async validation behavior in jsdom
+  - `packages/plus/src/components/DatePicker/DatePicker.browser.test.tsx` – browser integration coverage for Plus `DatePicker`
+  - `packages/plus/src/components/DateRangePicker/DateRangePicker.browser.test.tsx` – browser integration coverage for `DateRangePicker`
+
+What each layer proves
+- Adapter tests verify the network contract:
+  - request bodies use ISO strings
+  - valid responses map to `{ valid: true }`
+  - invalid responses map to `{ valid: false, message, code? }`
+  - malformed payloads and network failures fall back to a predictable error shape
+- jsdom component tests verify:
+  - pending-state rendering
+  - blocking vs optimistic behavior
+  - inline error display
+  - uncontrolled rollback behavior
+- Browser tests verify:
+  - a user can select a date or range in the rendered UI
+  - `validateAsync` performs a real `fetch`
+  - the mocked server response updates the UI correctly
+
+How to run these tests locally
+- Install Chromium once: `npm run test:browser:install`
+- Run the async validation adapter + jsdom tests: `npm run test:async-validation`
+- Run the async validation browser tests: `npm run test:async-validation:browser`
+- Run the full verification suite: `npm run verify`
+
+Why `npm run test:browser` only runs the browser tests
+- The default test command, `npm run test`, uses `vitest.config.ts` and runs the main jsdom suite.
+- The browser command, `npm run test:browser`, uses `vitest.browser.config.ts` and intentionally includes only `*.browser.test.ts` and `*.browser.test.tsx`.
+- Right now, the only browser-test files in this repo are:
+  - `packages/plus/src/components/DatePicker/DatePicker.browser.test.tsx`
+  - `packages/plus/src/components/DateRangePicker/DateRangePicker.browser.test.tsx`
+- That is why `npm run test:browser` currently shows only those two tests.
+- This split is deliberate because browser-mode tests are slower and should be used where a real browser runtime adds value.
+
+Routine regression enforcement
+- CI is defined in [ci.yml](/Users/mikerizzo/git/qube3s-react-datepicker-full/.github/workflows/ci.yml).
+- On each push and pull request, CI runs:
+  - `npm ci`
+  - `npm run test:browser:install -- --with-deps`
+  - `npm run verify`
+- `npm run verify` is the main regression gate because it combines:
+  - the full jsdom suite via `vitest run`
+  - the async validation browser tests
+  - the production `vite build`
+- This workflow intentionally depends on a committed `package-lock.json` so installs stay reproducible across local development and CI.
+- The next high-value additions, if needed later, are stale-response tests and controlled-mode browser scenarios.
 
 ## Internationalization (i18n)
 - UI components accept an `i18n` prop to localize month/day labels, aria labels, and input formatting.
