@@ -8,7 +8,9 @@ This core repo is a headless-first datepicker built with Vite, React, TypeScript
 - `packages/core/src/headless/useCalendar.ts` – Headless calendar state and derived values (single-date).
 - `packages/core/src/components/Calendar` – Visual calendar that consumes the headless hook (single-date).
 - `packages/core/src/components/DatePicker` – Compound single-date picker (`Root/Input/Calendar/Header/Grid`).
+- `packages/core/src/components/DatePicker/createDatePicker.tsx` – Shared single-date picker factory used by core and Plus variants.
 - `packages/plus/src/headless/useRangeCalendar.ts` – Range-aware hook that composes the core hook.
+- `packages/plus/src/components/DatePicker` – Plus single-date picker with date constraints.
 - `packages/plus/src/components/RangeCalendar` – Range-capable calendar UI.
 - `packages/plus/src/components/DateRangePicker` – Compound range picker (`Root/Input/Calendar/Header/Grid`).
 - `tailwind.config.js`, `apps/demo/src/index.css` – Tailwind wiring (base/components/utilities only).
@@ -20,7 +22,7 @@ This core repo is a headless-first datepicker built with Vite, React, TypeScript
    Popovers render in a portal (`document.body`) by default; use `portal={false}` to render inline.
 4) `DatePicker.CalendarGrid` calls `useCalendar()` for month/grid state and keyboard navigation behavior.
 5) User actions: month navigation triggers `cal.prev`/`cal.next`; clicking a day calls `selectDate(day)` which either updates internal hook state or bubbles through the controlled prop handler.
-6) Plus components follow the same pattern with `DateRangePicker` + `useRangeCalendar`.
+6) Plus components follow the same pattern with constrained single-date `DatePicker` and range `DateRangePicker` + `useRangeCalendar`.
 
 ## Calendar state model (core `packages/core/src/headless/useCalendar.ts`)
 - **State**: `currentMonth` (`Date` of the visible month) and single-date selection (`selectedDate: Date | null`). The `initial?: Date` argument seeds `currentMonth`; invalid dates normalize to `new Date()`.
@@ -96,6 +98,32 @@ import CalendarJpg from './calendar.jpg'
 </DatePicker>
 ```
 Note: you can also pass `icon={<img src="/calendar.png" ... />}` for assets in `public/`, or use external URLs if your build allows them.
+
+## Date picker compound API (plus `packages/plus/src/components/DatePicker/DatePicker.tsx`)
+- Exposes the same composable surface as core: `DatePicker.Input`, `DatePicker.Calendar`, `DatePicker.CalendarHeader`, `DatePicker.CalendarGrid`.
+- Reuses the shared picker factory from `packages/core/src/components/DatePicker/createDatePicker.tsx` so portal, keyboard, and focus behavior stay aligned with core.
+- Adds Plus-only selection constraints:
+  - `minDate?: Date`
+  - `maxDate?: Date`
+  - `blockWeekends?: boolean`
+- Disabled dates remain focusable for grid navigation, but are rendered unavailable and cannot be selected by click or keyboard.
+
+Example:
+```tsx
+import DatePicker from '@plus/components/DatePicker'
+
+<DatePicker
+  minDate={new Date(2024, 0, 5)}
+  maxDate={new Date(2024, 0, 20)}
+  blockWeekends
+>
+  <DatePicker.Input />
+  <DatePicker.Calendar>
+    <DatePicker.CalendarHeader />
+    <DatePicker.CalendarGrid />
+  </DatePicker.Calendar>
+</DatePicker>
+```
 
 ## Date range picker compound API (plus `packages/plus/src/components/DateRangePicker/DateRangePicker.tsx`)
 - Exposes composable subcomponents: `DateRangePicker.Input`, `DateRangePicker.Calendar`, `DateRangePicker.CalendarHeader`, `DateRangePicker.CalendarGrid`.

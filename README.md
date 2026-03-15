@@ -6,6 +6,8 @@
 
 ✅ DatePicker compound API (core)
 
+✅ DatePicker constraints in Plus
+
 ✅ DateRangePicker compound API (plus)
 
 ✅ Date + time range picker wheels (plus)
@@ -30,7 +32,7 @@
 
 Packages
 - `packages/core`: single-date calendar UI (`Calendar`), composable picker (`DatePicker`), headless hook (`useCalendar`).
-- `packages/plus`: range and date-time-range components/hooks (`RangeCalendar`, composable `DateRangePicker`, `useRangeCalendar`), built on core.
+- `packages/plus`: constrained single-date picker, range/date-time-range components/hooks (`DatePicker`, `RangeCalendar`, composable `DateRangePicker`, `useRangeCalendar`), built on core.
 
 After downloading and extracting the ZIP:
 
@@ -98,6 +100,30 @@ import DatePicker from '@core/components/DatePicker'
 // Custom icon on the input trigger (defaults to built-in calendar icon)
 <DatePicker>
   <DatePicker.Input icon={<MyIcon />} iconPosition="left" iconAriaLabel="Choose date" />
+  <DatePicker.Calendar>
+    <DatePicker.CalendarHeader />
+    <DatePicker.CalendarGrid />
+  </DatePicker.Calendar>
+</DatePicker>
+```
+
+Plus usage (single date constraints):
+```tsx
+import DatePicker from '@plus/components/DatePicker'
+
+// Restrict selection to a bounded window
+<DatePicker minDate={new Date(2024, 0, 5)} maxDate={new Date(2024, 0, 20)} />
+
+// Allow only business days inside the bounded window
+<DatePicker
+  minDate={new Date(2024, 0, 5)}
+  maxDate={new Date(2024, 0, 20)}
+  blockWeekends
+/>
+
+// Full compound composition remains available
+<DatePicker blockWeekends>
+  <DatePicker.Input />
   <DatePicker.Calendar>
     <DatePicker.CalendarHeader />
     <DatePicker.CalendarGrid />
