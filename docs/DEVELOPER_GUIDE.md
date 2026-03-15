@@ -395,6 +395,7 @@ Routine regression enforcement
   - the full jsdom suite via `vitest run`
   - the async validation browser tests
   - the production `vite build`
+- This workflow intentionally depends on a committed `package-lock.json` so installs stay reproducible across local development and CI.
 - The next high-value additions, if needed later, are stale-response tests and controlled-mode browser scenarios.
 
 ## Internationalization (i18n)

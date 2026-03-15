@@ -42,6 +42,8 @@ From inside the project folder:
 
 npm install
 
+Note: this repo intentionally commits `package-lock.json`. It is used for reproducible local installs, `npm ci` in CI, and stable test/build behavior. The lockfile helps the repo itself; it does not lock dependency versions for consumers of the published package.
+
 🟦 Run the dev environment (Vite)
 
 Demo app lives at `apps/demo` and renders both core and plus examples:

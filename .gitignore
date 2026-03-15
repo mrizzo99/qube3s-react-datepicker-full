@@ -1,12 +1,10 @@
 debug-storybook.log
 doctor-storybook.log
 Free_vs_paid_version_features.txt
-package-lock.json
 dist/
 docs/api/
 docs/FREETIER_PROTIER.docx
 node_modules/
 storybook-static/
-
 
 
