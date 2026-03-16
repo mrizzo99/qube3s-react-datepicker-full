@@ -26,11 +26,14 @@ describe('ShadcnCalendar adapter', () => {
     const grid = screen.getByRole('grid', { name: 'January 2024' })
     expect(grid.className).toContain('bg-popover')
     expect(screen.getByRole('button', { name: 'Next month' }).className).toContain('rounded-md')
+    expect(screen.getByText('Su').className).toContain('h-8')
 
     const day15 = getCurrentMonthDay('15')!
     await userEvent.click(day15)
 
     expect(onSelect).toHaveBeenCalledWith(expect.any(Date))
     expect(day15.className).toContain('rounded-md')
+    expect(day15.className).toContain('h-9')
+    expect(day15.className).toContain('w-9')
   })
 })

@@ -3,7 +3,6 @@ import React, {
   useContext,
   useEffect,
   useId,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -36,6 +35,7 @@ import {
   type ThemeMode,
   type ThemeSkin,
 } from '@core/theming'
+import { useFloatingPopoverPosition } from '@core/floating'
 import { animateMonthSlide, FLUENT_UI_DURATION_MS, usePresenceTransition } from '@core/motion'
 import { useRangeCalendar, type DateRange } from '../../headless/useRangeCalendar'
 import { getDateRangePresets, type DateRangePreset } from '../../presets/dateRangePresets'
@@ -113,8 +113,6 @@ const visuallyHidden = {
   border: 0,
 } satisfies React.CSSProperties
 
-const POPOVER_VIEWPORT_PADDING = 16
-const POPOVER_OFFSET = 8
 const DEFAULT_MOBILE_BREAKPOINT = 768
 const SWIPE_MONTH_THRESHOLD = 48
 const SWIPE_CLOSE_THRESHOLD = 56
@@ -1428,11 +1426,16 @@ function DateRangePickerCalendar({
   const { isMounted, presenceState } = usePresenceTransition(open, FLUENT_UI_DURATION_MS)
   const shouldPortal = isMobilePresentation || portal
   const shouldUseAnchorPosition = shouldPortal && !isMobilePresentation
-  const [position, setPosition] = useState<{ left: number; top: number }>({ left: 0, top: 0 })
-  const [hasPosition, setHasPosition] = useState(!shouldUseAnchorPosition)
-  const bodyPaddingBaseRef = useRef<number | null>(null)
-  const bodyPaddingInlineRef = useRef<string | null>(null)
-  const bodyPaddingExtraRef = useRef(0)
+  const {
+    floatingStyle,
+    isPositioned,
+    panelStyle,
+  } = useFloatingPopoverPosition({
+    open,
+    enabled: shouldUseAnchorPosition,
+    referenceRef: containerRef,
+    floatingRef: popoverRef,
+  })
   const sheetDragStartRef = useRef<{ x: number; y: number; pointerId: number } | null>(null)
   const [sheetDragOffset, setSheetDragOffset] = useState(0)
   const [isSheetDragging, setIsSheetDragging] = useState(false)
@@ -1491,88 +1494,6 @@ function DateRangePickerCalendar({
 
     setSheetDragOffset(0)
   }
-
-  useLayoutEffect(() => {
-    if (!open) {
-      setHasPosition(!shouldUseAnchorPosition)
-      return
-    }
-
-    if (!shouldUseAnchorPosition) {
-      setHasPosition(true)
-      return
-    }
-
-    const updatePosition = () => {
-      const anchor = containerRef.current
-      if (!anchor) return
-      const rect = anchor.getBoundingClientRect()
-      setPosition({
-        left: rect.left + window.scrollX,
-        top: rect.bottom + window.scrollY + POPOVER_OFFSET,
-      })
-      setHasPosition(true)
-    }
-
-    updatePosition()
-    window.addEventListener('resize', updatePosition)
-    window.addEventListener('scroll', updatePosition, true)
-    return () => {
-      window.removeEventListener('resize', updatePosition)
-      window.removeEventListener('scroll', updatePosition, true)
-    }
-  }, [open, shouldUseAnchorPosition, containerRef])
-
-  useEffect(() => {
-    const clearExtraBodyPadding = () => {
-      if (bodyPaddingInlineRef.current !== null) {
-        document.body.style.paddingBottom = bodyPaddingInlineRef.current
-      }
-      bodyPaddingInlineRef.current = null
-      bodyPaddingBaseRef.current = null
-      bodyPaddingExtraRef.current = 0
-    }
-
-    if (!open || !hasPosition || isMobilePresentation) {
-      clearExtraBodyPadding()
-      return
-    }
-
-    const frame = window.requestAnimationFrame(() => {
-      const popover = popoverRef.current
-      if (!popover) return
-
-      const rect = popover.getBoundingClientRect()
-      const overflowBottom = rect.bottom + POPOVER_VIEWPORT_PADDING - window.innerHeight
-      if (overflowBottom > 0) {
-        if (shouldPortal) {
-          if (bodyPaddingInlineRef.current === null) {
-            bodyPaddingInlineRef.current = document.body.style.paddingBottom
-            bodyPaddingBaseRef.current = parseFloat(window.getComputedStyle(document.body).paddingBottom) || 0
-          }
-
-          const maxScrollable =
-            document.documentElement.scrollHeight - window.innerHeight - window.scrollY
-          const neededExtraSpace = overflowBottom - Math.max(0, maxScrollable)
-
-          if (neededExtraSpace > bodyPaddingExtraRef.current) {
-            const nextExtra = Math.ceil(neededExtraSpace + POPOVER_VIEWPORT_PADDING)
-            const basePadding = bodyPaddingBaseRef.current ?? 0
-            document.body.style.paddingBottom = `${basePadding + nextExtra}px`
-            bodyPaddingExtraRef.current = nextExtra
-          }
-        }
-
-        window.scrollBy({ top: overflowBottom, behavior: 'smooth' })
-      }
-    })
-
-    return () => {
-      window.cancelAnimationFrame(frame)
-      if (!open) clearExtraBodyPadding()
-    }
-  }, [open, hasPosition, position.left, position.top, popoverRef, shouldPortal, isMobilePresentation])
-
   useEffect(() => {
     if (!open || !isMobilePresentation) return
 
@@ -1589,7 +1510,7 @@ function DateRangePickerCalendar({
 
   useEffect(() => {
     if (!open) return
-    if (shouldUseAnchorPosition && !hasPosition) return
+    if (shouldUseAnchorPosition && !isPositioned) return
 
     const frame = window.requestAnimationFrame(() => {
       const dialog = popoverRef.current
@@ -1601,7 +1522,7 @@ function DateRangePickerCalendar({
     })
 
     return () => window.cancelAnimationFrame(frame)
-  }, [open, hasPosition, popoverRef, shouldUseAnchorPosition])
+  }, [open, isPositioned, popoverRef, shouldUseAnchorPosition])
 
   const handleDialogKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (event.defaultPrevented && event.key !== 'Tab') return
@@ -1642,7 +1563,6 @@ function DateRangePickerCalendar({
   }
 
   if (!isMounted) return null
-  if (shouldUseAnchorPosition && open && !hasPosition) return null
 
   const content = isMobilePresentation ? (
     <div
@@ -1704,13 +1624,20 @@ function DateRangePickerCalendar({
       )}
       data-rdp-theme={themeMode}
       data-state={presenceState}
-      style={shouldPortal ? { left: position.left, top: position.top, zIndex: 'var(--rdp-z-popover, 1000)' } : { zIndex: 'var(--rdp-z-popover, 1000)' }}
+      style={shouldPortal
+        ? {
+            ...floatingStyle,
+            zIndex: 'var(--rdp-z-popover, 1000)',
+            opacity: open && shouldUseAnchorPosition && !isPositioned ? 0 : undefined,
+            pointerEvents: open && shouldUseAnchorPosition && !isPositioned ? 'none' : undefined,
+          }
+        : { zIndex: 'var(--rdp-z-popover, 1000)' }}
       role="dialog"
       aria-label={resolvedI18n.labels.rangeCalendar}
       tabIndex={-1}
       onKeyDown={handleDialogKeyDown}
     >
-      <div className={cx(theme.desktopPopoverPanelClassName, className)} data-state={presenceState}>
+      <div className={cx(theme.desktopPopoverPanelClassName, className)} data-state={presenceState} style={panelStyle}>
         {children ?? (
           <>
             <DateRangePickerCalendarHeader />

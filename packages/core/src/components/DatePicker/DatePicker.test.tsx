@@ -50,12 +50,7 @@ describe('DatePicker', () => {
     expect(input).toHaveValue(format(new Date(2024, 0, 5), 'PPP'))
   })
 
-  it('positions portal popover near the trigger and auto-scrolls when clipped', async () => {
-    const originalScrollBy = window.scrollBy
-    const scrollBySpy = vi.fn()
-    window.scrollBy = scrollBySpy
-    const originalBodyPadding = document.body.style.paddingBottom
-
+  it('positions portal popover near the trigger and flips when space is constrained', async () => {
     const originalInnerHeight = window.innerHeight
     Object.defineProperty(window, 'innerHeight', { value: 800, configurable: true })
 
@@ -66,13 +61,13 @@ describe('DatePicker', () => {
         if (this.getAttribute('role') === 'dialog') {
           return {
             x: 48,
-            y: 140,
+            y: 0,
             width: 288,
             height: 320,
-            top: 140,
-            left: 48,
-            right: 336,
-            bottom: 980,
+            top: 0,
+            left: 0,
+            right: 288,
+            bottom: 320,
             toJSON: () => ({}),
           } as DOMRect
         }
@@ -80,13 +75,13 @@ describe('DatePicker', () => {
         if (className.includes('relative inline-flex items-center gap-1')) {
           return {
             x: 48,
-            y: 96,
+            y: 720,
             width: 260,
             height: 36,
-            top: 96,
+            top: 720,
             left: 48,
             right: 308,
-            bottom: 132,
+            bottom: 756,
             toJSON: () => ({}),
           } as DOMRect
         }
@@ -110,22 +105,14 @@ describe('DatePicker', () => {
 
     const dialog = await screen.findByRole('dialog', { name: 'Calendar' })
     expect(dialog.style.left).toBe('48px')
-    expect(dialog.style.top).toBe('140px')
-
-    await waitFor(() => {
-      expect(scrollBySpy).toHaveBeenCalledWith(
-        expect.objectContaining({ top: expect.any(Number), behavior: 'smooth' }),
-      )
-    })
+    expect(dialog.style.top).toBe('392px')
 
     await userEvent.click(screen.getByRole('textbox'))
     await waitFor(() => {
       expect(screen.queryByRole('dialog', { name: 'Calendar' })).not.toBeInTheDocument()
     })
-    expect(document.body.style.paddingBottom).toBe(originalBodyPadding)
 
     rectSpy.mockRestore()
-    window.scrollBy = originalScrollBy
     Object.defineProperty(window, 'innerHeight', { value: originalInnerHeight, configurable: true })
   })
 

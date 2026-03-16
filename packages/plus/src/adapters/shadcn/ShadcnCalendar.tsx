@@ -17,11 +17,11 @@ const shadcnCalendarTheme: CalendarTheme = {
     'inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
   monthLabelClassName: 'text-sm font-medium text-foreground',
   weekdayRowClassName: 'mb-1 grid grid-cols-7 text-sm text-muted-foreground',
-  weekdayCellClassName: 'text-center',
+  weekdayCellClassName: 'flex h-8 items-center justify-center font-normal',
   gridClassName: 'grid grid-cols-7 gap-1',
   dayButtonClassName: ({ active, faded, focused }) =>
     [
-      'rounded-md border border-transparent p-1 text-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+      'inline-flex h-9 w-9 items-center justify-center rounded-md border border-transparent text-sm font-normal transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
       active ? 'bg-primary text-primary-foreground' : '',
       !active ? 'hover:bg-accent hover:text-accent-foreground' : '',
       faded ? 'text-muted-foreground opacity-70' : '',

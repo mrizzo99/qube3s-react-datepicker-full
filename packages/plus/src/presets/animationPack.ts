@@ -34,6 +34,7 @@ export type FluentAnimationPack = {
 
 export const fluentAnimationPack: FluentAnimationPack = {
   calendar: {
+    __mergeClassSlots: true,
     containerClassName: 'motion-safe:will-change-transform',
     headerNavButtonClassName: fluentPress,
     dayButtonClassName: ({ active, faded }) =>
@@ -45,6 +46,7 @@ export const fluentAnimationPack: FluentAnimationPack = {
         .join(' '),
   },
   datePicker: {
+    __mergeClassSlots: true,
     inputClassName:
       'motion-safe:transition-[border-color,box-shadow,background-color] motion-safe:duration-[180ms] motion-safe:ease-[cubic-bezier(0.16,1,0.3,1)]',
     triggerClassName: fluentPress,
@@ -60,6 +62,7 @@ export const fluentAnimationPack: FluentAnimationPack = {
         .join(' '),
   },
   rangeCalendar: {
+    __mergeClassSlots: true,
     containerClassName: 'motion-safe:will-change-transform',
     headerNavButtonClassName: fluentPress,
     presetButtonClassName: active => `${fluentPress} ${active ? 'motion-safe:shadow-sm' : ''}`.trim(),
@@ -75,6 +78,7 @@ export const fluentAnimationPack: FluentAnimationPack = {
         .join(' '),
   },
   dateRangePicker: {
+    __mergeClassSlots: true,
     inputClassName:
       'motion-safe:transition-[border-color,box-shadow,background-color] motion-safe:duration-[180ms] motion-safe:ease-[cubic-bezier(0.16,1,0.3,1)]',
     triggerClassName: fluentPress,
