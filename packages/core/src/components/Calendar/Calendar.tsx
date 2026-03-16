@@ -1,7 +1,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useCalendar } from '../../headless/useCalendar'
-import { addMonths, format } from 'date-fns'
+import { addMonths, differenceInCalendarMonths, format, startOfMonth } from 'date-fns'
 import { resolveCalendarI18n, type CalendarI18n } from '../../i18n'
 import {
   getThemeScopeClassName,
@@ -12,6 +12,7 @@ import {
   type ThemeMode,
   type ThemeSkin,
 } from '../../theming'
+import { animateMonthSlide } from '../../motion'
 
 const cx = (...values: Array<string | false | null | undefined>) => values.filter(Boolean).join(' ')
 
@@ -164,6 +165,8 @@ function CalendarRoot({
   const activeDate = selectedDate ?? cal.currentMonth
   const [focusDate, setFocusDate] = useState<Date>(activeDate)
   const gridRef = useRef<HTMLDivElement>(null)
+  const monthAnimatorRef = useRef<HTMLDivElement>(null)
+  const previousMonthRef = useRef(cal.currentMonth)
   const gridDays = useMemo(() => cal.weeks.flat(), [cal.weeks])
   const weekdayLabels = useMemo(
     () =>
@@ -185,6 +188,18 @@ function CalendarRoot({
     cell?.focus()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cal.currentMonth, gridDays, focusDate])
+
+  useEffect(() => {
+    const prev = previousMonthRef.current
+    const next = cal.currentMonth
+    const monthDelta = differenceInCalendarMonths(startOfMonth(next), startOfMonth(prev))
+
+    if (monthAnimatorRef.current) {
+      animateMonthSlide(monthAnimatorRef.current, monthDelta)
+    }
+
+    previousMonthRef.current = next
+  }, [cal.currentMonth])
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     const idx = gridDays.findIndex(d => cal.isSameDay(d, focusDate))
@@ -288,45 +303,47 @@ function CalendarRoot({
           </div>
         </header>
 
-        <div className={calendarTheme.weekdayRowClassName} aria-hidden="true">
-          {weekdayLabels.map((label, index) => (
-            <div key={index} className={calendarTheme.weekdayCellClassName}>
-              {label}
-            </div>
-          ))}
-        </div>
+        <div ref={monthAnimatorRef}>
+          <div className={calendarTheme.weekdayRowClassName} aria-hidden="true">
+            {weekdayLabels.map((label, index) => (
+              <div key={index} className={calendarTheme.weekdayCellClassName}>
+                {label}
+              </div>
+            ))}
+          </div>
 
-        <div className={calendarTheme.gridClassName}>
-          {cal.weeks.map((week, wi) =>
-            week.map((day, di) => {
-              const faded = !cal.isSameMonth(day, cal.currentMonth)
-              const isActive = selectedDate && cal.isSameDay(day, selectedDate)
-              const isFocused = cal.isSameDay(day, focusDate)
+          <div className={calendarTheme.gridClassName}>
+            {cal.weeks.map((week, wi) =>
+              week.map((day, di) => {
+                const faded = !cal.isSameMonth(day, cal.currentMonth)
+                const isActive = selectedDate && cal.isSameDay(day, selectedDate)
+                const isFocused = cal.isSameDay(day, focusDate)
 
-              const handleClick = () => {
-                selectDate(day)
-              }
+                const handleClick = () => {
+                  selectDate(day)
+                }
 
-              return (
-                <button
-                  key={wi + '-' + di}
-                  role="gridcell"
-                  aria-selected={!!isActive}
-                  tabIndex={isFocused ? 0 : -1}
-                  data-date={day.getTime()}
-                  onClick={handleClick}
-                  className={calendarTheme.dayButtonClassName?.({
-                    active: !!isActive,
-                    faded,
-                    focused: isFocused,
-                  })}
-                  aria-label={format(day, resolvedI18n.format.dayAriaLabel, formatOptions)}
-                >
-                  {format(day, resolvedI18n.format.dayLabel, formatOptions)}
-                </button>
-              )
-            })
-          )}
+                return (
+                  <button
+                    key={wi + '-' + di}
+                    role="gridcell"
+                    aria-selected={!!isActive}
+                    tabIndex={isFocused ? 0 : -1}
+                    data-date={day.getTime()}
+                    onClick={handleClick}
+                    className={calendarTheme.dayButtonClassName?.({
+                      active: !!isActive,
+                      faded,
+                      focused: isFocused,
+                    })}
+                    aria-label={format(day, resolvedI18n.format.dayAriaLabel, formatOptions)}
+                  >
+                    {format(day, resolvedI18n.format.dayLabel, formatOptions)}
+                  </button>
+                )
+              })
+            )}
+          </div>
         </div>
       </div>
     </div>

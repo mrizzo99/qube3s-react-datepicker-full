@@ -4,6 +4,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { format } from 'date-fns'
 import type { AsyncValidationResult } from '@core/asyncValidation'
 import DateRangePicker from './DateRangePicker'
+import { fluentAnimationPack } from '../../presets/animationPack'
 
 const jan102024 = new Date('2024-01-10T12:00:00Z')
 
@@ -246,6 +247,28 @@ describe('DateRangePicker', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Previous year' }))
     expect(screen.getByRole('grid', { name: 'January 2024' })).toBeInTheDocument()
+  })
+
+  it('keeps the mobile sheet mounted briefly for fluent exit animations', async () => {
+    render(
+      <DateRangePicker
+        mobile={{ enabled: true, mode: 'always' }}
+        skin={fluentAnimationPack.dateRangePicker}
+      />,
+    )
+
+    await userEvent.click(screen.getByPlaceholderText('Start date'))
+    await waitFor(() => {
+      expect(screen.getByRole('dialog', { name: 'Range calendar' })).toHaveAttribute('data-state', 'open')
+    })
+
+    await userEvent.click(screen.getByRole('button', { name: 'Close range calendar' }))
+
+    expect(screen.getByRole('dialog', { name: 'Range calendar' })).toHaveAttribute('data-state', 'closed')
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Range calendar' })).not.toBeInTheDocument()
+    })
   })
 
   it('opens the calendar from either input using keyboard keys', async () => {

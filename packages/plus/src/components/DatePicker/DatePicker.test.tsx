@@ -1,9 +1,10 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { format } from 'date-fns'
 import type { AsyncValidationResult } from '@core/asyncValidation'
 import DatePicker from './DatePicker'
+import { fluentAnimationPack } from '../../presets/animationPack'
 
 const jan102024 = new Date('2024-01-10T12:00:00Z')
 
@@ -214,5 +215,24 @@ describe('Plus DatePicker', () => {
     const dialog = await screen.findByRole('dialog', { name: 'Calendar' })
     expect(dialog).toHaveAttribute('data-rdp-theme', 'booking-light')
     expect(dialog.firstElementChild).toHaveClass('rounded-2xl')
+  })
+
+  it('keeps the popover mounted briefly for fluent exit animations', async () => {
+    render(<DatePicker skin={fluentAnimationPack.datePicker} />)
+
+    const input = screen.getByRole('textbox')
+    await userEvent.click(input)
+
+    await waitFor(() => {
+      expect(screen.getByRole('dialog', { name: 'Calendar' })).toHaveAttribute('data-state', 'open')
+    })
+
+    await userEvent.click(input)
+
+    expect(screen.getByRole('dialog', { name: 'Calendar' })).toHaveAttribute('data-state', 'closed')
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Calendar' })).not.toBeInTheDocument()
+    })
   })
 })

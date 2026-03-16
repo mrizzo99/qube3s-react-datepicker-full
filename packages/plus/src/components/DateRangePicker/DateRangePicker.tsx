@@ -36,6 +36,7 @@ import {
   type ThemeMode,
   type ThemeSkin,
 } from '@core/theming'
+import { animateMonthSlide, FLUENT_UI_DURATION_MS, usePresenceTransition } from '@core/motion'
 import { useRangeCalendar, type DateRange } from '../../headless/useRangeCalendar'
 import { getDateRangePresets, type DateRangePreset } from '../../presets/dateRangePresets'
 
@@ -1424,6 +1425,7 @@ function DateRangePickerCalendar({
     onEscape,
     themeMode,
   } = useDateRangePickerContext()
+  const { isMounted, presenceState } = usePresenceTransition(open, FLUENT_UI_DURATION_MS)
   const shouldPortal = isMobilePresentation || portal
   const shouldUseAnchorPosition = shouldPortal && !isMobilePresentation
   const [position, setPosition] = useState<{ left: number; top: number }>({ left: 0, top: 0 })
@@ -1639,50 +1641,56 @@ function DateRangePickerCalendar({
     }
   }
 
-  if (!open) return null
-  if (shouldUseAnchorPosition && !hasPosition) return null
+  if (!isMounted) return null
+  if (shouldUseAnchorPosition && open && !hasPosition) return null
 
   const content = isMobilePresentation ? (
     <div
       className={cx(getThemeScopeClassName(themeMode), theme.mobilePopoverShellClassName, popoverClassName)}
       data-rdp-theme={themeMode}
+      data-state={presenceState}
     >
       <button
         type="button"
         aria-label="Close range calendar"
         className={theme.mobileBackdropClassName}
+        data-state={presenceState}
         style={{ opacity: Math.max(0.2, 1 - sheetDragOffset / 280) }}
         onClick={onEscape}
       />
       <div
-        ref={popoverRef}
-        role="dialog"
-        aria-modal="true"
-        aria-label={resolvedI18n.labels.rangeCalendar}
-        tabIndex={-1}
-        onKeyDown={handleDialogKeyDown}
-        className={cx(theme.mobileSheetClassName, className)}
         style={{
           transform: `translateY(${sheetDragOffset}px)`,
           transition: isSheetDragging ? 'none' : 'transform 220ms cubic-bezier(0.22, 1, 0.36, 1)',
         }}
       >
         <div
-          className={theme.mobileSheetHandleWrapClassName}
-          onPointerDown={handleSheetPointerDown}
-          onPointerMove={handleSheetPointerMove}
-          onPointerUp={handleSheetPointerEnd}
-          onPointerCancel={handleSheetPointerEnd}
-          data-testid="range-sheet-handle"
+          ref={popoverRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label={resolvedI18n.labels.rangeCalendar}
+          tabIndex={-1}
+          onKeyDown={handleDialogKeyDown}
+          className={cx(theme.mobileSheetClassName, className)}
+          data-state={presenceState}
         >
-          <div className={theme.mobileSheetHandleClassName} aria-hidden="true" />
+          <div
+            className={theme.mobileSheetHandleWrapClassName}
+            onPointerDown={handleSheetPointerDown}
+            onPointerMove={handleSheetPointerMove}
+            onPointerUp={handleSheetPointerEnd}
+            onPointerCancel={handleSheetPointerEnd}
+            data-testid="range-sheet-handle"
+          >
+            <div className={theme.mobileSheetHandleClassName} aria-hidden="true" />
+          </div>
+          {children ?? (
+            <>
+              <DateRangePickerCalendarHeader />
+              <DateRangePickerCalendarGrid />
+            </>
+          )}
         </div>
-        {children ?? (
-          <>
-            <DateRangePickerCalendarHeader />
-            <DateRangePickerCalendarGrid />
-          </>
-        )}
       </div>
     </div>
   ) : (
@@ -1695,13 +1703,14 @@ function DateRangePickerCalendar({
         popoverClassName,
       )}
       data-rdp-theme={themeMode}
+      data-state={presenceState}
       style={shouldPortal ? { left: position.left, top: position.top, zIndex: 'var(--rdp-z-popover, 1000)' } : { zIndex: 'var(--rdp-z-popover, 1000)' }}
       role="dialog"
       aria-label={resolvedI18n.labels.rangeCalendar}
       tabIndex={-1}
       onKeyDown={handleDialogKeyDown}
     >
-      <div className={cx(theme.desktopPopoverPanelClassName, className)}>
+      <div className={cx(theme.desktopPopoverPanelClassName, className)} data-state={presenceState}>
         {children ?? (
           <>
             <DateRangePickerCalendarHeader />
@@ -2168,21 +2177,9 @@ function DateRangePickerCalendarGrid() {
     const next = cal.currentMonth
     const monthDelta = differenceInCalendarMonths(startOfMonth(next), startOfMonth(prev))
 
-    if (monthDelta === 0 || !monthAnimatorRef.current || typeof monthAnimatorRef.current.animate !== 'function') {
-      previousMonthRef.current = next
-      return
+    if (monthAnimatorRef.current) {
+      animateMonthSlide(monthAnimatorRef.current, monthDelta)
     }
-
-    monthAnimatorRef.current.animate(
-      [
-        { opacity: 0.88, transform: `translateX(${monthDelta > 0 ? '10px' : '-10px'})` },
-        { opacity: 1, transform: 'translateX(0)' },
-      ],
-      {
-        duration: 180,
-        easing: 'ease-out',
-      },
-    )
 
     previousMonthRef.current = next
   }, [cal.currentMonth])

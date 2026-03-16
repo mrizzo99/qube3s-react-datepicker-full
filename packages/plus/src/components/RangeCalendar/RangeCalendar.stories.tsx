@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react'
 import { useState } from 'react'
 import { format } from 'date-fns'
 import RangeCalendar from './RangeCalendar'
+import { fluentAnimationPack } from '../../presets/animationPack'
 
 const meta: Meta<typeof RangeCalendar> = {
   title: 'RangeCalendar',
@@ -45,4 +46,8 @@ export const Controlled: Story = {
       </div>
     )
   }
+}
+
+export const FluentAnimationPack: Story = {
+  render: () => <RangeCalendar numberOfMonths={2} skin={fluentAnimationPack.rangeCalendar} />,
 }

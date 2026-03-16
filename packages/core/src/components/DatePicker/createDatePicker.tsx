@@ -9,7 +9,7 @@ import React, {
   useState,
 } from 'react'
 import { createPortal } from 'react-dom'
-import { addMonths, format } from 'date-fns'
+import { addMonths, differenceInCalendarMonths, format, startOfMonth } from 'date-fns'
 import { resolveCalendarI18n, type CalendarI18n } from '../../i18n'
 import { useCalendar } from '../../headless/useCalendar'
 import {
@@ -21,6 +21,7 @@ import {
   type ThemeMode,
   type ThemeSkin,
 } from '../../theming'
+import { animateMonthSlide, FLUENT_UI_DURATION_MS, usePresenceTransition } from '../../motion'
 import type {
   AsyncValidationBehavior,
   AsyncValidationResult,
@@ -754,6 +755,7 @@ export function createDatePicker<TRootProps>(
   }: DatePickerCalendarProps) {
     const theme = useDatePickerTheme()
     const { open, resolvedI18n, containerRef, popoverRef, portal, portalContainer, onEscape, themeMode } = useDatePickerContext()
+    const { isMounted, presenceState } = usePresenceTransition(open, FLUENT_UI_DURATION_MS)
     const [position, setPosition] = useState<{ left: number; top: number }>({ left: 0, top: 0 })
     const [hasPosition, setHasPosition] = useState(!portal)
     const bodyPaddingBaseRef = useRef<number | null>(null)
@@ -895,8 +897,8 @@ export function createDatePicker<TRootProps>(
       }
     }
 
-    if (!open) return null
-    if (portal && !hasPosition) return null
+    if (!isMounted) return null
+    if (portal && open && !hasPosition) return null
 
     const content = (
       <div
@@ -908,13 +910,14 @@ export function createDatePicker<TRootProps>(
           popoverClassName,
         )}
         data-rdp-theme={themeMode}
+        data-state={presenceState}
         style={portal ? { left: position.left, top: position.top, zIndex: 'var(--rdp-z-popover, 1000)' } : { zIndex: 'var(--rdp-z-popover, 1000)' }}
         role="dialog"
         aria-label={resolvedI18n.labels.calendar}
         tabIndex={-1}
         onKeyDown={handleDialogKeyDown}
       >
-        <div className={cx(theme.popoverPanelClassName, className)}>
+        <div className={cx(theme.popoverPanelClassName, className)} data-state={presenceState}>
           {children ?? (
             <>
               <DatePickerCalendarHeader />
@@ -981,6 +984,8 @@ export function createDatePicker<TRootProps>(
     } = useDatePickerContext()
 
     const gridDays = useMemo(() => cal.weeks.flat(), [cal.weeks])
+    const monthAnimatorRef = useRef<HTMLDivElement>(null)
+    const previousMonthRef = useRef(cal.currentMonth)
     const weekdayLabels = useMemo(
       () =>
         (cal.weeks[0] ?? []).map(day =>
@@ -1000,6 +1005,18 @@ export function createDatePicker<TRootProps>(
       cell?.focus()
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [cal.currentMonth, gridDays, focusDate])
+
+    useEffect(() => {
+      const prev = previousMonthRef.current
+      const next = cal.currentMonth
+      const monthDelta = differenceInCalendarMonths(startOfMonth(next), startOfMonth(prev))
+
+      if (monthAnimatorRef.current) {
+        animateMonthSlide(monthAnimatorRef.current, monthDelta)
+      }
+
+      previousMonthRef.current = next
+    }, [cal.currentMonth])
 
     const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
       const idx = gridDays.findIndex(d => cal.isSameDay(d, focusDate))
@@ -1079,47 +1096,49 @@ export function createDatePicker<TRootProps>(
         ref={gridRef}
         data-initial-focus="true"
       >
-        <div className={theme.weekdayRowClassName} aria-hidden="true">
-          {weekdayLabels.map((label, index) => (
-            <div key={index} className={theme.weekdayCellClassName}>
-              {label}
-            </div>
-          ))}
-        </div>
+        <div ref={monthAnimatorRef}>
+          <div className={theme.weekdayRowClassName} aria-hidden="true">
+            {weekdayLabels.map((label, index) => (
+              <div key={index} className={theme.weekdayCellClassName}>
+                {label}
+              </div>
+            ))}
+          </div>
 
-        <div className={theme.gridClassName}>
-          {cal.weeks.map((week, wi) =>
-            week.map((day, di) => {
-              const faded = !cal.isSameMonth(day, cal.currentMonth)
-              const disabled = isDateDisabled(day)
-              const isActive = selectedDate ? cal.isSameDay(day, selectedDate) : false
-              const isFocused = cal.isSameDay(day, focusDate)
+          <div className={theme.gridClassName}>
+            {cal.weeks.map((week, wi) =>
+              week.map((day, di) => {
+                const faded = !cal.isSameMonth(day, cal.currentMonth)
+                const disabled = isDateDisabled(day)
+                const isActive = selectedDate ? cal.isSameDay(day, selectedDate) : false
+                const isFocused = cal.isSameDay(day, focusDate)
 
-              return (
-                <button
-                  key={wi + '-' + di}
-                  role="gridcell"
-                  aria-selected={isActive}
-                  aria-disabled={disabled}
-                  tabIndex={isFocused ? 0 : -1}
-                  data-date={day.getTime()}
-                  onClick={() => {
-                    if (disabled) return
-                    selectDate(day)
-                  }}
-                  className={theme.dayButtonClassName?.({
-                    active: isActive,
-                    disabled,
-                    faded,
-                    focused: isFocused,
-                  })}
-                  aria-label={format(day, resolvedI18n.format.dayAriaLabel, formatOptions)}
-                >
-                  {format(day, resolvedI18n.format.dayLabel, formatOptions)}
-                </button>
-              )
-            }),
-          )}
+                return (
+                  <button
+                    key={wi + '-' + di}
+                    role="gridcell"
+                    aria-selected={isActive}
+                    aria-disabled={disabled}
+                    tabIndex={isFocused ? 0 : -1}
+                    data-date={day.getTime()}
+                    onClick={() => {
+                      if (disabled) return
+                      selectDate(day)
+                    }}
+                    className={theme.dayButtonClassName?.({
+                      active: isActive,
+                      disabled,
+                      faded,
+                      focused: isFocused,
+                    })}
+                    aria-label={format(day, resolvedI18n.format.dayAriaLabel, formatOptions)}
+                  >
+                    {format(day, resolvedI18n.format.dayLabel, formatOptions)}
+                  </button>
+                )
+              }),
+            )}
+          </div>
         </div>
       </div>
     )

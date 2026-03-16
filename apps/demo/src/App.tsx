@@ -5,6 +5,7 @@ import { addDays, format, subDays } from 'date-fns'
 import DateRangePicker from '@plus/components/DateRangePicker'
 import PlusDatePicker from '@plus/components/DatePicker'
 import RangeCalendar from '@plus/components/RangeCalendar'
+import { fluentAnimationPack } from '@plus/presets/animationPack'
 import { shadcn } from '@plus/adapters'
 import { esI18n } from '@core/i18n-presets'
 import type { ThemeMode } from '@core/theming'
@@ -49,6 +50,16 @@ export default function App() {
   })
   const [skinPreset, setSkinPreset] = useState<SkinPresetKey>('default')
   const [skinDemoDate, setSkinDemoDate] = useState<Date | null>(null)
+  const [fluentCalendarDate, setFluentCalendarDate] = useState<Date | null>(null)
+  const [fluentDatePickerDate, setFluentDatePickerDate] = useState<Date | null>(null)
+  const [fluentRange, setFluentRange] = useState<{ start: Date | null; end: Date | null }>({
+    start: null,
+    end: null
+  })
+  const [fluentRangePicker, setFluentRangePicker] = useState<{ start: Date | null; end: Date | null }>({
+    start: null,
+    end: null
+  })
   const [range, setRange] = useState<{ start: Date | null; end: Date | null }>({
     start: null,
     end: null
@@ -172,6 +183,9 @@ export default function App() {
               </a>
               <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#stock-skin-playground">
                 Stock Skin Playground
+              </a>
+              <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#fluent-animation-pack">
+                Fluent Animation Pack
               </a>
               <a className="block rounded-md px-3 py-2 text-sm text-[var(--q3-text-primary)] hover:bg-[color:rgb(76_95_213_/_0.12)]" href="#range-inline-2">
                 Range Inline 2-Month
@@ -405,6 +419,92 @@ export default function App() {
                       `{skinPreset === 'default' ? 'skin={undefined}' : `skin={${activeCalendarSkin.label}}`}`
                     </p>
                   </div>
+                </div>
+              </div>
+            </section>
+
+            <section id="fluent-animation-pack" className={panelClass}>
+              <h2 className="text-lg font-semibold">Fluent animation pack</h2>
+              <p className="mt-1 mb-4 max-w-3xl text-sm text-[var(--q3-text-disabled)]">
+                Motion preset coverage for inline calendar, popover date picker, inline range calendar, and range picker.
+                This uses the additive `fluentAnimationPack` skin export, so the stock surface styling stays intact while
+                transitions, calendar slide motion, micro-interactions, and popover or sheet animations are layered on top.
+              </p>
+              <div className="grid gap-4 xl:grid-cols-2">
+                <div className="rounded-xl border border-[var(--q3-border)] bg-[color:rgb(11_18_32_/_0.3)] p-4">
+                  <p className="mb-3 text-sm text-[var(--q3-text-disabled)]">Core `Calendar` + fluent motion skin</p>
+                  <Calendar
+                    selectedDate={fluentCalendarDate}
+                    selectDate={setFluentCalendarDate}
+                    theme="light"
+                    skin={fluentAnimationPack.calendar}
+                  />
+                  <p className="mt-3 text-sm text-[var(--q3-text-disabled)]">
+                    {fluentCalendarDate ? `Selected: ${format(fluentCalendarDate, 'PPP')}` : 'Choose a date'}
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-[var(--q3-border)] bg-[color:rgb(11_18_32_/_0.3)] p-4">
+                  <p className="mb-3 text-sm text-[var(--q3-text-disabled)]">Plus `DatePicker` + fluent popover transitions</p>
+                  <PlusDatePicker
+                    value={fluentDatePickerDate}
+                    onChange={setFluentDatePickerDate}
+                    theme="light"
+                    skin={fluentAnimationPack.datePicker}
+                  >
+                    <PlusDatePicker.Input />
+                    <PlusDatePicker.Calendar>
+                      <PlusDatePicker.CalendarHeader />
+                      <PlusDatePicker.CalendarGrid />
+                    </PlusDatePicker.Calendar>
+                  </PlusDatePicker>
+                  <p className="mt-3 text-sm text-[var(--q3-text-disabled)]">
+                    {fluentDatePickerDate ? `Selected: ${format(fluentDatePickerDate, 'PPP')}` : 'Open the picker to preview fade and scale motion'}
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-[var(--q3-border)] bg-[color:rgb(11_18_32_/_0.3)] p-4">
+                  <p className="mb-3 text-sm text-[var(--q3-text-disabled)]">Plus `RangeCalendar` + month slide animation</p>
+                  <div className="overflow-x-auto pb-1">
+                    <RangeCalendar
+                      selectedRange={fluentRange}
+                      selectRange={setFluentRange}
+                      numberOfMonths={2}
+                      showPresets
+                      theme="material-light"
+                      skin={fluentAnimationPack.rangeCalendar}
+                    />
+                  </div>
+                  <p className="mt-3 text-sm text-[var(--q3-text-disabled)]">
+                    {fluentRange.start ? `Start: ${format(fluentRange.start, 'PPP')}` : 'Start: —'}{' '}
+                    {fluentRange.end ? `End: ${format(fluentRange.end, 'PPP')}` : 'End: —'}
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-[var(--q3-border)] bg-[color:rgb(11_18_32_/_0.3)] p-4">
+                  <p className="mb-3 text-sm text-[var(--q3-text-disabled)]">Plus `DateRangePicker` + fluent desktop and mobile motion</p>
+                  <DateRangePicker
+                    value={fluentRangePicker}
+                    onChange={setFluentRangePicker}
+                    numberOfMonths={2}
+                    showPresets
+                    mobile={{ enabled: true, mode: 'always', gestures: { swipeMonth: true, swipeToClose: true } }}
+                    theme="material-light"
+                    skin={fluentAnimationPack.dateRangePicker}
+                  >
+                    <DateRangePicker.Input />
+                    <DateRangePicker.Calendar>
+                      <DateRangePicker.CalendarHeader />
+                      <DateRangePicker.CalendarGrid />
+                    </DateRangePicker.Calendar>
+                  </DateRangePicker>
+                  <p className="mt-2 text-xs text-[var(--q3-text-disabled)]">
+                    Open on desktop for popover fade-scale. On narrow screens or forced sheet mode, use the handle to see modal motion and snap-back.
+                  </p>
+                  <p className="mt-3 text-sm text-[var(--q3-text-disabled)]">
+                    {fluentRangePicker.start ? `Start: ${format(fluentRangePicker.start, 'PPP')}` : 'Start: —'}{' '}
+                    {fluentRangePicker.end ? `End: ${format(fluentRangePicker.end, 'PPP')}` : 'End: —'}
+                  </p>
                 </div>
               </div>
             </section>

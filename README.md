@@ -257,6 +257,37 @@ import ClockIcon from './ClockIcon'
 
 Date + time wheels are a Plus feature and are only available on `DateRangePicker`.
 
+Animation pack
+
+- Plus now ships an additive `fluentAnimationPack` preset for fluent transitions, month-slide motion, button micro-interactions, and popover/modal fade-scale entry and exit.
+- The pack composes with stock themes and adapter skins instead of replacing them.
+
+```tsx
+import Calendar from '@core/components/Calendar'
+import DatePicker from '@plus/components/DatePicker'
+import DateRangePicker from '@plus/components/DateRangePicker'
+import RangeCalendar from '@plus/components/RangeCalendar'
+import { fluentAnimationPack } from '@plus'
+
+<Calendar skin={fluentAnimationPack.calendar} />
+
+<DatePicker
+  theme="modern-minimal-light"
+  skin={fluentAnimationPack.datePicker}
+/>
+
+<DateRangePicker
+  numberOfMonths={2}
+  showPresets
+  skin={fluentAnimationPack.dateRangePicker}
+/>
+
+<RangeCalendar
+  numberOfMonths={2}
+  skin={fluentAnimationPack.rangeCalendar}
+/>
+```
+
 Themes and skins
 
 - `theme` is supported on the stock components: `Calendar`, core `DatePicker`, Plus `DatePicker`, `RangeCalendar`, and `DateRangePicker`.

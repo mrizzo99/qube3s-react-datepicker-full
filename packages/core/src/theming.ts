@@ -33,6 +33,8 @@ export const isBookingTheme = (theme?: ThemeMode) =>
 
 export const getThemeScopeClassName = (theme?: ThemeMode) => (isDarkTheme(theme) ? 'dark' : '')
 
+const cx = (...values: Array<string | false | null | undefined>) => values.filter(Boolean).join(' ')
+
 export const mergeThemeWithSkin = <TTheme extends ThemeWithIcons>(
   baseTheme: TTheme,
   skin?: ThemeSkin<TTheme>,
@@ -47,9 +49,36 @@ export const mergeThemeWithSkin = <TTheme extends ThemeWithIcons>(
         }
       : undefined
 
+  const mergedTheme = { ...baseTheme } as Record<string, unknown>
+  const skinEntries = Object.entries(skin) as Array<[keyof ThemeSkin<TTheme>, unknown]>
+
+  for (const [key, skinValue] of skinEntries) {
+    if (key === 'icons' || skinValue === undefined) continue
+
+    const baseValue = mergedTheme[key as string]
+
+    if (typeof baseValue === 'string' && typeof skinValue === 'string') {
+      mergedTheme[key as string] = cx(baseValue, skinValue)
+      continue
+    }
+
+    if (typeof baseValue === 'function' && typeof skinValue === 'function') {
+      mergedTheme[key as string] = (...args: unknown[]) => {
+        const baseResult = baseValue(...args)
+        const skinResult = skinValue(...args)
+        return cx(
+          typeof baseResult === 'string' ? baseResult : undefined,
+          typeof skinResult === 'string' ? skinResult : undefined,
+        )
+      }
+      continue
+    }
+
+    mergedTheme[key as string] = skinValue
+  }
+
   return {
-    ...baseTheme,
-    ...skin,
+    ...(mergedTheme as TTheme),
     ...(mergedIcons ? { icons: mergedIcons } : {}),
   }
 }
