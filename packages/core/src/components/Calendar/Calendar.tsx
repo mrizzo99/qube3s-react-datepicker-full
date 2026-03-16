@@ -21,7 +21,9 @@ export type CalendarProps = {
   selectDate?: (date: Date) => void
   onEscape?: () => void
   i18n?: CalendarI18n
+  /** Transitional support only. Advanced theme presets are moving to @plus/Calendar. */
   theme?: ThemeMode
+  /** Transitional support only. Advanced slot-level skins are moving to @plus/Calendar. */
   skin?: CalendarSkin
 }
 

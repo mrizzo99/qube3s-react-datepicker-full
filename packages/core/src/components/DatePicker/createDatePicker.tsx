@@ -136,7 +136,9 @@ export type DatePickerBaseProps = {
   i18n?: CalendarI18n
   portal?: boolean
   portalContainer?: HTMLElement | null
+  /** Transitional support only. Advanced theme presets are moving to @plus/DatePicker. */
   theme?: ThemeMode
+  /** Transitional support only. Advanced slot-level skins are moving to @plus/DatePicker. */
   skin?: DatePickerSkin
 }
 

@@ -4,7 +4,7 @@ import DatePicker from './DatePicker'
 import { esI18n } from '@core/i18n-presets'
 
 const meta: Meta<typeof DatePicker> = {
-  title: 'DatePicker',
+  title: 'Core/DatePicker',
   component: DatePicker,
   tags: ['autodocs'],
 }

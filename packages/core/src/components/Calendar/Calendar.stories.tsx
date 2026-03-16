@@ -5,7 +5,7 @@ import { format } from 'date-fns'
 import Calendar from './Calendar'
 
 const meta: Meta<typeof Calendar> = {
-  title: 'Calendar',
+  title: 'Core/Calendar',
   component: Calendar,
   argTypes: {
     selectedDate: { control: false },
