@@ -13,6 +13,7 @@ type ThemeWithIcons = {
 }
 
 export type ThemeSkin<TTheme extends ThemeWithIcons> = Omit<Partial<TTheme>, 'icons'> & {
+  __mergeClassSlots?: boolean
   icons?: Partial<NonNullable<TTheme['icons']>>
 }
 
@@ -40,6 +41,7 @@ export const mergeThemeWithSkin = <TTheme extends ThemeWithIcons>(
   skin?: ThemeSkin<TTheme>,
 ): TTheme => {
   if (!skin) return baseTheme
+  const shouldMergeClassSlots = skin.__mergeClassSlots === true
 
   const mergedIcons =
     baseTheme.icons || skin.icons
@@ -53,24 +55,26 @@ export const mergeThemeWithSkin = <TTheme extends ThemeWithIcons>(
   const skinEntries = Object.entries(skin) as Array<[keyof ThemeSkin<TTheme>, unknown]>
 
   for (const [key, skinValue] of skinEntries) {
-    if (key === 'icons' || skinValue === undefined) continue
+    if (key === 'icons' || key === '__mergeClassSlots' || skinValue === undefined) continue
 
     const baseValue = mergedTheme[key as string]
 
     if (typeof baseValue === 'string' && typeof skinValue === 'string') {
-      mergedTheme[key as string] = cx(baseValue, skinValue)
+      mergedTheme[key as string] = shouldMergeClassSlots ? cx(baseValue, skinValue) : skinValue
       continue
     }
 
     if (typeof baseValue === 'function' && typeof skinValue === 'function') {
-      mergedTheme[key as string] = (...args: unknown[]) => {
-        const baseResult = baseValue(...args)
-        const skinResult = skinValue(...args)
-        return cx(
-          typeof baseResult === 'string' ? baseResult : undefined,
-          typeof skinResult === 'string' ? skinResult : undefined,
-        )
-      }
+      mergedTheme[key as string] = shouldMergeClassSlots
+        ? (...args: unknown[]) => {
+            const baseResult = baseValue(...args)
+            const skinResult = skinValue(...args)
+            return cx(
+              typeof baseResult === 'string' ? baseResult : undefined,
+              typeof skinResult === 'string' ? skinResult : undefined,
+            )
+          }
+        : skinValue
       continue
     }
 

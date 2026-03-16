@@ -85,12 +85,7 @@ describe('DateRangePicker', () => {
     expect(screen.getByText('March 2024')).toBeInTheDocument()
   })
 
-  it('positions portal popover near the trigger and auto-scrolls when clipped', async () => {
-    const originalScrollBy = window.scrollBy
-    const scrollBySpy = vi.fn()
-    window.scrollBy = scrollBySpy
-    const originalBodyPadding = document.body.style.paddingBottom
-
+  it('positions portal popover near the trigger and flips when space is constrained', async () => {
     const originalInnerHeight = window.innerHeight
     Object.defineProperty(window, 'innerHeight', { value: 800, configurable: true })
 
@@ -101,13 +96,13 @@ describe('DateRangePicker', () => {
         if (this.getAttribute('role') === 'dialog') {
           return {
             x: 64,
-            y: 168,
+            y: 0,
             width: 640,
             height: 360,
-            top: 168,
-            left: 64,
-            right: 704,
-            bottom: 980,
+            top: 0,
+            left: 0,
+            right: 640,
+            bottom: 360,
             toJSON: () => ({}),
           } as DOMRect
         }
@@ -115,13 +110,13 @@ describe('DateRangePicker', () => {
         if (className.includes('relative inline-flex flex-col gap-2')) {
           return {
             x: 64,
-            y: 120,
+            y: 720,
             width: 420,
             height: 40,
-            top: 120,
+            top: 720,
             left: 64,
             right: 484,
-            bottom: 160,
+            bottom: 760,
             toJSON: () => ({}),
           } as DOMRect
         }
@@ -145,22 +140,14 @@ describe('DateRangePicker', () => {
 
     const dialog = await screen.findByRole('dialog', { name: 'Range calendar' })
     expect(dialog.style.left).toBe('64px')
-    expect(dialog.style.top).toBe('168px')
-
-    await waitFor(() => {
-      expect(scrollBySpy).toHaveBeenCalledWith(
-        expect.objectContaining({ top: expect.any(Number), behavior: 'smooth' }),
-      )
-    })
+    expect(dialog.style.top).toBe('352px')
 
     await userEvent.click(screen.getByPlaceholderText('Start date'))
     await waitFor(() => {
       expect(screen.queryByRole('dialog', { name: 'Range calendar' })).not.toBeInTheDocument()
     })
-    expect(document.body.style.paddingBottom).toBe(originalBodyPadding)
 
     rectSpy.mockRestore()
-    window.scrollBy = originalScrollBy
     Object.defineProperty(window, 'innerHeight', { value: originalInnerHeight, configurable: true })
   })
 

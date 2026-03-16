@@ -565,4 +565,4 @@ const i18n = { ...frI18n, format: { ...frI18n.format, inputValue: 'Pp' } }
 - **Accessibility**: Apply grid roles, roving tab index, keyboard arrow navigation, focus management, and Escape-to-close on the popover.
 - **Hover previews for ranges**: Show a temporary range as the user hovers between start and end.
 - **Multi-month view**: Generate multiple month grids from the same hook output, or extend the hook to return adjacent months.
-- **UI polish**: `@plus` now ships `fluentAnimationPack` for additive motion skins (fluent transitions, month slide animation, micro-interactions, and popover/modal fade-scale). Remaining polish work is improved positioning, such as Floating UI.
+- **UI polish**: `@plus` now ships `fluentAnimationPack` for additive motion skins (fluent transitions, month slide animation, micro-interactions, and popover/modal fade-scale), and desktop popovers now use Floating UI-backed collision handling for more reliable positioning in complex layouts.
