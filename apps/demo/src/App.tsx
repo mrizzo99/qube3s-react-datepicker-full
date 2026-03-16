@@ -45,7 +45,8 @@ type AdapterShowcase = {
 const coreNavItems: NavItem[] = [
   { id: 'single-inline', label: 'Inline Calendar', detail: 'Core visual calendar' },
   { id: 'single-popover', label: 'Popover Picker', detail: 'Compound DatePicker' },
-  { id: 'single-es', label: 'ES Locale Picker', detail: 'Core i18n preset' }
+  { id: 'single-es', label: 'ES Locale Picker', detail: 'Core i18n preset' },
+  { id: 'core-appearance', label: 'Light + Dark', detail: 'Default core appearance modes' }
 ]
 
 const plusNavItems: NavItem[] = [
@@ -233,6 +234,10 @@ export default function App() {
   const [inlineSelectedDate, setInlineSelectedDate] = useState<Date | null>(null)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [selectedDateEs, setSelectedDateEs] = useState<Date | null>(null)
+  const [coreLightCalendarDate, setCoreLightCalendarDate] = useState<Date | null>(null)
+  const [coreDarkCalendarDate, setCoreDarkCalendarDate] = useState<Date | null>(null)
+  const [coreLightPickerDate, setCoreLightPickerDate] = useState<Date | null>(null)
+  const [coreDarkPickerDate, setCoreDarkPickerDate] = useState<Date | null>(null)
   const [plusSelectedDate, setPlusSelectedDate] = useState<Date | null>(null)
   const [asyncSelectedDate, setAsyncSelectedDate] = useState<Date | null>(null)
   const [themeDemoMode, setThemeDemoMode] = useState<ThemeMode>('light')
@@ -504,6 +509,66 @@ export default function App() {
                 </SectionCard>
               </SectionGroup>
 
+              <SectionGroup
+                eyebrow="Core"
+                title="Default light and dark appearance"
+                description="Core keeps the base styling story simple: Calendar and DatePicker now expose an explicit appearance prop for light and dark mode without exposing Plus theme presets or slot-level skin APIs."
+              >
+                <SectionCard
+                  id="core-appearance"
+                  title="Light and dark styling"
+                  description="The same Core components rendered with explicit light and dark appearance props."
+                >
+                  <div className="grid gap-4 xl:grid-cols-2">
+                    <div className="rounded-xl border border-slate-200 bg-white p-4 text-slate-900">
+                      <p className="mb-3 text-sm font-medium text-slate-700">Light appearance</p>
+                      <Calendar
+                        appearance="light"
+                        selectedDate={coreLightCalendarDate}
+                        selectDate={setCoreLightCalendarDate}
+                      />
+                      <div className="mt-4">
+                        <DatePicker
+                          appearance="light"
+                          value={coreLightPickerDate}
+                          onChange={setCoreLightPickerDate}
+                          portal={false}
+                        >
+                          <DatePicker.Input />
+                          <DatePicker.Calendar>
+                            <DatePicker.CalendarHeader />
+                            <DatePicker.CalendarGrid />
+                          </DatePicker.Calendar>
+                        </DatePicker>
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-700 bg-slate-950 p-4 text-slate-100">
+                      <p className="mb-3 text-sm font-medium text-slate-300">Dark appearance</p>
+                      <Calendar
+                        appearance="dark"
+                        selectedDate={coreDarkCalendarDate}
+                        selectDate={setCoreDarkCalendarDate}
+                      />
+                      <div className="mt-4">
+                        <DatePicker
+                          appearance="dark"
+                          value={coreDarkPickerDate}
+                          onChange={setCoreDarkPickerDate}
+                          portal={false}
+                        >
+                          <DatePicker.Input />
+                          <DatePicker.Calendar>
+                            <DatePicker.CalendarHeader />
+                            <DatePicker.CalendarGrid />
+                          </DatePicker.Calendar>
+                        </DatePicker>
+                      </div>
+                    </div>
+                  </div>
+                </SectionCard>
+              </SectionGroup>
+
             </div>
           ) : (
             <div
@@ -721,7 +786,7 @@ export default function App() {
                     styling stays intact while transitions, calendar slide motion,
                     micro-interactions, and popover or sheet animations are layered on top.
                   </p>
-                  <div className="grid gap-4 xl:grid-cols-2">
+                  <div className="grid gap-4">
                     <div className="rounded-xl border border-[var(--q3-border)] bg-[color:rgb(11_18_32_/_0.3)] p-4">
                       <p className="mb-3 text-sm text-[var(--q3-text-disabled)]">
                         Plus `Calendar` + fluent motion skin

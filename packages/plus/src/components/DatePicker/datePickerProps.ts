@@ -5,18 +5,17 @@ import type {
   DatePickerBaseProps,
   DatePickerResolvedProps,
   DatePickerSkin,
+  DatePickerStylingProps,
 } from '@core/components/DatePicker/createDatePicker'
-import type { ThemeMode } from '../../theming'
 
 const normalizeDate = (value: unknown): Date | null => {
   if (value instanceof Date && !Number.isNaN(value.getTime())) return value
   return null
 }
 
-export type PlusDatePickerProps = Omit<DatePickerBaseProps, 'theme' | 'skin'> &
+export type PlusDatePickerProps = DatePickerBaseProps &
+  DatePickerStylingProps &
   DatePickerAsyncValidationProps & {
-  theme?: ThemeMode
-  skin?: DatePickerSkin
   minDate?: Date
   maxDate?: Date
   blockWeekends?: boolean

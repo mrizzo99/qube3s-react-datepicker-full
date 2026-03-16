@@ -6,7 +6,7 @@ import type { DateRange } from '../../headless/useRangeCalendar'
 import { fluentAnimationPack } from '../../presets/animationPack'
 
 const meta: Meta<typeof DateRangePicker> = {
-  title: 'DateRangePicker',
+  title: 'Plus/DateRangePicker',
   component: DateRangePicker,
   tags: ['autodocs'],
 }

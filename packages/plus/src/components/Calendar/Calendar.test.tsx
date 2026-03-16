@@ -8,7 +8,11 @@ const jan102024 = new Date('2024-01-10T12:00:00Z')
 const getCurrentMonthDay = (dayLabel: string) =>
   screen
     .getAllByRole('gridcell')
-    .find(button => button.textContent === dayLabel && !button.classList.contains('text-gray-300'))
+    .find(
+      button =>
+        button.textContent === dayLabel
+        && !button.classList.contains('text-[var(--rdp-muted-foreground)]'),
+    )
 
 describe('Plus Calendar', () => {
   beforeEach(() => vi.setSystemTime(jan102024))
@@ -26,7 +30,7 @@ describe('Plus Calendar', () => {
 
     await userEvent.click(day15!)
 
-    expect(day15).toHaveClass('bg-blue-600')
+    expect(day15).toHaveClass('bg-[var(--rdp-accent)]')
   })
 
   it('supports built-in plus theme presets', () => {

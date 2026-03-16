@@ -12,6 +12,12 @@ import { addMonths, differenceInCalendarMonths, format, startOfMonth } from 'dat
 import { resolveCalendarI18n, type CalendarI18n } from '../../i18n'
 import { useCalendar } from '../../headless/useCalendar'
 import {
+  getAppearanceScopeClassName,
+  normalizeCoreStyleVariables,
+  type CoreAppearance,
+  type CoreStyleProperties,
+} from '../../styling'
+import {
   getThemeScopeClassName,
   isBookingTheme,
   isMaterialTheme,
@@ -60,6 +66,10 @@ type DatePickerContextValue = {
   validationMessage: string
   validationMessageClassName: string
   themeMode?: ThemeMode
+  resolvedAppearance: CoreAppearance
+  scopeClassName: string
+  appearanceClassName: string
+  appearanceStyleVariables: React.CSSProperties
 }
 
 const visuallyHidden = {
@@ -112,6 +122,7 @@ const renderPickerIcon = (icon: React.ReactNode | undefined, fallbackIcon?: Reac
 
 const defaultIsDateDisabled = () => false
 const defaultValidatingMessage = 'Validating selection...'
+const POPOVER_VIEWPORT_PADDING = 16
 
 const normalizeValidationResult = (result: AsyncValidationResult): AsyncValidationResult => {
   if (result.valid) return result
@@ -136,9 +147,13 @@ export type DatePickerBaseProps = {
   i18n?: CalendarI18n
   portal?: boolean
   portalContainer?: HTMLElement | null
-  /** Transitional support only. Advanced theme presets are moving to @plus/DatePicker. */
+  appearance?: CoreAppearance
+  className?: string
+  style?: CoreStyleProperties
+}
+
+export type DatePickerStylingProps = {
   theme?: ThemeMode
-  /** Transitional support only. Advanced slot-level skins are moving to @plus/DatePicker. */
   skin?: DatePickerSkin
 }
 
@@ -151,7 +166,9 @@ export type DatePickerAsyncValidationProps = {
   onValidationStateChange?: (detail: AsyncValidationStateChange<Date>) => void
 }
 
-export type DatePickerResolvedProps = DatePickerBaseProps & DatePickerAsyncValidationProps & {
+export type DatePickerResolvedProps = DatePickerBaseProps &
+  DatePickerStylingProps &
+  DatePickerAsyncValidationProps & {
   isDateDisabled?: (date: Date) => boolean
 }
 
@@ -213,38 +230,99 @@ const defaultDatePickerAdapterTheme: DatePickerAdapterTheme = {
   inputLayoutClassName: 'inline-flex flex-wrap items-center gap-3',
   inputGroupClassName: 'inline-flex items-center gap-1',
   inputClassName:
-    'w-48 rounded border border-gray-300 bg-white p-2 text-gray-900 placeholder:text-gray-500 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:placeholder:text-gray-400 dark:hover:border-blue-300 dark:focus-visible:ring-blue-400',
+    'w-48 rounded border border-[var(--rdp-border)] bg-[var(--rdp-field-surface)] p-2 text-[var(--rdp-surface-foreground)] placeholder:text-[var(--rdp-muted)] hover:border-[var(--rdp-ring)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--rdp-ring)]',
   triggerClassName:
-    'inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 text-gray-700 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-300 dark:hover:border-blue-300 dark:focus-visible:ring-blue-400',
+    'inline-flex items-center justify-center rounded border border-[var(--rdp-border)] bg-[var(--rdp-field-surface)] p-2 text-[var(--rdp-muted)] hover:border-[var(--rdp-ring)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--rdp-ring)]',
   validationMessageClassName: 'text-sm',
-  validationMessageInvalidClassName: 'text-red-600 dark:text-red-400',
-  validationMessageValidatingClassName: 'text-gray-600 dark:text-gray-400',
-  popoverShellClassName: 'rounded bg-white shadow dark:bg-gray-900',
+  validationMessageInvalidClassName: 'text-[var(--rdp-danger)]',
+  validationMessageValidatingClassName: 'text-[var(--rdp-muted)]',
+  popoverShellClassName: 'rounded bg-[var(--rdp-surface)] shadow',
   popoverPanelClassName:
-    'w-72 rounded-lg border border-gray-200 bg-white p-4 text-gray-900 shadow dark:border-gray-700 dark:bg-gray-900 dark:text-gray-50',
+    'w-72 rounded-lg border border-[var(--rdp-border)] bg-[var(--rdp-surface)] p-4 text-[var(--rdp-surface-foreground)] shadow',
   headerClassName: 'mb-2 flex justify-between',
   headerNavGroupClassName: 'flex gap-1',
   headerNavButtonClassName:
-    'inline-flex h-8 w-8 items-center justify-center rounded border border-transparent text-gray-700 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-gray-300 dark:hover:bg-gray-800 dark:focus-visible:ring-blue-400',
-  monthLabelClassName: 'font-semibold text-gray-900 dark:text-gray-50',
-  weekdayRowClassName: 'mb-1 grid grid-cols-7 text-sm text-gray-600 dark:text-gray-400',
+    'inline-flex h-8 w-8 items-center justify-center rounded border border-transparent text-[var(--rdp-muted)] hover:bg-[var(--rdp-accent-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--rdp-ring)]',
+  monthLabelClassName: 'font-semibold text-[var(--rdp-surface-foreground)]',
+  weekdayRowClassName: 'mb-1 grid grid-cols-7 text-sm text-[var(--rdp-muted)]',
   weekdayCellClassName: 'text-center',
   gridClassName: 'grid grid-cols-7 gap-1',
   dayButtonClassName: ({ active, disabled, faded }) =>
     cx(
-      'rounded border border-transparent p-1 text-gray-900 focus-visible:border-blue-500 focus-visible:outline-none dark:text-gray-100 dark:focus-visible:border-blue-300',
+      'rounded border border-transparent p-1 text-[var(--rdp-surface-foreground)] focus-visible:border-[var(--rdp-ring)] focus-visible:outline-none',
       disabled
-        ? 'cursor-not-allowed border-transparent bg-gray-100 text-gray-300 dark:bg-gray-800 dark:text-gray-600'
+        ? 'cursor-not-allowed border-transparent bg-[var(--rdp-disabled-surface)] text-[var(--rdp-disabled-foreground)]'
         : cx(
-          'hover:border-blue-400 dark:hover:border-blue-300',
+          'hover:border-[var(--rdp-ring)]',
           active
-            ? 'bg-blue-600 text-white'
+            ? 'bg-[var(--rdp-accent)] text-[var(--rdp-accent-foreground)]'
             : faded
-              ? 'text-gray-300 hover:bg-transparent dark:text-gray-600'
-              : 'hover:bg-blue-100 dark:hover:bg-blue-950/60',
+              ? 'text-[var(--rdp-muted-foreground)] hover:bg-transparent'
+              : 'hover:bg-[var(--rdp-accent-soft)]',
         ),
     ),
 }
+
+const defaultDatePickerInheritAppearanceClassName = cx(
+  '[--rdp-accent:#2563eb]',
+  '[--rdp-accent-foreground:#ffffff]',
+  '[--rdp-ring:#3b82f6]',
+  '[--rdp-surface:#ffffff]',
+  '[--rdp-surface-foreground:#111827]',
+  '[--rdp-border:#e5e7eb]',
+  '[--rdp-field-surface:#ffffff]',
+  '[--rdp-muted:#4b5563]',
+  '[--rdp-muted-foreground:#9ca3af]',
+  '[--rdp-accent-soft:#dbeafe]',
+  '[--rdp-disabled-surface:#f3f4f6]',
+  '[--rdp-disabled-foreground:#9ca3af]',
+  '[--rdp-danger:#dc2626]',
+  'dark:[--rdp-accent:#2563eb]',
+  'dark:[--rdp-accent-foreground:#ffffff]',
+  'dark:[--rdp-ring:#93c5fd]',
+  'dark:[--rdp-surface:#111827]',
+  'dark:[--rdp-surface-foreground:#f9fafb]',
+  'dark:[--rdp-border:#374151]',
+  'dark:[--rdp-field-surface:#030712]',
+  'dark:[--rdp-muted:#9ca3af]',
+  'dark:[--rdp-muted-foreground:#4b5563]',
+  'dark:[--rdp-accent-soft:#17255499]',
+  'dark:[--rdp-disabled-surface:#1f2937]',
+  'dark:[--rdp-disabled-foreground:#4b5563]',
+  'dark:[--rdp-danger:#f87171]',
+)
+
+const lightDatePickerStyleVariables = {
+  '--rdp-accent': '#2563eb',
+  '--rdp-accent-foreground': '#ffffff',
+  '--rdp-ring': '#3b82f6',
+  '--rdp-surface': '#ffffff',
+  '--rdp-surface-foreground': '#111827',
+  '--rdp-border': '#e5e7eb',
+  '--rdp-field-surface': '#ffffff',
+  '--rdp-muted': '#4b5563',
+  '--rdp-muted-foreground': '#9ca3af',
+  '--rdp-accent-soft': '#dbeafe',
+  '--rdp-disabled-surface': '#f3f4f6',
+  '--rdp-disabled-foreground': '#9ca3af',
+  '--rdp-danger': '#dc2626',
+} as React.CSSProperties
+
+const darkDatePickerStyleVariables = {
+  '--rdp-accent': '#2563eb',
+  '--rdp-accent-foreground': '#ffffff',
+  '--rdp-ring': '#93c5fd',
+  '--rdp-surface': '#111827',
+  '--rdp-surface-foreground': '#f9fafb',
+  '--rdp-border': '#374151',
+  '--rdp-field-surface': '#030712',
+  '--rdp-muted': '#9ca3af',
+  '--rdp-muted-foreground': '#4b5563',
+  '--rdp-accent-soft': '#17255499',
+  '--rdp-disabled-surface': '#1f2937',
+  '--rdp-disabled-foreground': '#4b5563',
+  '--rdp-danger': '#f87171',
+} as React.CSSProperties
 
 const materialDatePickerTheme: DatePickerSkin = {
   inputGroupClassName: 'inline-flex items-center gap-2',
@@ -371,6 +449,9 @@ export function createDatePicker<TRootProps>(
       i18n,
       portal = true,
       portalContainer = null,
+      appearance = 'inherit',
+      className,
+      style,
       theme: themeMode,
       skin,
       isDateDisabled,
@@ -381,6 +462,25 @@ export function createDatePicker<TRootProps>(
       validationMessageClassName = '',
       onValidationStateChange,
     } = useResolvedProps(props)
+    const hasPresetTheme =
+      isMaterialTheme(themeMode) || isModernMinimalTheme(themeMode) || isBookingTheme(themeMode)
+    const resolvedAppearance: CoreAppearance =
+      themeMode === 'light' || themeMode === 'dark' ? themeMode : appearance
+    const appearanceClassName = !hasPresetTheme && resolvedAppearance === 'inherit'
+      ? defaultDatePickerInheritAppearanceClassName
+      : ''
+    const scopeClassName =
+      themeMode !== undefined
+        ? getThemeScopeClassName(themeMode)
+        : getAppearanceScopeClassName(resolvedAppearance)
+    const defaultAppearanceStyleVariables = useMemo<React.CSSProperties | undefined>(() => {
+      if (hasPresetTheme || resolvedAppearance === 'inherit') return undefined
+      return resolvedAppearance === 'dark' ? darkDatePickerStyleVariables : lightDatePickerStyleVariables
+    }, [hasPresetTheme, resolvedAppearance])
+    const customStyleVariables = useMemo(
+      () => normalizeCoreStyleVariables(style),
+      [style],
+    )
     const resolvedTheme = useMemo(() => {
       const themedBase = isMaterialTheme(themeMode)
         ? mergeThemeWithSkin(baseTheme, materialDatePickerTheme)
@@ -396,13 +496,29 @@ export function createDatePicker<TRootProps>(
     const resolvedI18n = useMemo(() => resolveCalendarI18n(i18n), [i18n])
     const formatOptions = useMemo(
       () => ({ locale: resolvedI18n.locale }),
-      [resolvedI18n.locale],
+    [resolvedI18n.locale],
     )
     const [open, setOpen] = useState(false)
     const [internalDate, setInternalDate] = useState<Date | null>(value ?? null)
     const [pendingDate, setPendingDate] = useState<Date | null>(null)
     const [internalValidationState, setInternalValidationState] = useState<AsyncValidationState>('idle')
     const [internalValidationMessage, setInternalValidationMessage] = useState('')
+    const rootStyle = useMemo<React.CSSProperties>(() => {
+      const nextStyle = {
+        ...(defaultAppearanceStyleVariables ?? {}),
+        ...(style ?? {}),
+        ...(open ? { zIndex: 'var(--rdp-z-popover, 1000)' } : {}),
+      }
+
+      return nextStyle
+    }, [defaultAppearanceStyleVariables, open, style])
+    const appearanceStyleVariables = useMemo<React.CSSProperties>(
+      () => ({
+        ...(defaultAppearanceStyleVariables ?? {}),
+        ...customStyleVariables,
+      }),
+      [customStyleVariables, defaultAppearanceStyleVariables],
+    )
     const containerRef = useRef<HTMLDivElement | null>(null)
     const inputRef = useRef<HTMLInputElement | null>(null)
     const gridRef = useRef<HTMLDivElement | null>(null)
@@ -623,6 +739,10 @@ export function createDatePicker<TRootProps>(
       validationMessage: resolvedValidationMessage,
       validationMessageClassName,
       themeMode,
+      resolvedAppearance,
+      scopeClassName,
+      appearanceClassName,
+      appearanceStyleVariables,
     }
 
     return (
@@ -631,11 +751,14 @@ export function createDatePicker<TRootProps>(
           <div
             ref={containerRef}
             className={cx(
-              getThemeScopeClassName(themeMode),
+              scopeClassName,
+              appearanceClassName,
               resolvedTheme.rootClassName ?? defaultDatePickerAdapterTheme.rootClassName,
+              className,
             )}
             data-rdp-theme={themeMode}
-            style={open ? { zIndex: 'var(--rdp-z-popover, 1000)' } : undefined}
+            data-rdp-appearance={resolvedAppearance}
+            style={rootStyle}
           >
             {children ?? (
               <>
@@ -754,7 +877,20 @@ export function createDatePicker<TRootProps>(
     popoverClassName = '',
   }: DatePickerCalendarProps) {
     const theme = useDatePickerTheme()
-    const { open, resolvedI18n, containerRef, popoverRef, portal, portalContainer, onEscape, themeMode } = useDatePickerContext()
+    const {
+      open,
+      resolvedI18n,
+      containerRef,
+      popoverRef,
+      portal,
+      portalContainer,
+      onEscape,
+      themeMode,
+      resolvedAppearance,
+      scopeClassName,
+      appearanceClassName,
+      appearanceStyleVariables,
+    } = useDatePickerContext()
     const { isMounted, presenceState } = usePresenceTransition(open, FLUENT_UI_DURATION_MS)
     const {
       floatingStyle,
@@ -828,20 +964,26 @@ export function createDatePicker<TRootProps>(
         ref={popoverRef}
         className={cx(
           portal ? 'absolute' : 'absolute left-0 top-full mt-2',
-          getThemeScopeClassName(themeMode),
+          scopeClassName,
+          appearanceClassName,
           theme.popoverShellClassName,
           popoverClassName,
         )}
         data-rdp-theme={themeMode}
+        data-rdp-appearance={resolvedAppearance}
         data-state={presenceState}
         style={portal
           ? {
+              ...appearanceStyleVariables,
               ...floatingStyle,
               zIndex: 'var(--rdp-z-popover, 1000)',
               opacity: open && !isPositioned ? 0 : undefined,
               pointerEvents: open && !isPositioned ? 'none' : undefined,
             }
-          : { zIndex: 'var(--rdp-z-popover, 1000)' }}
+          : {
+              ...appearanceStyleVariables,
+              zIndex: 'var(--rdp-z-popover, 1000)',
+            }}
         role="dialog"
         aria-label={resolvedI18n.labels.calendar}
         tabIndex={-1}
@@ -1093,7 +1235,7 @@ function DefaultCalendarIcon() {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="h-4 w-4 text-gray-600 dark:text-gray-300"
+      className="h-4 w-4"
       aria-hidden="true"
     >
       <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />

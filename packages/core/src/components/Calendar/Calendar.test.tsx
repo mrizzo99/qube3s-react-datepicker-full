@@ -8,9 +8,11 @@ import Calendar from "./Calendar";
 const jan102024 = new Date('2024-01-10T12:00:00Z') // stable base date
 const expectDayGrid = () =>
   screen.getAllByRole('gridcell')
+const getCalendarRoot = () => screen.getByRole('grid').parentElement as HTMLElement
 const getCurrentMonthDay = (dayLabel: string) =>
-  screen.getAllByRole('gridcell').find(btn => btn.textContent === dayLabel && !btn.classList.contains('text-gray-300'))
-const expectHasClass = (el: HTMLElement, className: string) => expect(el.className.split(' ')).toContain(className)
+  screen.getAllByRole('gridcell').find(
+    btn => btn.textContent === dayLabel && !btn.classList.contains('text-[var(--rdp-muted-foreground)]')
+  )
 
 describe('Calendar', () => {
   beforeEach(() => vi.setSystemTime(jan102024))
@@ -52,14 +54,14 @@ describe('Calendar', () => {
     render(<Calendar />)
     const day15 = getCurrentMonthDay('15')!
     await userEvent.click(day15)
-    expect(day15).toHaveClass('bg-blue-600')
+    expect(day15).toHaveClass('bg-[var(--rdp-accent)]')
   })
 
   it('respects controlled selectedDate/selectDate', async () => {
     const onSelect = vi.fn()
     render(<Calendar selectedDate={new Date(2024, 0, 5)} selectDate={onSelect} />)
     const day5 = getCurrentMonthDay('5')!
-    expect(day5).toHaveClass('bg-blue-600')
+    expect(day5).toHaveClass('bg-[var(--rdp-accent)]')
     const day6 = getCurrentMonthDay('6')!
     await userEvent.click(day6)
     expect(onSelect).toHaveBeenCalledWith(expect.any(Date))
@@ -70,6 +72,30 @@ describe('Calendar', () => {
     const grid = expectDayGrid()
     const first = grid[0]
     // First cell should be late December 2023 when base date is Jan 2024
-    expect(first).toHaveClass('text-gray-300')
+    expect(first).toHaveClass('text-[var(--rdp-muted-foreground)]')
+  })
+
+  it('supports explicit dark appearance without a dark wrapper', () => {
+    render(<Calendar appearance="dark" />)
+    const root = getCalendarRoot()
+
+    expect(root).toHaveAttribute('data-rdp-appearance', 'dark')
+    expect(root).toHaveClass('dark')
+    expect(root.style.getPropertyValue('--rdp-surface')).toBe('#111827')
+    expect(root.style.getPropertyValue('--rdp-ring')).toBe('#93c5fd')
+  })
+
+  it('applies root className and style props to the calendar wrapper', () => {
+    render(
+      <Calendar
+        className="calendar-shell"
+        style={{ marginTop: 12, '--rdp-accent': '#0f766e' } as React.CSSProperties}
+      />
+    )
+    const root = getCalendarRoot()
+
+    expect(root).toHaveClass('calendar-shell')
+    expect(root).toHaveStyle({ marginTop: '12px' })
+    expect(root.style.getPropertyValue('--rdp-accent')).toBe('#0f766e')
   })
 })

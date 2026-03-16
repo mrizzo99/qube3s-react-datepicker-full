@@ -1,2 +1,2 @@
 export { default } from './Calendar'
-export * from './Calendar'
+export type { CalendarProps } from './Calendar'

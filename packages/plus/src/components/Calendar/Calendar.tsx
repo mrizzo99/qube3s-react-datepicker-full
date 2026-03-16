@@ -1,18 +1,18 @@
-import CoreCalendar, {
+import {
+  createCalendar,
   type CalendarDaySlotState,
   type CalendarProps as CoreCalendarProps,
   type CalendarSkin,
+  type CalendarStylingProps,
   type CalendarTheme,
-} from '@core/components/Calendar'
-import type { ThemeMode } from '../../theming'
+} from '@core/components/Calendar/Calendar'
 
-export type CalendarProps = Omit<CoreCalendarProps, 'theme' | 'skin'> & {
-  theme?: ThemeMode
-  skin?: CalendarSkin
-}
+export type CalendarProps = CoreCalendarProps & CalendarStylingProps
 
 export type { CalendarDaySlotState, CalendarSkin, CalendarTheme }
 
-const Calendar = (props: CalendarProps) => <CoreCalendar {...props} />
+const PlusCalendarBase = createCalendar()
+
+const Calendar = (props: CalendarProps) => <PlusCalendarBase {...props} />
 
 export default Calendar

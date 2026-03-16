@@ -1,4 +1,4 @@
-import type { CalendarSkin } from '@plus/components/Calendar'
+import type { CalendarDaySlotState, CalendarSkin } from '@plus/components/Calendar'
 
 export type SkinPresetKey = 'default' | 'sunrise' | 'midnight'
 
@@ -27,7 +27,7 @@ export const calendarSkinPresets: Record<SkinPresetKey, DemoCalendarSkinPreset> 
       weekdayRowClassName: 'mb-2 grid grid-cols-7 text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-700',
       weekdayCellClassName: 'text-center',
       gridClassName: 'grid grid-cols-7 gap-1.5',
-      dayButtonClassName: ({ active, faded, focused }) =>
+      dayButtonClassName: ({ active, faded, focused }: CalendarDaySlotState) =>
         [
           'rounded-full border border-transparent p-1.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400',
           active ? 'border-amber-500 bg-amber-500 text-white shadow-sm' : '',
@@ -53,7 +53,7 @@ export const calendarSkinPresets: Record<SkinPresetKey, DemoCalendarSkinPreset> 
       weekdayRowClassName: 'mb-2 grid grid-cols-7 text-xs text-slate-500',
       weekdayCellClassName: 'text-center',
       gridClassName: 'grid grid-cols-7 gap-1',
-      dayButtonClassName: ({ active, faded, focused }) =>
+      dayButtonClassName: ({ active, faded, focused }: CalendarDaySlotState) =>
         [
           'rounded-md border border-transparent p-1.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400',
           active ? 'border-indigo-500 bg-indigo-500 text-white' : '',

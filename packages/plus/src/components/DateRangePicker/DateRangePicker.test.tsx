@@ -228,6 +228,11 @@ describe('DateRangePicker', () => {
   it('supports year navigation controls in popover header', async () => {
     render(<DateRangePicker />)
     await userEvent.click(screen.getByPlaceholderText('Start date'))
+    const dialog = await screen.findByRole('dialog', { name: 'Range calendar' })
+
+    await waitFor(() => {
+      expect(dialog).not.toHaveStyle({ pointerEvents: 'none' })
+    })
 
     await userEvent.click(screen.getByRole('button', { name: 'Next year' }))
     expect(screen.getByRole('grid', { name: 'January 2025' })).toBeInTheDocument()
