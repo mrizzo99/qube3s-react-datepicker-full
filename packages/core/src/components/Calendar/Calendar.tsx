@@ -5,6 +5,7 @@ import { addMonths, format } from 'date-fns'
 import { resolveCalendarI18n, type CalendarI18n } from '../../i18n'
 import {
   getThemeScopeClassName,
+  isBookingTheme,
   isMaterialTheme,
   isModernMinimalTheme,
   mergeThemeWithSkin,
@@ -107,6 +108,27 @@ const modernMinimalCalendarTheme: CalendarSkin = {
       !active ? 'hover:bg-zinc-200/80 dark:hover:bg-zinc-800' : '',
       faded ? 'text-zinc-300 dark:text-zinc-700' : 'text-zinc-900 dark:text-zinc-50',
       focused && !active ? 'bg-zinc-100 dark:bg-zinc-900' : '',
+    ),
+}
+
+const bookingCalendarTheme: CalendarSkin = {
+  containerClassName:
+    'w-72 rounded-2xl border border-sky-200 bg-white p-4 text-slate-950 shadow-[0_20px_40px_rgba(0,53,128,0.14)] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50',
+  headerClassName: 'mb-3 flex items-center justify-between',
+  headerNavGroupClassName: 'flex items-center gap-1.5',
+  headerNavButtonClassName:
+    'inline-flex h-9 w-9 items-center justify-center rounded-full border border-transparent bg-sky-50 text-[#003580] transition-colors hover:bg-sky-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006ce4] dark:bg-slate-800 dark:text-sky-200 dark:hover:bg-slate-700 dark:focus-visible:ring-sky-400',
+  monthLabelClassName: 'text-sm font-semibold tracking-[0.01em] text-[#003580] dark:text-white',
+  weekdayRowClassName: 'mb-2 grid grid-cols-7 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400',
+  weekdayCellClassName: 'text-center',
+  gridClassName: 'grid grid-cols-7 gap-1.5',
+  dayButtonClassName: ({ active, faded, focused }) =>
+    cx(
+      'rounded-xl border border-transparent p-1.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006ce4] dark:focus-visible:ring-sky-400',
+      active ? 'border-[#006ce4] bg-[#006ce4] text-white shadow-sm dark:border-sky-500 dark:bg-sky-500' : '',
+      !active ? 'hover:border-sky-200 hover:bg-sky-50 dark:hover:border-slate-700 dark:hover:bg-slate-800' : '',
+      faded ? 'text-slate-300 dark:text-slate-600' : 'text-slate-900 dark:text-slate-50',
+      focused && !active ? 'bg-amber-50 dark:bg-slate-800' : '',
     ),
 }
 
@@ -326,6 +348,8 @@ export function createCalendar(theme: CalendarTheme = defaultCalendarTheme) {
         ? mergeThemeWithSkin(theme, materialCalendarTheme)
         : isModernMinimalTheme(themeMode)
           ? mergeThemeWithSkin(theme, modernMinimalCalendarTheme)
+        : isBookingTheme(themeMode)
+          ? mergeThemeWithSkin(theme, bookingCalendarTheme)
         : theme
 
       return mergeThemeWithSkin(themedBase, skin)

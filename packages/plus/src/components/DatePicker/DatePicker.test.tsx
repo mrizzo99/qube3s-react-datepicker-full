@@ -202,4 +202,17 @@ describe('Plus DatePicker', () => {
     expect(dialog).toHaveAttribute('data-rdp-theme', 'modern-minimal-light')
     expect(dialog.firstElementChild).toHaveClass('rounded-2xl')
   })
+
+  it('supports the built-in booking theme preset', async () => {
+    render(<DatePicker theme="booking-light" />)
+
+    const input = screen.getByRole('textbox')
+    expect(input).toHaveClass('rounded-xl')
+
+    await userEvent.click(input)
+
+    const dialog = await screen.findByRole('dialog', { name: 'Calendar' })
+    expect(dialog).toHaveAttribute('data-rdp-theme', 'booking-light')
+    expect(dialog.firstElementChild).toHaveClass('rounded-2xl')
+  })
 })

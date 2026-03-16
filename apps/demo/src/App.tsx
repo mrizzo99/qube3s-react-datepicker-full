@@ -31,6 +31,8 @@ const stockThemeOptions: Array<{ value: ThemeMode; label: string }> = [
   { value: 'material-dark', label: 'Material Dark' },
   { value: 'modern-minimal-light', label: 'Modern Minimal Light' },
   { value: 'modern-minimal-dark', label: 'Modern Minimal Dark' },
+  { value: 'booking-light', label: 'Booking Light' },
+  { value: 'booking-dark', label: 'Booking Dark' },
 ]
 
 export default function App() {
@@ -313,7 +315,7 @@ export default function App() {
             <section id="stock-theme-playground" className={panelClass}>
               <h2 className="text-lg font-semibold">Stock theme playground</h2>
               <p className="mt-1 mb-4 max-w-3xl text-sm text-[var(--q3-text-disabled)]">
-                Switch between the built-in stock themes. The Material variants are stock theme presets inspired by Material-style surfaces, not external-system adapters.
+                Switch between the built-in stock themes. Material, Modern Minimal, and Booking are stock theme presets, not external-system adapters.
               </p>
               <div className="mb-5 flex flex-wrap gap-2">
                 {stockThemeOptions.map(option => (

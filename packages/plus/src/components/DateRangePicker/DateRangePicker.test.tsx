@@ -576,4 +576,17 @@ describe('DateRangePicker', () => {
     expect(dialog).toHaveAttribute('data-rdp-theme', 'modern-minimal-light')
     expect(dialog.firstElementChild).toHaveClass('rounded-2xl')
   })
+
+  it('supports the built-in booking theme preset', async () => {
+    render(<DateRangePicker theme="booking-light" />)
+
+    const input = screen.getByPlaceholderText('Start date')
+    expect(input).toHaveClass('rounded-xl')
+
+    await userEvent.click(input)
+
+    const dialog = await screen.findByRole('dialog', { name: 'Range calendar' })
+    expect(dialog).toHaveAttribute('data-rdp-theme', 'booking-light')
+    expect(dialog.firstElementChild).toHaveClass('rounded-2xl')
+  })
 })

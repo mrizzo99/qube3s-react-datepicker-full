@@ -159,4 +159,12 @@ describe('RangeCalendar', () => {
     expect(grid).toHaveAttribute('data-rdp-theme', 'modern-minimal-light')
     expect(grid).toHaveClass('rounded-2xl')
   })
+
+  it('supports the built-in booking theme preset', () => {
+    render(<RangeCalendar theme="booking-light" />)
+
+    const grid = screen.getByRole('grid', { name: 'January 2024' })
+    expect(grid).toHaveAttribute('data-rdp-theme', 'booking-light')
+    expect(grid).toHaveClass('rounded-2xl')
+  })
 })

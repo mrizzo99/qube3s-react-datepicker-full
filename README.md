@@ -267,10 +267,12 @@ Themes and skins
   - `material-dark`
   - `modern-minimal-light`
   - `modern-minimal-dark`
+  - `booking-light`
+  - `booking-dark`
 - `skin` is a per-instance slot override object. It lets you patch classes or icons for one picker without creating a new adapter.
 - Adapters are a separate layer:
   - adapter: chooses the design system defaults, like the stock components vs `shadcn`
-  - theme: chooses the stock component preset and mode, such as `light`, `dark`, `material-light`, `material-dark`, `modern-minimal-light`, or `modern-minimal-dark`
+  - theme: chooses the stock component preset and mode, such as `light`, `dark`, `material-light`, `material-dark`, `modern-minimal-light`, `modern-minimal-dark`, `booking-light`, or `booking-dark`
   - skin: overrides specific slots on one stock component instance
 - Adapters rely on the external system's theming model. For example, `shadcn.*` should be themed through your app's ShadCN/Tailwind tokens, not through our `theme` or `skin` props.
 
@@ -285,6 +287,8 @@ import { shadcn } from '@plus/adapters'
 <Calendar theme="material-light" />
 
 <Calendar theme="modern-minimal-light" />
+
+<Calendar theme="booking-light" />
 
 <DateRangePicker
   theme="material-dark"

@@ -29,6 +29,7 @@ import type {
 import { resolveCalendarI18n, type CalendarI18n } from '@core/i18n'
 import {
   getThemeScopeClassName,
+  isBookingTheme,
   isMaterialTheme,
   isModernMinimalTheme,
   mergeThemeWithSkin,
@@ -417,6 +418,78 @@ const modernMinimalDateRangePickerTheme: DateRangePickerSkin = {
     'rounded-full border border-zinc-200 bg-zinc-100 px-4 py-1.5 text-sm text-zinc-700 transition-colors hover:bg-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800 dark:focus-visible:ring-zinc-600',
   confirmButtonClassName:
     'rounded-full border border-zinc-900 bg-zinc-900 px-4 py-1.5 text-sm text-white transition-colors hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-zinc-200 dark:focus-visible:ring-zinc-600',
+}
+
+const bookingDateRangePickerTheme: DateRangePickerSkin = {
+  rootClassName: 'relative inline-flex flex-col gap-3',
+  inputLayoutClassName: 'flex flex-wrap items-end gap-3',
+  inputFieldsGroupClassName: 'flex flex-wrap gap-3',
+  inputFieldClassName: 'flex flex-col gap-1.5',
+  inputLabelClassName: 'text-sm font-medium text-[#003580] dark:text-sky-200',
+  inputGroupClassName: 'inline-flex items-center gap-2',
+  inputClassName:
+    'rounded-xl border border-sky-200 bg-white px-4 py-2 text-sm text-slate-950 placeholder:text-slate-500 transition-colors hover:border-[#006ce4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006ce4] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50 dark:placeholder:text-slate-400 dark:hover:border-sky-400 dark:focus-visible:ring-sky-400',
+  triggerClassName:
+    'inline-flex h-10 w-10 items-center justify-center rounded-xl border border-sky-200 bg-sky-50 text-[#003580] transition-colors hover:bg-sky-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006ce4] dark:border-slate-700 dark:bg-slate-800 dark:text-sky-200 dark:hover:bg-slate-700 dark:focus-visible:ring-sky-400',
+  validationMessageInvalidClassName: 'text-rose-600 dark:text-rose-400',
+  validationMessageValidatingClassName: 'text-slate-500 dark:text-slate-400',
+  mobileBackdropClassName: 'absolute inset-0 bg-[#003580]/35 transition-opacity duration-200 dark:bg-black/70',
+  mobileSheetClassName:
+    'relative max-h-[90vh] w-full overflow-y-auto rounded-t-3xl border border-sky-200 bg-white p-4 text-slate-950 shadow-[0_24px_48px_rgba(0,53,128,0.18)] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50',
+  mobileSheetHandleClassName: 'h-1.5 w-12 rounded-full bg-sky-200 dark:bg-slate-600',
+  desktopPopoverShellClassName: 'rounded-2xl bg-transparent',
+  desktopPopoverPanelClassName:
+    'max-w-[calc(100vw-1rem)] rounded-2xl border border-sky-200 bg-white p-4 text-slate-950 shadow-[0_20px_40px_rgba(0,53,128,0.14)] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50',
+  headerClassName: 'mb-4 flex items-center justify-between gap-3',
+  headerNavGroupClassName: 'flex items-center gap-1.5',
+  headerNavButtonClassName:
+    'inline-flex h-9 w-9 items-center justify-center rounded-full border border-transparent bg-sky-50 text-[#003580] transition-colors hover:bg-sky-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006ce4] dark:bg-slate-800 dark:text-sky-200 dark:hover:bg-slate-700 dark:focus-visible:ring-sky-400',
+  monthLabelClassName: 'text-center text-sm font-semibold tracking-[0.01em] text-[#003580] dark:text-white',
+  timeWheelTitleClassName: 'text-xs font-medium text-slate-500 dark:text-slate-400',
+  timeWheelListClassName: disabled =>
+    cx(
+      'h-16 overflow-y-auto rounded-xl border border-sky-200 p-1 dark:border-slate-700',
+      disabled ? 'cursor-not-allowed bg-slate-100 dark:bg-slate-800' : 'bg-white dark:bg-slate-950',
+    ),
+  timeWheelOptionClassName: ({ selected }) =>
+    cx(
+      'w-full rounded-lg px-2 py-1 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006ce4] dark:focus-visible:ring-sky-400',
+      selected ? 'bg-[#006ce4] text-white dark:bg-sky-500' : 'text-[#003580] hover:bg-sky-50 dark:text-sky-100 dark:hover:bg-slate-800',
+    ),
+  timeBoundarySectionClassName: 'rounded-2xl border border-sky-100 bg-sky-50/60 p-3 dark:border-slate-700 dark:bg-slate-950/70',
+  timeBoundaryHeaderClassName: 'mb-2 flex items-center gap-2 text-sm font-medium text-[#003580] dark:text-sky-100',
+  timeBoundaryIconWrapClassName: 'inline-flex h-4 w-4 items-center justify-center overflow-hidden text-[#006ce4] dark:text-sky-300',
+  timeSectionClassName: 'mt-2 border-t border-sky-100 pt-3 dark:border-slate-700',
+  timeSectionTitleClassName: 'mb-2 text-sm font-semibold text-slate-800 dark:text-slate-100',
+  presetsListClassName: 'flex flex-wrap gap-2',
+  presetButtonClassName: active =>
+    cx(
+      'rounded-full border px-3 py-1 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006ce4] dark:focus-visible:ring-sky-400 sm:text-sm',
+      active
+        ? 'border-[#006ce4] bg-[#006ce4] text-white dark:border-sky-500 dark:bg-sky-500'
+        : 'border-sky-200 bg-white text-[#003580] hover:bg-sky-50 dark:border-slate-700 dark:bg-slate-900 dark:text-sky-200 dark:hover:bg-slate-800',
+    ),
+  monthsViewportClassName: 'flex flex-col gap-4 sm:flex-row sm:gap-3',
+  monthPanelClassName: 'w-72 rounded-2xl border border-sky-100 bg-sky-50/60 p-3 dark:border-slate-700 dark:bg-slate-950/70 sm:w-64',
+  monthPanelTitleClassName: 'mb-2 text-center text-sm font-medium text-[#003580] dark:text-sky-100',
+  weekdayRowClassName: 'mb-2 grid grid-cols-7 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400',
+  weekdayCellClassName: 'text-center',
+  weekRowsClassName: 'flex flex-col gap-1.5',
+  weekRowClassName: 'grid grid-cols-7 gap-1.5',
+  dayButtonClassName: ({ rangeEdge, inRange, faded, focused }) =>
+    cx(
+      'rounded-xl border border-transparent p-1.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006ce4] dark:focus-visible:ring-sky-400',
+      rangeEdge ? 'border-[#006ce4] bg-[#006ce4] text-white dark:border-sky-500 dark:bg-sky-500' : '',
+      !rangeEdge && inRange ? 'bg-sky-100 text-[#003580] dark:bg-sky-950/60 dark:text-sky-100' : '',
+      !rangeEdge && !inRange ? 'hover:border-sky-200 hover:bg-sky-50 dark:hover:border-slate-700 dark:hover:bg-slate-800' : '',
+      faded ? 'text-slate-300 dark:text-slate-600' : 'text-slate-900 dark:text-slate-50',
+      focused && !rangeEdge ? 'bg-amber-50 dark:bg-slate-800' : '',
+    ),
+  actionsClassName: 'mt-3 flex justify-end gap-2 border-t border-sky-100 pt-3 dark:border-slate-700',
+  cancelButtonClassName:
+    'rounded-full border border-sky-200 bg-white px-4 py-1.5 text-sm text-[#003580] transition-colors hover:bg-sky-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006ce4] dark:border-slate-700 dark:bg-slate-900 dark:text-sky-200 dark:hover:bg-slate-800 dark:focus-visible:ring-sky-400',
+  confirmButtonClassName:
+    'rounded-full border border-[#006ce4] bg-[#006ce4] px-4 py-1.5 text-sm text-white transition-colors hover:border-[#0057b8] hover:bg-[#0057b8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006ce4] dark:border-sky-500 dark:bg-sky-500 dark:hover:border-sky-400 dark:hover:bg-sky-400 dark:focus-visible:ring-sky-400',
 }
 
 const DateRangePickerThemeContext = createContext<DateRangePickerTheme>(defaultDateRangePickerTheme)
@@ -2420,6 +2493,8 @@ export function createDateRangePicker(baseTheme: DateRangePickerTheme = defaultD
         ? mergeThemeWithSkin(baseTheme, materialDateRangePickerTheme)
         : isModernMinimalTheme(props.theme)
           ? mergeThemeWithSkin(baseTheme, modernMinimalDateRangePickerTheme)
+        : isBookingTheme(props.theme)
+          ? mergeThemeWithSkin(baseTheme, bookingDateRangePickerTheme)
         : baseTheme
 
       return mergeThemeWithSkin(themedBase, skin)

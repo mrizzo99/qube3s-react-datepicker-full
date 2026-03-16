@@ -103,11 +103,27 @@ describe('Calendar', () => {
     expect(grid).toHaveClass('rounded-2xl')
   })
 
+  it('supports the built-in booking theme preset', () => {
+    render(<Calendar theme="booking-light" />)
+
+    const grid = screen.getByRole('grid')
+    expect(grid).toHaveAttribute('data-rdp-theme', 'booking-light')
+    expect(grid).toHaveClass('rounded-2xl')
+  })
+
   it('scopes dark mode for the built-in modern minimal dark preset', () => {
     render(<Calendar theme="modern-minimal-dark" />)
 
     const grid = screen.getByRole('grid')
     expect(grid).toHaveAttribute('data-rdp-theme', 'modern-minimal-dark')
+    expect(grid.parentElement).toHaveClass('dark')
+  })
+
+  it('scopes dark mode for the built-in booking dark preset', () => {
+    render(<Calendar theme="booking-dark" />)
+
+    const grid = screen.getByRole('grid')
+    expect(grid).toHaveAttribute('data-rdp-theme', 'booking-dark')
     expect(grid.parentElement).toHaveClass('dark')
   })
 })

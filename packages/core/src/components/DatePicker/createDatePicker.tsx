@@ -14,6 +14,7 @@ import { resolveCalendarI18n, type CalendarI18n } from '../../i18n'
 import { useCalendar } from '../../headless/useCalendar'
 import {
   getThemeScopeClassName,
+  isBookingTheme,
   isMaterialTheme,
   isModernMinimalTheme,
   mergeThemeWithSkin,
@@ -306,6 +307,36 @@ const modernMinimalDatePickerTheme: DatePickerSkin = {
     ),
 }
 
+const bookingDatePickerTheme: DatePickerSkin = {
+  inputGroupClassName: 'inline-flex items-center gap-2',
+  inputClassName:
+    'w-52 rounded-xl border border-sky-200 bg-white px-4 py-2 text-slate-950 placeholder:text-slate-500 transition-colors hover:border-[#006ce4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006ce4] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50 dark:placeholder:text-slate-400 dark:hover:border-sky-400 dark:focus-visible:ring-sky-400',
+  triggerClassName:
+    'inline-flex h-10 w-10 items-center justify-center rounded-xl border border-sky-200 bg-sky-50 text-[#003580] transition-colors hover:bg-sky-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006ce4] dark:border-slate-700 dark:bg-slate-800 dark:text-sky-200 dark:hover:bg-slate-700 dark:focus-visible:ring-sky-400',
+  validationMessageInvalidClassName: 'text-rose-600 dark:text-rose-400',
+  validationMessageValidatingClassName: 'text-slate-500 dark:text-slate-400',
+  popoverShellClassName: 'rounded-2xl bg-transparent',
+  popoverPanelClassName:
+    'w-[320px] rounded-2xl border border-sky-200 bg-white p-4 text-slate-950 shadow-[0_20px_40px_rgba(0,53,128,0.14)] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50',
+  headerClassName: 'mb-3 flex items-center justify-between',
+  headerNavGroupClassName: 'flex items-center gap-1.5',
+  headerNavButtonClassName:
+    'inline-flex h-9 w-9 items-center justify-center rounded-full border border-transparent bg-sky-50 text-[#003580] transition-colors hover:bg-sky-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006ce4] dark:bg-slate-800 dark:text-sky-200 dark:hover:bg-slate-700 dark:focus-visible:ring-sky-400',
+  monthLabelClassName: 'text-sm font-semibold tracking-[0.01em] text-[#003580] dark:text-white',
+  weekdayRowClassName: 'mb-2 grid grid-cols-7 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400',
+  weekdayCellClassName: 'text-center',
+  gridClassName: 'grid grid-cols-7 gap-1.5',
+  dayButtonClassName: ({ active, disabled, faded, focused }) =>
+    cx(
+      'rounded-xl border border-transparent p-1.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006ce4] dark:focus-visible:ring-sky-400',
+      disabled ? 'cursor-not-allowed bg-slate-100 text-slate-300 dark:bg-slate-800 dark:text-slate-600' : '',
+      active ? 'border-[#006ce4] bg-[#006ce4] text-white shadow-sm dark:border-sky-500 dark:bg-sky-500' : '',
+      !active && !disabled ? 'hover:border-sky-200 hover:bg-sky-50 dark:hover:border-slate-700 dark:hover:bg-slate-800' : '',
+      !active && faded ? 'text-slate-300 dark:text-slate-600' : '',
+      focused && !active && !disabled ? 'bg-amber-50 dark:bg-slate-800' : '',
+    ),
+}
+
 const DatePickerThemeContext = createContext<DatePickerAdapterTheme>(defaultDatePickerAdapterTheme)
 
 const useDatePickerTheme = () => useContext(DatePickerThemeContext)
@@ -354,6 +385,8 @@ export function createDatePicker<TRootProps>(
         ? mergeThemeWithSkin(baseTheme, materialDatePickerTheme)
         : isModernMinimalTheme(themeMode)
           ? mergeThemeWithSkin(baseTheme, modernMinimalDatePickerTheme)
+        : isBookingTheme(themeMode)
+          ? mergeThemeWithSkin(baseTheme, bookingDatePickerTheme)
         : baseTheme
 
       return mergeThemeWithSkin(themedBase, skin)
