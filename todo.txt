@@ -36,7 +36,7 @@ animated transitions -DONE
 
 keyboard-accessible month switching - DONE please see Keyboard Navigation details in the README.md
 
-4. Accessibility Upgrade
+4. Accessibility Upgrade - DONE
 
 WAI-ARIA patterns:
 
@@ -54,7 +54,7 @@ Escape-to-close
 
 Allow integration with:
 
-Shadcn UI
+Shadcn UI - DONE
 
 MUI
 

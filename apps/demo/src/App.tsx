@@ -4,11 +4,12 @@ import Calendar from '@core/components/Calendar'
 import DatePicker from '@core/components/DatePicker'
 import { esI18n } from '@core/i18n-presets'
 import { shadcn } from '@plus/adapters'
+import CalendarPlus from '@plus/components/Calendar'
 import DatePickerPlus from '@plus/components/DatePicker'
 import DateRangePicker from '@plus/components/DateRangePicker'
 import RangeCalendar from '@plus/components/RangeCalendar'
 import { fluentAnimationPack } from '@plus/presets/animationPack'
-import type { ThemeMode } from '@core/theming'
+import type { ThemeMode } from '@plus/theming'
 import { calendarSkinPresets, type SkinPresetKey } from './demoSkins'
 import qube3sCubePng from '../public/brand/qube3s-cube.png'
 import qube3sLogoPng from '../public/brand/qube3s-logo.png'
@@ -44,14 +45,14 @@ type AdapterShowcase = {
 const coreNavItems: NavItem[] = [
   { id: 'single-inline', label: 'Inline Calendar', detail: 'Core visual calendar' },
   { id: 'single-popover', label: 'Popover Picker', detail: 'Compound DatePicker' },
-  { id: 'single-es', label: 'ES Locale Picker', detail: 'Core i18n preset' },
-  { id: 'stock-theme-playground', label: 'Stock Themes', detail: 'Built-in theme presets' },
-  { id: 'stock-skin-playground', label: 'Stock Skins', detail: 'Slot-level visual presets' }
+  { id: 'single-es', label: 'ES Locale Picker', detail: 'Core i18n preset' }
 ]
 
 const plusNavItems: NavItem[] = [
   { id: 'single-plus-constraints', label: 'Constrained Date', detail: 'Single-date business rules' },
   { id: 'single-plus-async-validation', label: 'Async Validation', detail: 'Server-backed date validation' },
+  { id: 'stock-theme-playground', label: 'Theme Presets', detail: 'Built-in premium themes' },
+  { id: 'stock-skin-playground', label: 'Skin Presets', detail: 'Slot-level visual overrides' },
   { id: 'fluent-animation-pack', label: 'Fluent Motion', detail: 'Animation pack showcase' },
   { id: 'range-inline-2', label: 'Inline Range 2-Month', detail: 'RangeCalendar baseline' },
   { id: 'range-inline-3', label: 'Inline Range 3-Month', detail: 'Expanded range view' },
@@ -281,12 +282,12 @@ export default function App() {
       ? {
           title: 'Core primitives',
           description:
-            'Core is the base layer: the single-date calendar, the composable popover picker, and the stock theme and skin system that Plus builds on.'
+            'Core is the base layer: the single-date calendar, the composable popover picker, and the i18n-ready foundation that Plus builds on.'
         }
       : {
           title: 'Plus workflows',
           description:
-            'Plus adds opinionated product features: constraints, async validation, motion presets, range selection, time selection, mobile sheet behavior, and adapter surfaces.'
+            'Plus adds opinionated product features: constraints, named themes, skins, motion presets, range selection, time selection, mobile sheet behavior, and adapter surfaces.'
         }
 
   const validateDemoDateAsync = async (date: Date) => {
@@ -392,15 +393,15 @@ export default function App() {
                 <SummaryCard
                   title="Core"
                   badge="Foundation"
-                  description="Single-date primitives plus stock themes and skins for teams that want a clean base calendar system without the opinionated range and validation layer."
-                  highlights={['Calendar', 'DatePicker', 'Themes + skins']}
+                  description="Single-date primitives for teams that want a clean base calendar and a composable picker without the opinionated range and validation layer."
+                  highlights={['Calendar', 'DatePicker', 'i18n presets']}
                   tone="core"
                 />
                 <SummaryCard
                   title="Plus"
                   badge="Advanced"
-                  description="Product-ready workflows for constrained booking, fluent motion, multi-month range selection, time-aware ranges, mobile sheet mode, and design-system adapters."
-                  highlights={['Constraints', 'Motion + range', 'Adapters']}
+                  description="Product-ready workflows for constrained booking, named themes, slot-level skins, fluent motion, multi-month range selection, time-aware ranges, mobile sheet mode, and design-system adapters."
+                  highlights={['Themes + skins', 'Motion + range', 'Adapters']}
                   tone="plus"
                 />
               </div>
@@ -503,133 +504,6 @@ export default function App() {
                 </SectionCard>
               </SectionGroup>
 
-              <SectionGroup
-                eyebrow="Core"
-                title="Stock themes and skins"
-                description="These demos preserve the built-in theme and skin work from main, but keep it grouped under the Core story so the stock system remains visible in the reorganized app."
-              >
-                <SectionCard
-                  id="stock-theme-playground"
-                  title="Stock theme playground"
-                  description="Switch between the built-in stock themes. Material, Modern Minimal, and Booking are stock theme presets, not external-system adapters."
-                >
-                  <div className="mb-5 flex flex-wrap gap-2">
-                    {stockThemeOptions.map(option => (
-                      <button
-                        key={option.value}
-                        type="button"
-                        className={controlButtonClass(themeDemoMode === option.value)}
-                        onClick={() => setThemeDemoMode(option.value)}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="grid gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
-                    <div className="rounded-xl border border-[var(--q3-border)] bg-[color:rgb(11_18_32_/_0.3)] p-4">
-                      <p className="mb-3 text-sm text-[var(--q3-text-disabled)]">
-                        Core `DatePicker` preview
-                      </p>
-                      <DatePicker
-                        value={themeDemoDate}
-                        onChange={setThemeDemoDate}
-                        theme={themeDemoMode}
-                      >
-                        <DatePicker.Input />
-                        <DatePicker.Calendar>
-                          <DatePicker.CalendarHeader />
-                          <DatePicker.CalendarGrid />
-                        </DatePicker.Calendar>
-                      </DatePicker>
-                      <p className="mt-3 text-sm text-[var(--q3-text-disabled)]">
-                        {themeDemoDate
-                          ? `Selected: ${format(themeDemoDate, 'PPP')}`
-                          : 'Choose a date'}
-                      </p>
-                    </div>
-
-                    <div className="rounded-xl border border-[var(--q3-border)] bg-[color:rgb(11_18_32_/_0.3)] p-4">
-                      <p className="mb-3 text-sm text-[var(--q3-text-disabled)]">
-                        Plus `RangeCalendar` preview
-                      </p>
-                      <div className="overflow-x-auto pb-1">
-                        <RangeCalendar
-                          selectedRange={themeDemoRange}
-                          selectRange={setThemeDemoRange}
-                          numberOfMonths={2}
-                          theme={themeDemoMode}
-                        />
-                      </div>
-                      <p className="mt-3 text-sm text-[var(--q3-text-disabled)]">
-                        {themeDemoRange.start ? `Start: ${format(themeDemoRange.start, 'PPP')}` : 'Start: —'}{' '}
-                        {themeDemoRange.end ? `End: ${format(themeDemoRange.end, 'PPP')}` : 'End: —'}
-                      </p>
-                    </div>
-                  </div>
-                </SectionCard>
-
-                <SectionCard
-                  id="stock-skin-playground"
-                  title="Stock skin playground"
-                  description="Swap slot-level skins on the stock `Calendar` without changing its selection or keyboard behavior."
-                >
-                  <div className="mb-3 flex flex-wrap gap-2">
-                    {(Object.entries(calendarSkinPresets) as Array<
-                      [SkinPresetKey, typeof calendarSkinPresets[SkinPresetKey]]
-                    >).map(([key, preset]) => (
-                      <button
-                        key={key}
-                        type="button"
-                        className={controlButtonClass(skinPreset === key)}
-                        onClick={() => setSkinPreset(key)}
-                      >
-                        {preset.label}
-                      </button>
-                    ))}
-                  </div>
-                  <p className="mb-4 text-xs text-[var(--q3-text-disabled)]">
-                    {activeCalendarSkin.description}
-                  </p>
-                  <div className="grid gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
-                    <div className="rounded-xl border border-[var(--q3-border)] bg-[color:rgb(11_18_32_/_0.3)] p-4">
-                      <Calendar
-                        selectedDate={skinDemoDate}
-                        selectDate={setSkinDemoDate}
-                        skin={activeCalendarSkin.skin}
-                      />
-                      <p className="mt-3 text-sm text-[var(--q3-text-disabled)]">
-                        {skinDemoDate ? `Selected: ${format(skinDemoDate, 'PPP')}` : 'Choose a date'}
-                      </p>
-                    </div>
-
-                    <div className="rounded-xl border border-[var(--q3-border)] bg-[color:rgb(11_18_32_/_0.3)] p-4">
-                      <p className="text-sm font-medium text-[var(--q3-text-primary)]">
-                        What this is changing
-                      </p>
-                      <p className="mt-2 text-sm text-[var(--q3-text-disabled)]">
-                        Each preset swaps slot classes through the stock `skin` prop. The calendar
-                        logic stays the same, but the shell, header buttons, weekday labels, and
-                        day-cell states are restyled per instance.
-                      </p>
-                      <div className="mt-4 rounded-lg border border-[var(--q3-border)] bg-[color:rgb(11_18_32_/_0.45)] p-3">
-                        <p className="text-xs uppercase tracking-[0.14em] text-[var(--q3-text-disabled)]">
-                          Current preset
-                        </p>
-                        <p className="mt-2 text-sm text-[var(--q3-text-primary)]">
-                          {activeCalendarSkin.label}
-                        </p>
-                        <p className="mt-1 text-xs text-[var(--q3-text-disabled)]">
-                          {`${
-                            skinPreset === 'default'
-                              ? 'skin={undefined}'
-                              : `skin={${activeCalendarSkin.label}}`
-                          }`}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </SectionCard>
-              </SectionGroup>
             </div>
           ) : (
             <div
@@ -704,6 +578,135 @@ export default function App() {
 
               <SectionGroup
                 eyebrow="Plus"
+                title="Themes and skins"
+                description="Advanced styling now lives in the Plus story. These examples keep named theme presets and slot-level skins attached only to Plus components."
+                tone="plus"
+              >
+                <SectionCard
+                  id="stock-theme-playground"
+                  title="Theme preset playground"
+                  description="Switch between the built-in Plus themes. Material, Modern Minimal, and Booking are premium theme presets, not external-system adapters."
+                >
+                  <div className="mb-5 flex flex-wrap gap-2">
+                    {stockThemeOptions.map(option => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        className={controlButtonClass(themeDemoMode === option.value)}
+                        onClick={() => setThemeDemoMode(option.value)}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="grid gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
+                    <div className="rounded-xl border border-[var(--q3-border)] bg-[color:rgb(11_18_32_/_0.3)] p-4">
+                      <p className="mb-3 text-sm text-[var(--q3-text-disabled)]">
+                        Plus `DatePicker` preview
+                      </p>
+                      <DatePickerPlus
+                        value={themeDemoDate}
+                        onChange={setThemeDemoDate}
+                        theme={themeDemoMode}
+                      >
+                        <DatePickerPlus.Input />
+                        <DatePickerPlus.Calendar>
+                          <DatePickerPlus.CalendarHeader />
+                          <DatePickerPlus.CalendarGrid />
+                        </DatePickerPlus.Calendar>
+                      </DatePickerPlus>
+                      <p className="mt-3 text-sm text-[var(--q3-text-disabled)]">
+                        {themeDemoDate
+                          ? `Selected: ${format(themeDemoDate, 'PPP')}`
+                          : 'Choose a date'}
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl border border-[var(--q3-border)] bg-[color:rgb(11_18_32_/_0.3)] p-4">
+                      <p className="mb-3 text-sm text-[var(--q3-text-disabled)]">
+                        Plus `RangeCalendar` preview
+                      </p>
+                      <div className="overflow-x-auto pb-1">
+                        <RangeCalendar
+                          selectedRange={themeDemoRange}
+                          selectRange={setThemeDemoRange}
+                          numberOfMonths={2}
+                          theme={themeDemoMode}
+                        />
+                      </div>
+                      <p className="mt-3 text-sm text-[var(--q3-text-disabled)]">
+                        {themeDemoRange.start ? `Start: ${format(themeDemoRange.start, 'PPP')}` : 'Start: —'}{' '}
+                        {themeDemoRange.end ? `End: ${format(themeDemoRange.end, 'PPP')}` : 'End: —'}
+                      </p>
+                    </div>
+                  </div>
+                </SectionCard>
+
+                <SectionCard
+                  id="stock-skin-playground"
+                  title="Skin preset playground"
+                  description="Swap slot-level skins on the Plus `Calendar` without changing its selection or keyboard behavior."
+                >
+                  <div className="mb-3 flex flex-wrap gap-2">
+                    {(Object.entries(calendarSkinPresets) as Array<
+                      [SkinPresetKey, typeof calendarSkinPresets[SkinPresetKey]]
+                    >).map(([key, preset]) => (
+                      <button
+                        key={key}
+                        type="button"
+                        className={controlButtonClass(skinPreset === key)}
+                        onClick={() => setSkinPreset(key)}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="mb-4 text-xs text-[var(--q3-text-disabled)]">
+                    {activeCalendarSkin.description}
+                  </p>
+                  <div className="grid gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
+                    <div className="rounded-xl border border-[var(--q3-border)] bg-[color:rgb(11_18_32_/_0.3)] p-4">
+                      <CalendarPlus
+                        selectedDate={skinDemoDate}
+                        selectDate={setSkinDemoDate}
+                        skin={activeCalendarSkin.skin}
+                      />
+                      <p className="mt-3 text-sm text-[var(--q3-text-disabled)]">
+                        {skinDemoDate ? `Selected: ${format(skinDemoDate, 'PPP')}` : 'Choose a date'}
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl border border-[var(--q3-border)] bg-[color:rgb(11_18_32_/_0.3)] p-4">
+                      <p className="text-sm font-medium text-[var(--q3-text-primary)]">
+                        What this is changing
+                      </p>
+                      <p className="mt-2 text-sm text-[var(--q3-text-disabled)]">
+                        Each preset swaps slot classes through the Plus `skin` prop. The calendar
+                        logic stays the same, but the shell, header buttons, weekday labels, and
+                        day-cell states are restyled per instance.
+                      </p>
+                      <div className="mt-4 rounded-lg border border-[var(--q3-border)] bg-[color:rgb(11_18_32_/_0.45)] p-3">
+                        <p className="text-xs uppercase tracking-[0.14em] text-[var(--q3-text-disabled)]">
+                          Current preset
+                        </p>
+                        <p className="mt-2 text-sm text-[var(--q3-text-primary)]">
+                          {activeCalendarSkin.label}
+                        </p>
+                        <p className="mt-1 text-xs text-[var(--q3-text-disabled)]">
+                          {`${
+                            skinPreset === 'default'
+                              ? 'skin={undefined}'
+                              : `skin={${activeCalendarSkin.label}}`
+                          }`}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </SectionCard>
+              </SectionGroup>
+
+              <SectionGroup
+                eyebrow="Plus"
                 title="Motion presets"
                 description="This preserves the animation pack work from main and places it in the Plus story, where the motion preset spans inline calendars, popovers, range views, and mobile sheet interactions."
                 tone="plus"
@@ -721,9 +724,9 @@ export default function App() {
                   <div className="grid gap-4 xl:grid-cols-2">
                     <div className="rounded-xl border border-[var(--q3-border)] bg-[color:rgb(11_18_32_/_0.3)] p-4">
                       <p className="mb-3 text-sm text-[var(--q3-text-disabled)]">
-                        Core `Calendar` + fluent motion skin
+                        Plus `Calendar` + fluent motion skin
                       </p>
-                      <Calendar
+                      <CalendarPlus
                         selectedDate={fluentCalendarDate}
                         selectDate={setFluentCalendarDate}
                         theme="light"

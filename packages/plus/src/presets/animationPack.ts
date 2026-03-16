@@ -1,8 +1,8 @@
-import type { CalendarSkin } from '@core/components/Calendar'
 import type {
   DatePickerDaySlotState,
   DatePickerSkin,
-} from '@core/components/DatePicker/createDatePicker'
+} from '../components/DatePicker'
+import type { CalendarSkin } from '../components/Calendar'
 import type { DateRangePickerSkin } from '../components/DateRangePicker'
 import type { RangeCalendarSkin } from '../components/RangeCalendar'
 import type {

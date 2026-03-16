@@ -1,7 +1,9 @@
 import {
   createDatePicker,
   type DatePickerCalendarProps,
+  type DatePickerDaySlotState,
   type DatePickerInputProps,
+  type DatePickerSkin,
 } from '@core/components/DatePicker/createDatePicker'
 import {
   type PlusDatePickerProps as DatePickerProps,
@@ -9,7 +11,12 @@ import {
 } from './datePickerProps'
 
 export type { PlusDatePickerProps as DatePickerProps } from './datePickerProps'
-export type { DatePickerInputProps, DatePickerCalendarProps }
+export type {
+  DatePickerCalendarProps,
+  DatePickerDaySlotState,
+  DatePickerInputProps,
+  DatePickerSkin,
+}
 const DatePicker = createDatePicker<DatePickerProps>(useResolvedPlusDatePickerProps)
 
 export default DatePicker

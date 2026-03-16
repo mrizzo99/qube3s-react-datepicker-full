@@ -1,4 +1,4 @@
-import type { CalendarSkin } from '@core/components/Calendar'
+import type { CalendarSkin } from '@plus/components/Calendar'
 
 export type SkinPresetKey = 'default' | 'sunrise' | 'midnight'
 
