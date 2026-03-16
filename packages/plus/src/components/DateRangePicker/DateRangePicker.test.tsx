@@ -534,4 +534,20 @@ describe('DateRangePicker', () => {
     expect(endInput).toHaveValue('')
     expect(startInput).toHaveFocus()
   })
+
+  it('applies dark theme mode and shell skin overrides to the portaled range calendar', async () => {
+    render(
+      <DateRangePicker
+        theme="dark"
+        skin={{ desktopPopoverShellClassName: 'range-picker-skin-shell' }}
+      />,
+    )
+
+    await userEvent.click(screen.getByPlaceholderText('Start date'))
+
+    const dialog = await screen.findByRole('dialog', { name: 'Range calendar' })
+    expect(dialog).toHaveAttribute('data-rdp-theme', 'dark')
+    expect(dialog).toHaveClass('dark')
+    expect(dialog).toHaveClass('range-picker-skin-shell')
+  })
 })

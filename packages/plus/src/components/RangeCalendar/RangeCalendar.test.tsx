@@ -129,4 +129,18 @@ describe('RangeCalendar', () => {
       end: new Date(2024, 0, 10),
     })
   })
+
+  it('supports dark theme mode and inline skin overrides', () => {
+    render(
+      <RangeCalendar
+        theme="dark"
+        skin={{ containerClassName: 'range-calendar-skin' }}
+      />,
+    )
+
+    const grid = screen.getByRole('grid', { name: 'January 2024' })
+    expect(grid).toHaveAttribute('data-rdp-theme', 'dark')
+    expect(grid.parentElement).toHaveClass('dark')
+    expect(grid).toHaveClass('range-calendar-skin')
+  })
 })

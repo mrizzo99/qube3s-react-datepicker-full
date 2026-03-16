@@ -72,4 +72,18 @@ describe('Calendar', () => {
     // First cell should be late December 2023 when base date is Jan 2024
     expect(first).toHaveClass('text-gray-300')
   })
+
+  it('supports dark theme mode and per-instance skin overrides', () => {
+    render(
+      <Calendar
+        theme="dark"
+        skin={{ containerClassName: 'calendar-skin-shell' }}
+      />,
+    )
+
+    const grid = screen.getByRole('grid')
+    expect(grid).toHaveAttribute('data-rdp-theme', 'dark')
+    expect(grid.parentElement).toHaveClass('dark')
+    expect(grid).toHaveClass('calendar-skin-shell')
+  })
 })

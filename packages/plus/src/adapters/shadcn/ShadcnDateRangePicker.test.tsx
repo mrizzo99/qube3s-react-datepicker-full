@@ -41,4 +41,21 @@ describe('ShadcnDateRangePicker adapter', () => {
     expect(inputs[0]).toHaveValue('January 10th, 2024 09:00 AM')
     expect(inputs[1]).toHaveValue('January 12th, 2024 05:00 PM')
   })
+
+  it('ignores stock theme and skin props at runtime', async () => {
+    const runtimeOnlyProps: Record<string, unknown> = {
+      theme: 'dark',
+      skin: { desktopPopoverShellClassName: 'should-not-apply' },
+    }
+
+    render(
+      <ShadcnDateRangePicker {...runtimeOnlyProps} />,
+    )
+
+    await userEvent.click(screen.getAllByRole('textbox')[0])
+
+    const dialog = screen.getByRole('dialog', { name: 'Range calendar' })
+    expect(dialog).not.toHaveAttribute('data-rdp-theme')
+    expect(dialog.className).not.toContain('should-not-apply')
+  })
 })

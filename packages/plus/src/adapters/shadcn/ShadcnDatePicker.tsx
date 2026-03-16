@@ -1,3 +1,4 @@
+import React from 'react'
 import {
   createDatePicker,
   type DatePickerAdapterTheme,
@@ -5,7 +6,7 @@ import {
   type DatePickerInputProps,
 } from '@core/components/DatePicker/createDatePicker'
 import {
-  type PlusDatePickerProps as ShadcnDatePickerProps,
+  type PlusDatePickerProps,
   useResolvedPlusDatePickerProps,
 } from '../../components/DatePicker/datePickerProps'
 import {
@@ -55,10 +56,29 @@ const shadcnDatePickerTheme: DatePickerAdapterTheme = {
   },
 }
 
-const ShadcnDatePicker = createDatePicker<ShadcnDatePickerProps>(
-  useResolvedPlusDatePickerProps,
+export type ShadcnDatePickerProps = Omit<PlusDatePickerProps, 'theme' | 'skin'>
+
+const resolveShadcnDatePickerProps = (props: ShadcnDatePickerProps) =>
+  useResolvedPlusDatePickerProps(props)
+
+const ShadcnDatePickerBase = createDatePicker<ShadcnDatePickerProps>(
+  resolveShadcnDatePickerProps,
   shadcnDatePickerTheme,
 )
 
+const ShadcnDatePicker = ((incomingProps: ShadcnDatePickerProps) => {
+  const { theme: _theme, skin: _skin, ...props } = incomingProps as ShadcnDatePickerProps & {
+    theme?: unknown
+    skin?: unknown
+  }
+
+  return <ShadcnDatePickerBase {...props} />
+}) as typeof ShadcnDatePickerBase
+
+ShadcnDatePicker.Input = ShadcnDatePickerBase.Input
+ShadcnDatePicker.Calendar = ShadcnDatePickerBase.Calendar
+ShadcnDatePicker.CalendarHeader = ShadcnDatePickerBase.CalendarHeader
+ShadcnDatePicker.CalendarGrid = ShadcnDatePickerBase.CalendarGrid
+
 export default ShadcnDatePicker
-export type { ShadcnDatePickerProps, DatePickerInputProps, DatePickerCalendarProps }
+export type { DatePickerInputProps, DatePickerCalendarProps }

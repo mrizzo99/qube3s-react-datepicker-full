@@ -12,6 +12,12 @@ import { createPortal } from 'react-dom'
 import { addMonths, format } from 'date-fns'
 import { resolveCalendarI18n, type CalendarI18n } from '../../i18n'
 import { useCalendar } from '../../headless/useCalendar'
+import {
+  getThemeScopeClassName,
+  mergeThemeWithSkin,
+  type ThemeMode,
+  type ThemeSkin,
+} from '../../theming'
 import type {
   AsyncValidationBehavior,
   AsyncValidationResult,
@@ -49,6 +55,7 @@ type DatePickerContextValue = {
   validationState: AsyncValidationState
   validationMessage: string
   validationMessageClassName: string
+  themeMode?: ThemeMode
 }
 
 const visuallyHidden = {
@@ -127,6 +134,8 @@ export type DatePickerBaseProps = {
   i18n?: CalendarI18n
   portal?: boolean
   portalContainer?: HTMLElement | null
+  theme?: ThemeMode
+  skin?: DatePickerSkin
 }
 
 export type DatePickerAsyncValidationProps = {
@@ -193,38 +202,49 @@ export type DatePickerAdapterTheme = {
   }
 }
 
+export type DatePickerSkin = ThemeSkin<DatePickerAdapterTheme>
+
 const defaultDatePickerAdapterTheme: DatePickerAdapterTheme = {
   rootClassName: 'relative inline-flex items-center gap-1',
   inputLayoutClassName: 'inline-flex flex-wrap items-center gap-3',
   inputGroupClassName: 'inline-flex items-center gap-1',
   inputClassName:
-    'w-48 rounded border border-gray-300 bg-white p-2 text-gray-900 placeholder:text-gray-500 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
+    'w-48 rounded border border-gray-300 bg-white p-2 text-gray-900 placeholder:text-gray-500 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:placeholder:text-gray-400 dark:hover:border-blue-300 dark:focus-visible:ring-blue-400',
   triggerClassName:
-    'inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
+    'inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 text-gray-700 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-300 dark:hover:border-blue-300 dark:focus-visible:ring-blue-400',
   validationMessageClassName: 'text-sm',
-  validationMessageInvalidClassName: 'text-red-600',
-  validationMessageValidatingClassName: 'text-gray-600',
-  popoverShellClassName: 'rounded bg-white shadow',
-  popoverPanelClassName: 'w-72 rounded-lg border bg-white p-4 text-gray-900 shadow',
+  validationMessageInvalidClassName: 'text-red-600 dark:text-red-400',
+  validationMessageValidatingClassName: 'text-gray-600 dark:text-gray-400',
+  popoverShellClassName: 'rounded bg-white shadow dark:bg-gray-900',
+  popoverPanelClassName:
+    'w-72 rounded-lg border border-gray-200 bg-white p-4 text-gray-900 shadow dark:border-gray-700 dark:bg-gray-900 dark:text-gray-50',
   headerClassName: 'mb-2 flex justify-between',
   headerNavGroupClassName: 'flex gap-1',
   headerNavButtonClassName:
-    'inline-flex h-8 w-8 items-center justify-center rounded border border-transparent text-gray-700 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
-  monthLabelClassName: 'font-semibold text-gray-900',
-  weekdayRowClassName: 'mb-1 grid grid-cols-7 text-sm text-gray-600',
+    'inline-flex h-8 w-8 items-center justify-center rounded border border-transparent text-gray-700 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-gray-300 dark:hover:bg-gray-800 dark:focus-visible:ring-blue-400',
+  monthLabelClassName: 'font-semibold text-gray-900 dark:text-gray-50',
+  weekdayRowClassName: 'mb-1 grid grid-cols-7 text-sm text-gray-600 dark:text-gray-400',
   weekdayCellClassName: 'text-center',
   gridClassName: 'grid grid-cols-7 gap-1',
   dayButtonClassName: ({ active, disabled, faded }) =>
     cx(
-      'rounded border border-transparent p-1 text-gray-900 focus-visible:border-blue-500 focus-visible:outline-none',
+      'rounded border border-transparent p-1 text-gray-900 focus-visible:border-blue-500 focus-visible:outline-none dark:text-gray-100 dark:focus-visible:border-blue-300',
       disabled
-        ? 'cursor-not-allowed border-transparent bg-gray-100 text-gray-300'
+        ? 'cursor-not-allowed border-transparent bg-gray-100 text-gray-300 dark:bg-gray-800 dark:text-gray-600'
         : cx(
-          'hover:border-blue-400',
-          active ? 'bg-blue-600 text-white' : faded ? 'text-gray-300 hover:bg-transparent' : 'hover:bg-blue-100',
+          'hover:border-blue-400 dark:hover:border-blue-300',
+          active
+            ? 'bg-blue-600 text-white'
+            : faded
+              ? 'text-gray-300 hover:bg-transparent dark:text-gray-600'
+              : 'hover:bg-blue-100 dark:hover:bg-blue-950/60',
         ),
     ),
 }
+
+const DatePickerThemeContext = createContext<DatePickerAdapterTheme>(defaultDatePickerAdapterTheme)
+
+const useDatePickerTheme = () => useContext(DatePickerThemeContext)
 
 type DatePickerCompoundComponent<TRootProps> = React.FC<TRootProps> & {
   Input: React.FC<DatePickerInputProps>
@@ -235,7 +255,7 @@ type DatePickerCompoundComponent<TRootProps> = React.FC<TRootProps> & {
 
 export function createDatePicker<TRootProps>(
   useResolvedProps: (props: TRootProps) => DatePickerResolvedProps,
-  theme: DatePickerAdapterTheme = defaultDatePickerAdapterTheme,
+  baseTheme: DatePickerAdapterTheme = defaultDatePickerAdapterTheme,
 ) {
   const DatePickerContext = createContext<DatePickerContextValue | null>(null)
 
@@ -255,6 +275,8 @@ export function createDatePicker<TRootProps>(
       i18n,
       portal = true,
       portalContainer = null,
+      theme: themeMode,
+      skin,
       isDateDisabled,
       validateAsync,
       validationBehavior = 'blocking',
@@ -263,6 +285,7 @@ export function createDatePicker<TRootProps>(
       validationMessageClassName = '',
       onValidationStateChange,
     } = useResolvedProps(props)
+    const resolvedTheme = useMemo(() => mergeThemeWithSkin(baseTheme, skin), [skin])
 
     const resolvedI18n = useMemo(() => resolveCalendarI18n(i18n), [i18n])
     const formatOptions = useMemo(
@@ -493,26 +516,33 @@ export function createDatePicker<TRootProps>(
       validationState: resolvedValidationState,
       validationMessage: resolvedValidationMessage,
       validationMessageClassName,
+      themeMode,
     }
 
     return (
-      <DatePickerContext.Provider value={contextValue}>
-        <div
-          ref={containerRef}
-          className={theme.rootClassName ?? defaultDatePickerAdapterTheme.rootClassName}
-          style={open ? { zIndex: 'var(--rdp-z-popover, 1000)' } : undefined}
-        >
-          {children ?? (
-            <>
-              <DatePickerInput />
-              <DatePickerCalendar>
-                <DatePickerCalendarHeader />
-                <DatePickerCalendarGrid />
-              </DatePickerCalendar>
-            </>
-          )}
-        </div>
-      </DatePickerContext.Provider>
+      <DatePickerThemeContext.Provider value={resolvedTheme}>
+        <DatePickerContext.Provider value={contextValue}>
+          <div
+            ref={containerRef}
+            className={cx(
+              getThemeScopeClassName(themeMode),
+              resolvedTheme.rootClassName ?? defaultDatePickerAdapterTheme.rootClassName,
+            )}
+            data-rdp-theme={themeMode}
+            style={open ? { zIndex: 'var(--rdp-z-popover, 1000)' } : undefined}
+          >
+            {children ?? (
+              <>
+                <DatePickerInput />
+                <DatePickerCalendar>
+                  <DatePickerCalendarHeader />
+                  <DatePickerCalendarGrid />
+                </DatePickerCalendar>
+              </>
+            )}
+          </div>
+        </DatePickerContext.Provider>
+      </DatePickerThemeContext.Provider>
     )
   }
 
@@ -525,6 +555,7 @@ export function createDatePicker<TRootProps>(
     placeholder,
     formatDescription,
   }: DatePickerInputProps) {
+    const theme = useDatePickerTheme()
     const {
       open,
       setOpen,
@@ -616,7 +647,8 @@ export function createDatePicker<TRootProps>(
     className = '',
     popoverClassName = '',
   }: DatePickerCalendarProps) {
-    const { open, resolvedI18n, containerRef, popoverRef, portal, portalContainer, onEscape } = useDatePickerContext()
+    const theme = useDatePickerTheme()
+    const { open, resolvedI18n, containerRef, popoverRef, portal, portalContainer, onEscape, themeMode } = useDatePickerContext()
     const [position, setPosition] = useState<{ left: number; top: number }>({ left: 0, top: 0 })
     const [hasPosition, setHasPosition] = useState(!portal)
     const bodyPaddingBaseRef = useRef<number | null>(null)
@@ -766,9 +798,11 @@ export function createDatePicker<TRootProps>(
         ref={popoverRef}
         className={cx(
           portal ? 'absolute' : 'absolute left-0 top-full mt-2',
+          getThemeScopeClassName(themeMode),
           theme.popoverShellClassName,
           popoverClassName,
         )}
+        data-rdp-theme={themeMode}
         style={portal ? { left: position.left, top: position.top, zIndex: 'var(--rdp-z-popover, 1000)' } : { zIndex: 'var(--rdp-z-popover, 1000)' }}
         role="dialog"
         aria-label={resolvedI18n.labels.calendar}
@@ -797,6 +831,7 @@ export function createDatePicker<TRootProps>(
   }
 
   function DatePickerCalendarHeader() {
+    const theme = useDatePickerTheme()
     const { cal, resolvedI18n, formatOptions, monthLabelId } = useDatePickerContext()
 
     return (
@@ -825,6 +860,7 @@ export function createDatePicker<TRootProps>(
   }
 
   function DatePickerCalendarGrid() {
+    const theme = useDatePickerTheme()
     const {
       cal,
       selectedDate,
@@ -1003,7 +1039,7 @@ function DefaultCalendarIcon() {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="h-4 w-4 text-gray-600"
+      className="h-4 w-4 text-gray-600 dark:text-gray-300"
       aria-hidden="true"
     >
       <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />

@@ -1,4 +1,5 @@
 export * from '@core/asyncValidation'
+export type { ThemeMode } from '@core/theming'
 export { default as DatePicker } from './components/DatePicker'
 export * from './components/DatePicker'
 export { default as DateRangePicker } from './components/DateRangePicker'

@@ -1,8 +1,9 @@
+import React from 'react'
 import {
   createDateRangePicker,
   type DateRangePickerCalendarProps,
   type DateRangePickerInputProps,
-  type DateRangePickerProps as ShadcnDateRangePickerProps,
+  type DateRangePickerProps,
   type DateRangePickerTheme,
 } from '../../components/DateRangePicker/DateRangePicker'
 import {
@@ -90,7 +91,23 @@ const shadcnDateRangePickerTheme: DateRangePickerTheme = {
   },
 }
 
-const ShadcnDateRangePicker = createDateRangePicker(shadcnDateRangePickerTheme)
+export type ShadcnDateRangePickerProps = Omit<DateRangePickerProps, 'theme' | 'skin'>
+
+const ShadcnDateRangePickerBase = createDateRangePicker(shadcnDateRangePickerTheme)
+
+const ShadcnDateRangePicker = ((incomingProps: ShadcnDateRangePickerProps) => {
+  const { theme: _theme, skin: _skin, ...props } = incomingProps as ShadcnDateRangePickerProps & {
+    theme?: unknown
+    skin?: unknown
+  }
+
+  return <ShadcnDateRangePickerBase {...props} />
+}) as typeof ShadcnDateRangePickerBase
+
+ShadcnDateRangePicker.Input = ShadcnDateRangePickerBase.Input
+ShadcnDateRangePicker.Calendar = ShadcnDateRangePickerBase.Calendar
+ShadcnDateRangePicker.CalendarHeader = ShadcnDateRangePickerBase.CalendarHeader
+ShadcnDateRangePicker.CalendarGrid = ShadcnDateRangePickerBase.CalendarGrid
 
 export default ShadcnDateRangePicker
-export type { ShadcnDateRangePickerProps, DateRangePickerInputProps, DateRangePickerCalendarProps }
+export type { DateRangePickerInputProps, DateRangePickerCalendarProps }
