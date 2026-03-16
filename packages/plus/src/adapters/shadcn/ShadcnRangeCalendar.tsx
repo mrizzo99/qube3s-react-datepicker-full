@@ -25,6 +25,8 @@ const shadcnRangeCalendarTheme: RangeCalendarTheme = {
   monthPanelTitleClassName: 'mb-1 text-center text-sm font-medium text-foreground',
   weekdayRowClassName: 'mb-1 grid grid-cols-7 text-sm text-muted-foreground',
   weekdayCellClassName: 'text-center',
+  weekRowsClassName: 'flex flex-col gap-1',
+  weekRowClassName: 'grid grid-cols-7 gap-1',
   dayButtonClassName: ({ rangeEdge, inRange, faded, focused }) =>
     [
       'rounded-md border border-transparent p-1 text-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',

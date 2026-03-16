@@ -21,10 +21,11 @@ describe('ShadcnRangeCalendar adapter', () => {
   it('renders shadcn range calendar styling and supports range selection', async () => {
     const onChange = vi.fn()
 
-    render(<ShadcnRangeCalendar selectRange={onChange} showPresets />)
+    render(<ShadcnRangeCalendar selectRange={onChange} showPresets numberOfMonths={2} />)
 
-    const grid = screen.getByRole('grid', { name: 'January 2024' })
+    const grid = screen.getByRole('grid', { name: 'January 2024 - February 2024' })
     expect(grid.className).toContain('bg-popover')
+    expect(screen.getAllByRole('row').some(row => row.className.includes('grid-cols-7'))).toBe(true)
 
     const preset = screen.getByRole('button', { name: 'Today' })
     expect(preset.className).toContain('rounded-md')
