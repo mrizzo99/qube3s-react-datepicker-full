@@ -12,6 +12,9 @@ import {
 import { resolveCalendarI18n, type CalendarI18n } from '@core/i18n'
 import {
   getThemeScopeClassName,
+  isBookingTheme,
+  isMaterialTheme,
+  isModernMinimalTheme,
   mergeThemeWithSkin,
   type ThemeMode,
   type ThemeSkin,
@@ -95,6 +98,111 @@ const defaultRangeCalendarTheme: RangeCalendarTheme = {
       'rounded border border-transparent p-1 text-gray-900 transition-colors duration-150 hover:border-blue-400 focus-visible:border-blue-500 focus-visible:outline-none dark:text-gray-100 dark:hover:border-blue-300 dark:focus-visible:border-blue-300',
       rangeEdge ? 'bg-blue-600 text-white' : inRange ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/70 dark:text-blue-100' : '',
       faded ? 'text-gray-300 dark:text-gray-600' : 'hover:bg-blue-100 dark:hover:bg-blue-950/60',
+    ),
+}
+
+const materialRangeCalendarTheme: RangeCalendarSkin = {
+  containerClassName:
+    'inline-block w-fit max-w-[calc(100vw-1rem)] rounded-[32px] border border-slate-200 bg-slate-50 p-4 text-slate-900 shadow-[0_16px_36px_rgba(15,23,42,0.14)] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50',
+  headerClassName: 'mb-4 flex items-center justify-between gap-3',
+  headerNavGroupClassName: 'flex items-center gap-1',
+  headerNavButtonClassName:
+    'inline-flex h-10 w-10 items-center justify-center rounded-full border border-transparent bg-slate-100 text-slate-700 transition-colors hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 dark:focus-visible:ring-sky-400',
+  monthLabelClassName: 'text-center text-base font-medium tracking-[0.01em] text-slate-900 dark:text-slate-50',
+  presetsSectionClassName: 'mb-4',
+  presetsListClassName: 'flex flex-wrap gap-2',
+  presetButtonClassName: active =>
+    cx(
+      'rounded-full border px-3 py-1 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 dark:focus-visible:ring-sky-400 sm:text-sm',
+      active
+        ? 'border-sky-600 bg-sky-600 text-white dark:border-sky-500 dark:bg-sky-500'
+        : 'border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700',
+    ),
+  monthsViewportClassName: 'flex flex-col gap-4 sm:flex-row sm:gap-3',
+  monthPanelClassName: 'w-72 rounded-[28px] border border-slate-200 bg-white/80 p-3 dark:border-slate-700 dark:bg-slate-950/70 sm:w-64',
+  monthPanelTitleClassName: 'mb-2 text-center text-sm font-medium text-slate-700 dark:text-slate-200',
+  weekdayRowClassName: 'mb-2 grid grid-cols-7 text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400',
+  weekdayCellClassName: 'text-center',
+  weekRowsClassName: 'flex flex-col gap-1.5',
+  weekRowClassName: 'grid grid-cols-7 gap-1.5',
+  dayButtonClassName: ({ rangeEdge, inRange, faded, focused }) =>
+    cx(
+      'rounded-full border border-transparent p-1.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 dark:focus-visible:ring-sky-400',
+      rangeEdge ? 'bg-sky-600 text-white dark:bg-sky-500' : '',
+      !rangeEdge && inRange ? 'bg-sky-100 text-sky-900 dark:bg-sky-950/70 dark:text-sky-100' : '',
+      !rangeEdge && !inRange ? 'hover:bg-slate-200 dark:hover:bg-slate-800' : '',
+      faded ? 'text-slate-300 dark:text-slate-600' : 'text-slate-900 dark:text-slate-50',
+      focused && !rangeEdge ? 'bg-slate-100 dark:bg-slate-800' : '',
+    ),
+}
+
+const modernMinimalRangeCalendarTheme: RangeCalendarSkin = {
+  containerClassName:
+    'inline-block w-fit max-w-[calc(100vw-1rem)] rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-zinc-950 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50',
+  headerClassName: 'mb-4 flex items-center justify-between gap-3',
+  headerNavGroupClassName: 'flex items-center gap-1',
+  headerNavButtonClassName:
+    'inline-flex h-9 w-9 items-center justify-center rounded-xl border border-transparent text-zinc-600 transition-colors hover:bg-zinc-200/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:focus-visible:ring-zinc-600',
+  monthLabelClassName: 'text-center text-sm font-medium tracking-[0.01em] text-zinc-900 dark:text-zinc-50',
+  presetsSectionClassName: 'mb-4',
+  presetsListClassName: 'flex flex-wrap gap-2',
+  presetButtonClassName: active =>
+    cx(
+      'rounded-full border px-3 py-1 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-600 sm:text-sm',
+      active
+        ? 'border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-950'
+        : 'border-zinc-200 bg-zinc-100 text-zinc-700 hover:bg-zinc-200 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800',
+    ),
+  monthsViewportClassName: 'flex flex-col gap-4 sm:flex-row sm:gap-3',
+  monthPanelClassName: 'w-72 rounded-xl border border-zinc-200 bg-white/80 p-3 dark:border-zinc-800 dark:bg-zinc-900/70 sm:w-64',
+  monthPanelTitleClassName: 'mb-2 text-center text-sm font-medium text-zinc-700 dark:text-zinc-200',
+  weekdayRowClassName: 'mb-2 grid grid-cols-7 text-[11px] font-medium uppercase tracking-[0.14em] text-zinc-500 dark:text-zinc-400',
+  weekdayCellClassName: 'text-center',
+  weekRowsClassName: 'flex flex-col gap-1',
+  weekRowClassName: 'grid grid-cols-7 gap-1',
+  dayButtonClassName: ({ rangeEdge, inRange, faded, focused }) =>
+    cx(
+      'rounded-xl border border-transparent p-1.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-600',
+      rangeEdge ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950' : '',
+      !rangeEdge && inRange ? 'bg-zinc-200 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100' : '',
+      !rangeEdge && !inRange ? 'hover:bg-zinc-200/80 dark:hover:bg-zinc-800' : '',
+      faded ? 'text-zinc-300 dark:text-zinc-700' : 'text-zinc-900 dark:text-zinc-50',
+      focused && !rangeEdge ? 'bg-zinc-100 dark:bg-zinc-900' : '',
+    ),
+}
+
+const bookingRangeCalendarTheme: RangeCalendarSkin = {
+  containerClassName:
+    'inline-block w-fit max-w-[calc(100vw-1rem)] rounded-2xl border border-sky-200 bg-white p-4 text-slate-950 shadow-[0_20px_40px_rgba(0,53,128,0.14)] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50',
+  headerClassName: 'mb-4 flex items-center justify-between gap-3',
+  headerNavGroupClassName: 'flex items-center gap-1.5',
+  headerNavButtonClassName:
+    'inline-flex h-9 w-9 items-center justify-center rounded-full border border-transparent bg-sky-50 text-[#003580] transition-colors hover:bg-sky-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006ce4] dark:bg-slate-800 dark:text-sky-200 dark:hover:bg-slate-700 dark:focus-visible:ring-sky-400',
+  monthLabelClassName: 'text-center text-sm font-semibold tracking-[0.01em] text-[#003580] dark:text-white sm:text-base',
+  presetsSectionClassName: 'mb-4',
+  presetsListClassName: 'flex flex-wrap gap-2',
+  presetButtonClassName: active =>
+    cx(
+      'rounded-full border px-3 py-1 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006ce4] dark:focus-visible:ring-sky-400 sm:text-sm',
+      active
+        ? 'border-[#006ce4] bg-[#006ce4] text-white dark:border-sky-500 dark:bg-sky-500'
+        : 'border-sky-200 bg-white text-[#003580] hover:bg-sky-50 dark:border-slate-700 dark:bg-slate-900 dark:text-sky-200 dark:hover:bg-slate-800',
+    ),
+  monthsViewportClassName: 'flex flex-col gap-4 sm:flex-row sm:gap-3',
+  monthPanelClassName: 'w-72 rounded-2xl border border-sky-100 bg-sky-50/60 p-3 dark:border-slate-700 dark:bg-slate-950/70 sm:w-64',
+  monthPanelTitleClassName: 'mb-2 text-center text-sm font-medium text-[#003580] dark:text-sky-100',
+  weekdayRowClassName: 'mb-2 grid grid-cols-7 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400',
+  weekdayCellClassName: 'text-center',
+  weekRowsClassName: 'flex flex-col gap-1.5',
+  weekRowClassName: 'grid grid-cols-7 gap-1.5',
+  dayButtonClassName: ({ rangeEdge, inRange, faded, focused }) =>
+    cx(
+      'rounded-xl border border-transparent p-1.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006ce4] dark:focus-visible:ring-sky-400',
+      rangeEdge ? 'border-[#006ce4] bg-[#006ce4] text-white dark:border-sky-500 dark:bg-sky-500' : '',
+      !rangeEdge && inRange ? 'bg-sky-100 text-[#003580] dark:bg-sky-950/60 dark:text-sky-100' : '',
+      !rangeEdge && !inRange ? 'hover:border-sky-200 hover:bg-sky-50 dark:hover:border-slate-700 dark:hover:bg-slate-800' : '',
+      faded ? 'text-slate-300 dark:text-slate-600' : 'text-slate-900 dark:text-slate-50',
+      focused && !rangeEdge ? 'bg-amber-50 dark:bg-slate-800' : '',
     ),
 }
 
@@ -574,12 +682,22 @@ function RangeCalendarRoot({
 }
 
 export function createRangeCalendar(theme: RangeCalendarTheme = defaultRangeCalendarTheme) {
-  return function ThemedRangeCalendar({ skin, ...props }: RangeCalendarProps) {
-    const resolvedTheme = useMemo(() => mergeThemeWithSkin(theme, skin), [skin])
+  return function ThemedRangeCalendar({ theme: themeMode, skin, ...props }: RangeCalendarProps) {
+    const resolvedTheme = useMemo(() => {
+      const themedBase = isMaterialTheme(themeMode)
+        ? mergeThemeWithSkin(theme, materialRangeCalendarTheme)
+        : isModernMinimalTheme(themeMode)
+          ? mergeThemeWithSkin(theme, modernMinimalRangeCalendarTheme)
+        : isBookingTheme(themeMode)
+          ? mergeThemeWithSkin(theme, bookingRangeCalendarTheme)
+        : theme
+
+      return mergeThemeWithSkin(themedBase, skin)
+    }, [skin, themeMode])
 
     return (
       <RangeCalendarThemeContext.Provider value={resolvedTheme}>
-        <RangeCalendarRoot {...props} />
+        <RangeCalendarRoot {...props} theme={themeMode} />
       </RangeCalendarThemeContext.Provider>
     )
   }

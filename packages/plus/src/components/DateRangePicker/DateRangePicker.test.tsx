@@ -550,4 +550,43 @@ describe('DateRangePicker', () => {
     expect(dialog).toHaveClass('dark')
     expect(dialog).toHaveClass('range-picker-skin-shell')
   })
+
+  it('supports the built-in material theme preset', async () => {
+    render(<DateRangePicker theme="material-light" />)
+
+    const input = screen.getByPlaceholderText('Start date')
+    expect(input).toHaveClass('rounded-full')
+
+    await userEvent.click(input)
+
+    const dialog = await screen.findByRole('dialog', { name: 'Range calendar' })
+    expect(dialog).toHaveAttribute('data-rdp-theme', 'material-light')
+    expect(dialog.firstElementChild).toHaveClass('rounded-[32px]')
+  })
+
+  it('supports the built-in modern minimal theme preset', async () => {
+    render(<DateRangePicker theme="modern-minimal-light" />)
+
+    const input = screen.getByPlaceholderText('Start date')
+    expect(input).toHaveClass('rounded-2xl')
+
+    await userEvent.click(input)
+
+    const dialog = await screen.findByRole('dialog', { name: 'Range calendar' })
+    expect(dialog).toHaveAttribute('data-rdp-theme', 'modern-minimal-light')
+    expect(dialog.firstElementChild).toHaveClass('rounded-2xl')
+  })
+
+  it('supports the built-in booking theme preset', async () => {
+    render(<DateRangePicker theme="booking-light" />)
+
+    const input = screen.getByPlaceholderText('Start date')
+    expect(input).toHaveClass('rounded-xl')
+
+    await userEvent.click(input)
+
+    const dialog = await screen.findByRole('dialog', { name: 'Range calendar' })
+    expect(dialog).toHaveAttribute('data-rdp-theme', 'booking-light')
+    expect(dialog.firstElementChild).toHaveClass('rounded-2xl')
+  })
 })

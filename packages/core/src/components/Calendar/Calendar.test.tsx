@@ -86,4 +86,44 @@ describe('Calendar', () => {
     expect(grid.parentElement).toHaveClass('dark')
     expect(grid).toHaveClass('calendar-skin-shell')
   })
+
+  it('supports the built-in material theme preset', () => {
+    render(<Calendar theme="material-light" />)
+
+    const grid = screen.getByRole('grid')
+    expect(grid).toHaveAttribute('data-rdp-theme', 'material-light')
+    expect(grid).toHaveClass('rounded-[28px]')
+  })
+
+  it('supports the built-in modern minimal theme preset', () => {
+    render(<Calendar theme="modern-minimal-light" />)
+
+    const grid = screen.getByRole('grid')
+    expect(grid).toHaveAttribute('data-rdp-theme', 'modern-minimal-light')
+    expect(grid).toHaveClass('rounded-2xl')
+  })
+
+  it('supports the built-in booking theme preset', () => {
+    render(<Calendar theme="booking-light" />)
+
+    const grid = screen.getByRole('grid')
+    expect(grid).toHaveAttribute('data-rdp-theme', 'booking-light')
+    expect(grid).toHaveClass('rounded-2xl')
+  })
+
+  it('scopes dark mode for the built-in modern minimal dark preset', () => {
+    render(<Calendar theme="modern-minimal-dark" />)
+
+    const grid = screen.getByRole('grid')
+    expect(grid).toHaveAttribute('data-rdp-theme', 'modern-minimal-dark')
+    expect(grid.parentElement).toHaveClass('dark')
+  })
+
+  it('scopes dark mode for the built-in booking dark preset', () => {
+    render(<Calendar theme="booking-dark" />)
+
+    const grid = screen.getByRole('grid')
+    expect(grid).toHaveAttribute('data-rdp-theme', 'booking-dark')
+    expect(grid.parentElement).toHaveClass('dark')
+  })
 })
