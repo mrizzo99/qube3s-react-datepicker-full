@@ -143,4 +143,20 @@ describe('RangeCalendar', () => {
     expect(grid.parentElement).toHaveClass('dark')
     expect(grid).toHaveClass('range-calendar-skin')
   })
+
+  it('supports the built-in material theme preset', () => {
+    render(<RangeCalendar theme="material-light" />)
+
+    const grid = screen.getByRole('grid', { name: 'January 2024' })
+    expect(grid).toHaveAttribute('data-rdp-theme', 'material-light')
+    expect(grid).toHaveClass('rounded-[32px]')
+  })
+
+  it('supports the built-in modern minimal theme preset', () => {
+    render(<RangeCalendar theme="modern-minimal-light" />)
+
+    const grid = screen.getByRole('grid', { name: 'January 2024' })
+    expect(grid).toHaveAttribute('data-rdp-theme', 'modern-minimal-light')
+    expect(grid).toHaveClass('rounded-2xl')
+  })
 })

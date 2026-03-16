@@ -147,7 +147,7 @@ Example: async validation
 - All adapters live under `packages/plus/src/adapters`, not `packages/core`, so they stay part of the Plus surface area.
 - Themes and skins sit below adapters:
   - `adapter`: selects the target design system defaults, such as stock vs `shadcn`
-  - `theme`: selects the color mode for stock components only; current built-ins are `light` and `dark`
+  - `theme`: selects the stock preset and mode; current built-ins are `light`, `dark`, `material-light`, `material-dark`, `modern-minimal-light`, and `modern-minimal-dark`
   - `skin`: applies per-instance slot overrides to stock components only
 - Adapters should rely on the external system's theming model instead of our stock theme contract. Example: ShadCN adapters should follow the host app's token setup and dark-mode strategy.
 - The adapter pattern for single-date pickers is:

@@ -5,6 +5,8 @@ import { addMonths, format } from 'date-fns'
 import { resolveCalendarI18n, type CalendarI18n } from '../../i18n'
 import {
   getThemeScopeClassName,
+  isMaterialTheme,
+  isModernMinimalTheme,
   mergeThemeWithSkin,
   type ThemeMode,
   type ThemeSkin,
@@ -63,6 +65,48 @@ const defaultCalendarTheme: CalendarTheme = {
       'rounded border border-transparent p-1 text-gray-900 hover:border-blue-400 focus-visible:border-blue-500 focus-visible:outline-none dark:text-gray-100 dark:hover:border-blue-300 dark:focus-visible:border-blue-300',
       active ? 'bg-blue-600 text-white' : '',
       faded ? 'text-gray-300 dark:text-gray-600' : 'hover:bg-blue-100 dark:hover:bg-blue-950/60',
+    ),
+}
+
+const materialCalendarTheme: CalendarSkin = {
+  containerClassName:
+    'w-72 rounded-[28px] border border-slate-200 bg-slate-50 p-4 text-slate-900 shadow-[0_12px_28px_rgba(15,23,42,0.12)] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50',
+  headerClassName: 'mb-3 flex items-center justify-between',
+  headerNavGroupClassName: 'flex items-center gap-1',
+  headerNavButtonClassName:
+    'inline-flex h-10 w-10 items-center justify-center rounded-full border border-transparent bg-slate-100 text-slate-700 hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 dark:focus-visible:ring-sky-400',
+  monthLabelClassName: 'text-base font-medium tracking-[0.01em] text-slate-900 dark:text-slate-50',
+  weekdayRowClassName: 'mb-2 grid grid-cols-7 text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400',
+  weekdayCellClassName: 'text-center',
+  gridClassName: 'grid grid-cols-7 gap-1.5',
+  dayButtonClassName: ({ active, faded, focused }) =>
+    cx(
+      'rounded-full border border-transparent p-1.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 dark:focus-visible:ring-sky-400',
+      active ? 'bg-sky-600 text-white shadow-sm dark:bg-sky-500' : '',
+      !active ? 'hover:bg-slate-200 dark:hover:bg-slate-800' : '',
+      faded ? 'text-slate-300 dark:text-slate-600' : 'text-slate-900 dark:text-slate-50',
+      focused && !active ? 'bg-slate-100 dark:bg-slate-800' : '',
+    ),
+}
+
+const modernMinimalCalendarTheme: CalendarSkin = {
+  containerClassName:
+    'w-72 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-zinc-950 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50',
+  headerClassName: 'mb-3 flex items-center justify-between',
+  headerNavGroupClassName: 'flex items-center gap-1',
+  headerNavButtonClassName:
+    'inline-flex h-9 w-9 items-center justify-center rounded-xl border border-transparent text-zinc-600 transition-colors hover:bg-zinc-200/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:focus-visible:ring-zinc-600',
+  monthLabelClassName: 'text-sm font-medium tracking-[0.01em] text-zinc-900 dark:text-zinc-50',
+  weekdayRowClassName: 'mb-2 grid grid-cols-7 text-[11px] font-medium uppercase tracking-[0.14em] text-zinc-500 dark:text-zinc-400',
+  weekdayCellClassName: 'text-center',
+  gridClassName: 'grid grid-cols-7 gap-1',
+  dayButtonClassName: ({ active, faded, focused }) =>
+    cx(
+      'rounded-xl border border-transparent p-1.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-600',
+      active ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950' : '',
+      !active ? 'hover:bg-zinc-200/80 dark:hover:bg-zinc-800' : '',
+      faded ? 'text-zinc-300 dark:text-zinc-700' : 'text-zinc-900 dark:text-zinc-50',
+      focused && !active ? 'bg-zinc-100 dark:bg-zinc-900' : '',
     ),
 }
 
@@ -273,14 +317,23 @@ const useCalendarTheme = () => React.useContext(CalendarThemeContext)
 
 export function createCalendar(theme: CalendarTheme = defaultCalendarTheme) {
   return function ThemedCalendar({
+    theme: themeMode,
     skin,
     ...props
   }: CalendarProps) {
-    const resolvedTheme = useMemo(() => mergeThemeWithSkin(theme, skin), [skin])
+    const resolvedTheme = useMemo(() => {
+      const themedBase = isMaterialTheme(themeMode)
+        ? mergeThemeWithSkin(theme, materialCalendarTheme)
+        : isModernMinimalTheme(themeMode)
+          ? mergeThemeWithSkin(theme, modernMinimalCalendarTheme)
+        : theme
+
+      return mergeThemeWithSkin(themedBase, skin)
+    }, [skin, themeMode])
 
     return (
       <CalendarThemeContext.Provider value={resolvedTheme}>
-        <CalendarRoot {...props} />
+        <CalendarRoot {...props} theme={themeMode} />
       </CalendarThemeContext.Provider>
     )
   }

@@ -24,6 +24,15 @@ const controlButtonClass = (active: boolean) =>
       : 'border-[var(--q3-border)] text-[var(--q3-text-disabled)] hover:border-[var(--q3-primary-soft)] hover:text-[var(--q3-text-primary)]',
   ].join(' ')
 
+const stockThemeOptions: Array<{ value: ThemeMode; label: string }> = [
+  { value: 'light', label: 'Default Light' },
+  { value: 'dark', label: 'Default Dark' },
+  { value: 'material-light', label: 'Material Light' },
+  { value: 'material-dark', label: 'Material Dark' },
+  { value: 'modern-minimal-light', label: 'Modern Minimal Light' },
+  { value: 'modern-minimal-dark', label: 'Modern Minimal Dark' },
+]
+
 export default function App() {
   const [inlineSelectedDate, setInlineSelectedDate] = useState<Date | null>(null)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
@@ -304,17 +313,17 @@ export default function App() {
             <section id="stock-theme-playground" className={panelClass}>
               <h2 className="text-lg font-semibold">Stock theme playground</h2>
               <p className="mt-1 mb-4 max-w-3xl text-sm text-[var(--q3-text-disabled)]">
-                Switch between the built-in stock themes. This demo only targets the stock components, not the external-system adapters.
+                Switch between the built-in stock themes. The Material variants are stock theme presets inspired by Material-style surfaces, not external-system adapters.
               </p>
               <div className="mb-5 flex flex-wrap gap-2">
-                {(['light', 'dark'] as const).map(mode => (
+                {stockThemeOptions.map(option => (
                   <button
-                    key={mode}
+                    key={option.value}
                     type="button"
-                    className={controlButtonClass(themeDemoMode === mode)}
-                    onClick={() => setThemeDemoMode(mode)}
+                    className={controlButtonClass(themeDemoMode === option.value)}
+                    onClick={() => setThemeDemoMode(option.value)}
                   >
-                    {mode === 'light' ? 'Light theme' : 'Dark theme'}
+                    {option.label}
                   </button>
                 ))}
               </div>

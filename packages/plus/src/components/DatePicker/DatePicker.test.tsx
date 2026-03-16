@@ -176,4 +176,30 @@ describe('Plus DatePicker', () => {
     expect(dialog).toHaveClass('dark')
     expect(dialog).toHaveClass('picker-skin-shell')
   })
+
+  it('supports the built-in material theme preset', async () => {
+    render(<DatePicker theme="material-light" />)
+
+    const input = screen.getByRole('textbox')
+    expect(input).toHaveClass('rounded-full')
+
+    await userEvent.click(input)
+
+    const dialog = await screen.findByRole('dialog', { name: 'Calendar' })
+    expect(dialog).toHaveAttribute('data-rdp-theme', 'material-light')
+    expect(dialog.firstElementChild).toHaveClass('rounded-[32px]')
+  })
+
+  it('supports the built-in modern minimal theme preset', async () => {
+    render(<DatePicker theme="modern-minimal-light" />)
+
+    const input = screen.getByRole('textbox')
+    expect(input).toHaveClass('rounded-2xl')
+
+    await userEvent.click(input)
+
+    const dialog = await screen.findByRole('dialog', { name: 'Calendar' })
+    expect(dialog).toHaveAttribute('data-rdp-theme', 'modern-minimal-light')
+    expect(dialog.firstElementChild).toHaveClass('rounded-2xl')
+  })
 })
