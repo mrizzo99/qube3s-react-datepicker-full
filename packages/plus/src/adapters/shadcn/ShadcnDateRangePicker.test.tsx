@@ -19,7 +19,7 @@ describe('ShadcnDateRangePicker adapter', () => {
   })
 
   it('renders range inputs and calendar with shadcn slots', async () => {
-    render(<ShadcnDateRangePicker showPresets enableTime />)
+    render(<ShadcnDateRangePicker showPresets enableTime numberOfMonths={2} />)
 
     const inputs = screen.getAllByRole('textbox')
     expect(inputs[0].className).toContain('border-input')
@@ -29,6 +29,7 @@ describe('ShadcnDateRangePicker adapter', () => {
 
     const dialog = screen.getByRole('dialog', { name: 'Range calendar' })
     expect(dialog.className).toContain('bg-popover')
+    expect(screen.getAllByRole('row').some(row => row.className.includes('grid-cols-7'))).toBe(true)
     expect(screen.getByRole('button', { name: 'Next month' }).className).toContain('rounded-md')
 
     const preset = screen.getByRole('button', { name: 'Today' })

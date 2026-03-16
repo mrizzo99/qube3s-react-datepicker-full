@@ -4,7 +4,7 @@ import DatePicker from './DatePicker'
 import { esI18n } from '@core/i18n-presets'
 
 const meta: Meta<typeof DatePicker> = {
-  title: 'DatePicker',
+  title: 'Core/DatePicker',
   component: DatePicker,
   tags: ['autodocs'],
 }
@@ -34,4 +34,20 @@ export const ControlledComposable: Story = {
 
 export const SpanishI18n: Story = {
   render: () => <DatePicker i18n={esI18n} />,
+}
+
+export const LightAndDark: Story = {
+  render: () => (
+    <div className="grid gap-4 lg:grid-cols-2">
+      <div className="rounded-xl border border-slate-200 bg-white p-4 text-slate-900">
+        <p className="mb-3 text-sm font-medium text-slate-700">Light appearance</p>
+        <DatePicker appearance="light" portal={false} />
+      </div>
+
+      <div className="rounded-xl border border-slate-700 bg-slate-950 p-4 text-slate-100">
+        <p className="mb-3 text-sm font-medium text-slate-300">Dark appearance</p>
+        <DatePicker appearance="dark" portal={false} />
+      </div>
+    </div>
+  ),
 }

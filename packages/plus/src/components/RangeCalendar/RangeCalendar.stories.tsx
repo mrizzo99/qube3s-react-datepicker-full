@@ -5,7 +5,7 @@ import RangeCalendar from './RangeCalendar'
 import { fluentAnimationPack } from '../../presets/animationPack'
 
 const meta: Meta<typeof RangeCalendar> = {
-  title: 'RangeCalendar',
+  title: 'Plus/RangeCalendar',
   component: RangeCalendar,
   argTypes: {
     selectedRange: { control: false },

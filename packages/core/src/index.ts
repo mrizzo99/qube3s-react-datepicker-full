@@ -1,7 +1,7 @@
 export * from './headless/useCalendar'
 export * from './i18n'
 export * from './i18n-presets'
-export * from './theming'
+export * from './styling'
 export { default as Calendar } from './components/Calendar'
 export * from './components/Calendar'
 export { default as DatePicker } from './components/DatePicker'

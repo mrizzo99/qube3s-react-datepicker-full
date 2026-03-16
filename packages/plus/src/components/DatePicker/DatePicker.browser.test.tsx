@@ -9,7 +9,11 @@ const jan102024 = new Date('2024-01-10T12:00:00Z')
 const getCurrentMonthDay = (label: string) =>
   screen
     .getAllByRole('gridcell')
-    .find(button => button.textContent === label && !button.classList.contains('text-gray-300'))
+    .find(
+      button =>
+        button.textContent === label
+        && !button.classList.contains('text-[var(--rdp-muted-foreground)]'),
+    )
 
 describe('Plus DatePicker browser async validation', () => {
   beforeEach(() => {

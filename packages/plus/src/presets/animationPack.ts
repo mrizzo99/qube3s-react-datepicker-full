@@ -1,8 +1,8 @@
-import type { CalendarSkin } from '@core/components/Calendar'
 import type {
   DatePickerDaySlotState,
   DatePickerSkin,
-} from '@core/components/DatePicker/createDatePicker'
+} from '../components/DatePicker'
+import type { CalendarDaySlotState, CalendarSkin } from '../components/Calendar'
 import type { DateRangePickerSkin } from '../components/DateRangePicker'
 import type { RangeCalendarSkin } from '../components/RangeCalendar'
 import type {
@@ -37,7 +37,7 @@ export const fluentAnimationPack: FluentAnimationPack = {
     __mergeClassSlots: true,
     containerClassName: 'motion-safe:will-change-transform',
     headerNavButtonClassName: fluentPress,
-    dayButtonClassName: ({ active, faded }) =>
+    dayButtonClassName: ({ active, faded }: CalendarDaySlotState) =>
       [
         !faded ? fluentPress : `${fluentTransition} motion-safe:active:scale-[0.98]`,
         active ? 'motion-safe:shadow-sm' : '',

@@ -18,7 +18,7 @@ import {
   mergeThemeWithSkin,
   type ThemeMode,
   type ThemeSkin,
-} from '@core/theming'
+} from '../../theming'
 import { animateMonthSlide } from '@core/motion'
 import { useRangeCalendar, type DateRange } from '../../headless/useRangeCalendar'
 import { getDateRangePresets, type DateRangePreset } from '../../presets/dateRangePresets'

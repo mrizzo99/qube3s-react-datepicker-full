@@ -2,6 +2,7 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { format } from 'date-fns'
+import React from 'react'
 import DatePicker from './DatePicker'
 
 const jan102024 = new Date('2024-01-10T12:00:00Z')
@@ -9,7 +10,12 @@ const jan102024 = new Date('2024-01-10T12:00:00Z')
 const getCurrentMonthDay = (label: string) =>
   screen
     .getAllByRole('gridcell')
-    .find(button => button.textContent === label && !button.classList.contains('text-gray-300'))
+    .find(
+      button =>
+        button.textContent === label
+        && !button.classList.contains('text-[var(--rdp-muted-foreground)]'),
+    )
+const getDatePickerRoot = () => screen.getByRole('textbox').closest('[data-rdp-appearance]') as HTMLElement
 const focusableSelector = [
   'button:not([disabled])',
   '[href]',
@@ -185,5 +191,43 @@ describe('DatePicker', () => {
       expect(screen.queryByRole('dialog', { name: 'Calendar' })).not.toBeInTheDocument()
     })
     expect(input).toHaveFocus()
+  })
+
+  it('supports explicit dark appearance on the root and the portaled popover', async () => {
+    render(<DatePicker appearance="dark" />)
+
+    const root = getDatePickerRoot()
+    expect(root).toHaveAttribute('data-rdp-appearance', 'dark')
+    expect(root).toHaveClass('dark')
+    expect(root.style.getPropertyValue('--rdp-surface')).toBe('#111827')
+    expect(root.style.getPropertyValue('--rdp-field-surface')).toBe('#030712')
+
+    await userEvent.click(screen.getByRole('textbox'))
+
+    const dialog = await screen.findByRole('dialog', { name: 'Calendar' })
+    expect(dialog).toHaveAttribute('data-rdp-appearance', 'dark')
+    expect(dialog).toHaveClass('dark')
+    expect(dialog.style.getPropertyValue('--rdp-surface')).toBe('#111827')
+    expect(dialog.style.getPropertyValue('--rdp-field-surface')).toBe('#030712')
+  })
+
+  it('applies root className and propagates custom core style variables to the portaled popover', async () => {
+    render(
+      <DatePicker
+        className="picker-shell"
+        style={{ marginTop: 12, '--rdp-accent': '#0f766e' } as React.CSSProperties}
+      />,
+    )
+
+    const root = getDatePickerRoot()
+    expect(root).toHaveClass('picker-shell')
+    expect(root).toHaveStyle({ marginTop: '12px' })
+    expect(root.style.getPropertyValue('--rdp-accent')).toBe('#0f766e')
+
+    await userEvent.click(screen.getByRole('textbox'))
+
+    const dialog = await screen.findByRole('dialog', { name: 'Calendar' })
+    expect(dialog.style.getPropertyValue('--rdp-accent')).toBe('#0f766e')
+    expect(dialog.style.marginTop).toBe('')
   })
 })

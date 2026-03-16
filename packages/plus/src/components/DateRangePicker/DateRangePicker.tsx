@@ -34,7 +34,7 @@ import {
   mergeThemeWithSkin,
   type ThemeMode,
   type ThemeSkin,
-} from '@core/theming'
+} from '../../theming'
 import { useFloatingPopoverPosition } from '@core/floating'
 import { animateMonthSlide, FLUENT_UI_DURATION_MS, usePresenceTransition } from '@core/motion'
 import { useRangeCalendar, type DateRange } from '../../headless/useRangeCalendar'

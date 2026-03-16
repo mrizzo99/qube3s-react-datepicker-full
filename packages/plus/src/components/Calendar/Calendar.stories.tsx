@@ -1,11 +1,11 @@
-
 import type { Meta, StoryObj } from '@storybook/react'
 import { useState } from 'react'
 import { format } from 'date-fns'
 import Calendar from './Calendar'
+import { fluentAnimationPack } from '../../presets/animationPack'
 
 const meta: Meta<typeof Calendar> = {
-  title: 'Core/Calendar',
+  title: 'Plus/Calendar',
   component: Calendar,
   argTypes: {
     selectedDate: { control: false },
@@ -35,18 +35,10 @@ export const Controlled: Story = {
   }
 }
 
-export const LightAndDark: Story = {
-  render: () => (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <div className="rounded-xl border border-slate-200 bg-white p-4 text-slate-900">
-        <p className="mb-3 text-sm font-medium text-slate-700">Light appearance</p>
-        <Calendar appearance="light" />
-      </div>
+export const MaterialTheme: Story = {
+  render: () => <Calendar theme="material-light" />
+}
 
-      <div className="rounded-xl border border-slate-700 bg-slate-950 p-4 text-slate-100">
-        <p className="mb-3 text-sm font-medium text-slate-300">Dark appearance</p>
-        <Calendar appearance="dark" />
-      </div>
-    </div>
-  )
+export const FluentAnimationPack: Story = {
+  render: () => <Calendar theme="light" skin={fluentAnimationPack.calendar} />
 }

@@ -4,6 +4,11 @@ import { useCalendar } from '../../headless/useCalendar'
 import { addMonths, differenceInCalendarMonths, format, startOfMonth } from 'date-fns'
 import { resolveCalendarI18n, type CalendarI18n } from '../../i18n'
 import {
+  getAppearanceScopeClassName,
+  type CoreAppearance,
+  type CoreStyleProperties,
+} from '../../styling'
+import {
   getThemeScopeClassName,
   isBookingTheme,
   isMaterialTheme,
@@ -21,6 +26,12 @@ export type CalendarProps = {
   selectDate?: (date: Date) => void
   onEscape?: () => void
   i18n?: CalendarI18n
+  appearance?: CoreAppearance
+  className?: string
+  style?: CoreStyleProperties
+}
+
+export type CalendarStylingProps = {
   theme?: ThemeMode
   skin?: CalendarSkin
 }
@@ -53,22 +64,67 @@ export type CalendarSkin = ThemeSkin<CalendarTheme>
 
 const defaultCalendarTheme: CalendarTheme = {
   containerClassName:
-    'w-72 rounded-lg border border-gray-200 bg-white p-4 text-gray-900 shadow dark:border-gray-700 dark:bg-gray-900 dark:text-gray-50',
+    'w-72 rounded-lg border border-[var(--rdp-border)] bg-[var(--rdp-surface)] p-4 text-[var(--rdp-surface-foreground)] shadow',
   headerClassName: 'mb-2 flex justify-between',
   headerNavGroupClassName: 'flex gap-1',
   headerNavButtonClassName:
-    'inline-flex h-8 w-8 items-center justify-center rounded border border-transparent text-gray-700 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-gray-300 dark:hover:bg-gray-800 dark:focus-visible:ring-blue-400',
-  monthLabelClassName: 'font-semibold text-gray-900 dark:text-gray-50',
-  weekdayRowClassName: 'mb-1 grid grid-cols-7 text-sm text-gray-600 dark:text-gray-400',
+    'inline-flex h-8 w-8 items-center justify-center rounded border border-transparent text-[var(--rdp-muted)] hover:bg-[var(--rdp-accent-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--rdp-ring)]',
+  monthLabelClassName: 'font-semibold text-[var(--rdp-surface-foreground)]',
+  weekdayRowClassName: 'mb-1 grid grid-cols-7 text-sm text-[var(--rdp-muted)]',
   weekdayCellClassName: 'text-center',
   gridClassName: 'grid grid-cols-7 gap-1',
   dayButtonClassName: ({ active, faded }) =>
     cx(
-      'rounded border border-transparent p-1 text-gray-900 hover:border-blue-400 focus-visible:border-blue-500 focus-visible:outline-none dark:text-gray-100 dark:hover:border-blue-300 dark:focus-visible:border-blue-300',
-      active ? 'bg-blue-600 text-white' : '',
-      faded ? 'text-gray-300 dark:text-gray-600' : 'hover:bg-blue-100 dark:hover:bg-blue-950/60',
+      'rounded border border-transparent p-1 text-[var(--rdp-surface-foreground)] hover:border-[var(--rdp-ring)] focus-visible:border-[var(--rdp-ring)] focus-visible:outline-none',
+      active ? 'bg-[var(--rdp-accent)] text-[var(--rdp-accent-foreground)]' : '',
+      faded ? 'text-[var(--rdp-muted-foreground)]' : 'hover:bg-[var(--rdp-accent-soft)]',
     ),
 }
+
+const defaultCalendarInheritAppearanceClassName = cx(
+  '[--rdp-accent:#2563eb]',
+  '[--rdp-accent-foreground:#ffffff]',
+  '[--rdp-ring:#3b82f6]',
+  '[--rdp-surface:#ffffff]',
+  '[--rdp-surface-foreground:#111827]',
+  '[--rdp-border:#e5e7eb]',
+  '[--rdp-muted:#4b5563]',
+  '[--rdp-muted-foreground:#9ca3af]',
+  '[--rdp-accent-soft:#dbeafe]',
+  'dark:[--rdp-accent:#2563eb]',
+  'dark:[--rdp-accent-foreground:#ffffff]',
+  'dark:[--rdp-ring:#93c5fd]',
+  'dark:[--rdp-surface:#111827]',
+  'dark:[--rdp-surface-foreground:#f9fafb]',
+  'dark:[--rdp-border:#374151]',
+  'dark:[--rdp-muted:#9ca3af]',
+  'dark:[--rdp-muted-foreground:#4b5563]',
+  'dark:[--rdp-accent-soft:#17255499]',
+)
+
+const lightCalendarStyleVariables = {
+  '--rdp-accent': '#2563eb',
+  '--rdp-accent-foreground': '#ffffff',
+  '--rdp-ring': '#3b82f6',
+  '--rdp-surface': '#ffffff',
+  '--rdp-surface-foreground': '#111827',
+  '--rdp-border': '#e5e7eb',
+  '--rdp-muted': '#4b5563',
+  '--rdp-muted-foreground': '#9ca3af',
+  '--rdp-accent-soft': '#dbeafe',
+} as React.CSSProperties
+
+const darkCalendarStyleVariables = {
+  '--rdp-accent': '#2563eb',
+  '--rdp-accent-foreground': '#ffffff',
+  '--rdp-ring': '#93c5fd',
+  '--rdp-surface': '#111827',
+  '--rdp-surface-foreground': '#f9fafb',
+  '--rdp-border': '#374151',
+  '--rdp-muted': '#9ca3af',
+  '--rdp-muted-foreground': '#4b5563',
+  '--rdp-accent-soft': '#17255499',
+} as React.CSSProperties
 
 const materialCalendarTheme: CalendarSkin = {
   containerClassName:
@@ -133,14 +189,38 @@ const bookingCalendarTheme: CalendarSkin = {
     ),
 }
 
+type InternalCalendarProps = CalendarProps & CalendarStylingProps
+
 function CalendarRoot({
   selectedDate: controlledSelectedDate,
   selectDate: controlledSelectDate,
   onEscape,
   i18n,
+  appearance = 'inherit',
+  className,
+  style,
   theme: themeMode,
-}: CalendarProps) {
+}: InternalCalendarProps) {
   const calendarTheme = useCalendarTheme()
+  const hasPresetTheme =
+    isMaterialTheme(themeMode) || isModernMinimalTheme(themeMode) || isBookingTheme(themeMode)
+  const resolvedAppearance: CoreAppearance =
+    themeMode === 'light' || themeMode === 'dark' ? themeMode : appearance
+  const appearanceClassName = !hasPresetTheme && resolvedAppearance === 'inherit'
+    ? defaultCalendarInheritAppearanceClassName
+    : ''
+  const scopeClassName =
+    themeMode !== undefined
+      ? getThemeScopeClassName(themeMode)
+      : getAppearanceScopeClassName(resolvedAppearance)
+  const resolvedStyle = useMemo(() => {
+    if (hasPresetTheme || resolvedAppearance === 'inherit') return style
+
+    return {
+      ...(resolvedAppearance === 'dark' ? darkCalendarStyleVariables : lightCalendarStyleVariables),
+      ...style,
+    }
+  }, [hasPresetTheme, resolvedAppearance, style])
   const normalizedSelected =
     controlledSelectedDate instanceof Date && !Number.isNaN(controlledSelectedDate.getTime())
       ? controlledSelectedDate
@@ -271,7 +351,12 @@ function CalendarRoot({
   }
 
   return (
-    <div className={cx(getThemeScopeClassName(themeMode), 'inline-block')} data-rdp-theme={themeMode}>
+    <div
+      className={cx('inline-block', className, appearanceClassName, scopeClassName)}
+      style={resolvedStyle}
+      data-rdp-theme={themeMode}
+      data-rdp-appearance={resolvedAppearance}
+    >
       <div
         className={calendarTheme.containerClassName}
         role="grid"
@@ -359,7 +444,7 @@ export function createCalendar(theme: CalendarTheme = defaultCalendarTheme) {
     theme: themeMode,
     skin,
     ...props
-  }: CalendarProps) {
+  }: InternalCalendarProps) {
     const resolvedTheme = useMemo(() => {
       const themedBase = isMaterialTheme(themeMode)
         ? mergeThemeWithSkin(theme, materialCalendarTheme)
@@ -382,4 +467,6 @@ export function createCalendar(theme: CalendarTheme = defaultCalendarTheme) {
 
 const Calendar = createCalendar()
 
-export default Calendar
+const PublicCalendar = (props: CalendarProps) => <Calendar {...props} />
+
+export default PublicCalendar

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { useState } from 'react'
 import { format } from 'date-fns'
-import Calendar from '@core/components/Calendar'
+import Calendar from '../components/Calendar'
 import DatePicker from '../components/DatePicker'
 import DateRangePicker from '../components/DateRangePicker'
 import RangeCalendar from '../components/RangeCalendar'
@@ -30,7 +30,7 @@ export const Showcase: Story = {
     return (
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="rounded-xl border border-slate-200 bg-white p-4">
-          <p className="mb-3 text-sm text-slate-500">Core `Calendar` with fluent motion skin.</p>
+          <p className="mb-3 text-sm text-slate-500">Plus `Calendar` with fluent motion skin.</p>
           <Calendar theme="light" skin={fluentAnimationPack.calendar} />
         </div>
 

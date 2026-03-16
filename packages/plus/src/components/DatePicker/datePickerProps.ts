@@ -4,6 +4,8 @@ import type {
   DatePickerAsyncValidationProps,
   DatePickerBaseProps,
   DatePickerResolvedProps,
+  DatePickerSkin,
+  DatePickerStylingProps,
 } from '@core/components/DatePicker/createDatePicker'
 
 const normalizeDate = (value: unknown): Date | null => {
@@ -11,7 +13,9 @@ const normalizeDate = (value: unknown): Date | null => {
   return null
 }
 
-export type PlusDatePickerProps = DatePickerBaseProps & DatePickerAsyncValidationProps & {
+export type PlusDatePickerProps = DatePickerBaseProps &
+  DatePickerStylingProps &
+  DatePickerAsyncValidationProps & {
   minDate?: Date
   maxDate?: Date
   blockWeekends?: boolean

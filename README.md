@@ -124,6 +124,10 @@ import DatePicker from '@core/components/DatePicker'
 // Inline
 <Calendar />
 
+// Explicit Core appearance modes
+<Calendar appearance="dark" />
+<DatePicker appearance="dark" />
+
 // Custom icon on the input trigger (defaults to built-in calendar icon)
 <DatePicker>
   <DatePicker.Input icon={<MyIcon />} iconPosition="left" iconAriaLabel="Choose date" />
@@ -132,6 +136,35 @@ import DatePicker from '@core/components/DatePicker'
     <DatePicker.CalendarGrid />
   </DatePicker.Calendar>
 </DatePicker>
+```
+
+Core appearance
+
+- `appearance` is supported on Core `Calendar` and Core `DatePicker`.
+- Available values are `inherit`, `light`, and `dark`.
+- `inherit` is the default and follows your surrounding app light/dark scope.
+- Core `DatePicker` applies the same appearance to its input, inline calendar, and portaled popover.
+- Core also supports a small CSS variable layer for light brand customization: `--rdp-accent`, `--rdp-accent-foreground`, `--rdp-ring`, `--rdp-surface`, `--rdp-surface-foreground`, and `--rdp-border`.
+
+```tsx
+import type { CSSProperties } from 'react'
+import Calendar from '@core/components/Calendar'
+import DatePicker from '@core/components/DatePicker'
+
+<Calendar appearance="dark" />
+
+<DatePicker appearance="light" />
+
+<div
+  style={
+    {
+      '--rdp-accent': '#0f766e',
+      '--rdp-ring': '#0f766e',
+    } as CSSProperties
+  }
+>
+  <DatePicker appearance="light" />
+</div>
 ```
 
 Plus usage (single date constraints):
@@ -263,7 +296,7 @@ Animation pack
 - The pack composes with stock themes and adapter skins instead of replacing them.
 
 ```tsx
-import Calendar from '@core/components/Calendar'
+import Calendar from '@plus/components/Calendar'
 import DatePicker from '@plus/components/DatePicker'
 import DateRangePicker from '@plus/components/DateRangePicker'
 import RangeCalendar from '@plus/components/RangeCalendar'
@@ -290,7 +323,7 @@ import { fluentAnimationPack } from '@plus'
 
 Themes and skins
 
-- `theme` is supported on the stock components: `Calendar`, core `DatePicker`, Plus `DatePicker`, `RangeCalendar`, and `DateRangePicker`.
+- `theme` is supported on the Plus stock components: `Calendar`, `DatePicker`, `RangeCalendar`, and `DateRangePicker`.
 - Built-in stock themes are:
   - `light`
   - `dark`
@@ -309,7 +342,7 @@ Themes and skins
 
 Examples:
 ```tsx
-import Calendar from '@core/components/Calendar'
+import Calendar from '@plus/components/Calendar'
 import DateRangePicker from '@plus/components/DateRangePicker'
 import { shadcn } from '@plus/adapters'
 
