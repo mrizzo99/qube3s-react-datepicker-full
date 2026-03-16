@@ -257,6 +257,33 @@ import ClockIcon from './ClockIcon'
 
 Date + time wheels are a Plus feature and are only available on `DateRangePicker`.
 
+Themes and skins
+
+- `theme` is supported on the stock components: `Calendar`, core `DatePicker`, Plus `DatePicker`, `RangeCalendar`, and `DateRangePicker`.
+- The first built-in themes are `light` and `dark`.
+- `skin` is a per-instance slot override object. It lets you patch classes or icons for one picker without creating a new adapter.
+- Adapters are a separate layer:
+  - adapter: chooses the design system defaults, like the stock components vs `shadcn`
+  - theme: chooses the stock component color mode, currently `light` or `dark`
+  - skin: overrides specific slots on one stock component instance
+- Adapters rely on the external system's theming model. For example, `shadcn.*` should be themed through your app's ShadCN/Tailwind tokens, not through our `theme` or `skin` props.
+
+Examples:
+```tsx
+import Calendar from '@core/components/Calendar'
+import DateRangePicker from '@plus/components/DateRangePicker'
+import { shadcn } from '@plus/adapters'
+
+<Calendar theme="dark" />
+
+<DateRangePicker
+  theme="dark"
+  skin={{ desktopPopoverShellClassName: 'rounded-2xl ring-1 ring-blue-400/40' }}
+/>
+
+<shadcn.DateRangePicker />
+```
+
 Async validation (Plus `DatePicker` and `DateRangePicker` only)
 - `validateAsync` receives the candidate date or completed range and must resolve to `{ valid: true }` or `{ valid: false, message, code? }`.
 - `validationBehavior?: 'blocking' | 'optimistic'` defaults to `'blocking'`.

@@ -1,6 +1,7 @@
+import React from 'react'
 import {
   createRangeCalendar,
-  type RangeCalendarProps as ShadcnRangeCalendarProps,
+  type RangeCalendarProps,
   type RangeCalendarTheme,
 } from '../../components/RangeCalendar/RangeCalendar'
 import { shadcnChevronLeftIcon, shadcnChevronRightIcon } from './shared'
@@ -44,7 +45,17 @@ const shadcnRangeCalendarTheme: RangeCalendarTheme = {
   },
 }
 
-const ShadcnRangeCalendar = createRangeCalendar(shadcnRangeCalendarTheme)
+export type ShadcnRangeCalendarProps = Omit<RangeCalendarProps, 'theme' | 'skin'>
+
+const ShadcnRangeCalendarBase = createRangeCalendar(shadcnRangeCalendarTheme)
+
+const ShadcnRangeCalendar = (incomingProps: ShadcnRangeCalendarProps) => {
+  const { theme: _theme, skin: _skin, ...props } = incomingProps as ShadcnRangeCalendarProps & {
+    theme?: unknown
+    skin?: unknown
+  }
+
+  return <ShadcnRangeCalendarBase {...props} />
+}
 
 export default ShadcnRangeCalendar
-export type { ShadcnRangeCalendarProps }

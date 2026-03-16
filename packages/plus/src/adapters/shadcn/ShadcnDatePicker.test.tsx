@@ -54,4 +54,21 @@ describe('ShadcnDatePicker adapter', () => {
     expect(onChange).toHaveBeenCalledWith(expect.any(Date))
     expect(input).toHaveValue(format(new Date(2024, 0, 5), 'PPP'))
   })
+
+  it('ignores stock theme and skin props at runtime', async () => {
+    const runtimeOnlyProps: Record<string, unknown> = {
+      theme: 'dark',
+      skin: { popoverShellClassName: 'should-not-apply' },
+    }
+
+    render(
+      <ShadcnDatePicker {...runtimeOnlyProps} />,
+    )
+
+    await userEvent.click(screen.getByRole('textbox'))
+
+    const dialog = screen.getByRole('dialog', { name: 'Calendar' })
+    expect(dialog).not.toHaveAttribute('data-rdp-theme')
+    expect(dialog.className).not.toContain('should-not-apply')
+  })
 })

@@ -160,4 +160,20 @@ describe('Plus DatePicker', () => {
     await screen.findByText('Server rejected that date.')
     expect(input).toHaveValue('')
   })
+
+  it('applies dark theme mode and popover skin overrides to the portaled calendar', async () => {
+    render(
+      <DatePicker
+        theme="dark"
+        skin={{ popoverShellClassName: 'picker-skin-shell' }}
+      />,
+    )
+
+    await userEvent.click(screen.getByRole('textbox'))
+
+    const dialog = await screen.findByRole('dialog', { name: 'Calendar' })
+    expect(dialog).toHaveAttribute('data-rdp-theme', 'dark')
+    expect(dialog).toHaveClass('dark')
+    expect(dialog).toHaveClass('picker-skin-shell')
+  })
 })

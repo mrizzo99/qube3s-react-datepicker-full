@@ -27,6 +27,12 @@ import type {
   AsyncValidationStateChange,
 } from '@core/asyncValidation'
 import { resolveCalendarI18n, type CalendarI18n } from '@core/i18n'
+import {
+  getThemeScopeClassName,
+  mergeThemeWithSkin,
+  type ThemeMode,
+  type ThemeSkin,
+} from '@core/theming'
 import { useRangeCalendar, type DateRange } from '../../headless/useRangeCalendar'
 import { getDateRangePresets, type DateRangePreset } from '../../presets/dateRangePresets'
 
@@ -85,6 +91,7 @@ type DateRangePickerContextValue = {
   onConfirm: () => void
   onCancel: () => void
   onEscape: () => void
+  themeMode?: ThemeMode
 }
 
 const DateRangePickerContext = createContext<DateRangePickerContextValue | null>(null)
@@ -187,75 +194,83 @@ export type DateRangePickerTheme = {
   }
 }
 
+export type DateRangePickerSkin = ThemeSkin<DateRangePickerTheme>
+
 const defaultDateRangePickerTheme: DateRangePickerTheme = {
   rootClassName: 'relative inline-flex flex-col gap-2',
   inputLayoutClassName: 'flex flex-wrap items-end gap-3',
   inputFieldsGroupClassName: 'flex flex-wrap gap-3',
   inputFieldClassName: 'flex flex-col gap-1',
-  inputLabelClassName: 'text-sm font-medium text-gray-700',
+  inputLabelClassName: 'text-sm font-medium text-gray-700 dark:text-gray-300',
   inputGroupClassName: 'inline-flex items-center gap-1',
   inputClassName:
-    'rounded border border-gray-300 bg-white p-2 text-gray-900 placeholder:text-gray-500 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
+    'rounded border border-gray-300 bg-white p-2 text-gray-900 placeholder:text-gray-500 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-50 dark:placeholder:text-gray-400 dark:hover:border-blue-300 dark:focus-visible:ring-blue-400',
   triggerClassName:
-    'inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
+    'inline-flex items-center justify-center rounded border border-gray-300 bg-white p-2 text-gray-700 hover:border-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-300 dark:hover:border-blue-300 dark:focus-visible:ring-blue-400',
   validationMessageClassName: 'text-sm',
-  validationMessageInvalidClassName: 'text-red-600',
-  validationMessageValidatingClassName: 'text-gray-600',
+  validationMessageInvalidClassName: 'text-red-600 dark:text-red-400',
+  validationMessageValidatingClassName: 'text-gray-600 dark:text-gray-400',
   mobilePopoverShellClassName: 'fixed inset-0 z-[var(--rdp-z-popover,1000)] flex items-end justify-center',
-  mobileBackdropClassName: 'absolute inset-0 bg-gray-900/45 transition-opacity duration-200',
+  mobileBackdropClassName: 'absolute inset-0 bg-gray-900/45 transition-opacity duration-200 dark:bg-black/70',
   mobileSheetClassName:
-    'relative max-h-[90vh] w-full overflow-y-auto rounded-t-2xl border border-gray-200 bg-white p-4 text-gray-900 shadow-xl',
+    'relative max-h-[90vh] w-full overflow-y-auto rounded-t-2xl border border-gray-200 bg-white p-4 text-gray-900 shadow-xl dark:border-gray-700 dark:bg-gray-900 dark:text-gray-50',
   mobileSheetHandleWrapClassName: 'mb-3 flex justify-center py-1',
-  mobileSheetHandleClassName: 'h-1.5 w-12 rounded-full bg-gray-300',
-  desktopPopoverShellClassName: 'rounded bg-white shadow',
-  desktopPopoverPanelClassName: 'max-w-[calc(100vw-1rem)] rounded-lg border bg-white p-4 text-gray-900 shadow',
+  mobileSheetHandleClassName: 'h-1.5 w-12 rounded-full bg-gray-300 dark:bg-gray-600',
+  desktopPopoverShellClassName: 'rounded bg-white shadow dark:bg-gray-900',
+  desktopPopoverPanelClassName:
+    'max-w-[calc(100vw-1rem)] rounded-lg border border-gray-200 bg-white p-4 text-gray-900 shadow dark:border-gray-700 dark:bg-gray-900 dark:text-gray-50',
   headerClassName: 'mb-3 flex items-center justify-between gap-3',
   headerNavGroupClassName: 'flex gap-1',
   headerNavButtonClassName:
-    'inline-flex h-8 w-8 items-center justify-center rounded border border-transparent text-gray-700 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
-  monthLabelClassName: 'text-center text-sm font-semibold text-gray-900 sm:text-base',
+    'inline-flex h-8 w-8 items-center justify-center rounded border border-transparent text-gray-700 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-gray-300 dark:hover:bg-gray-800 dark:focus-visible:ring-blue-400',
+  monthLabelClassName: 'text-center text-sm font-semibold text-gray-900 dark:text-gray-50 sm:text-base',
   timeWheelColumnClassName: 'flex w-16 flex-none flex-col gap-1',
-  timeWheelTitleClassName: 'text-xs font-medium text-gray-600',
+  timeWheelTitleClassName: 'text-xs font-medium text-gray-600 dark:text-gray-400',
   timeWheelListClassName: disabled =>
-    cx('h-16 overflow-y-auto rounded border p-1', disabled ? 'cursor-not-allowed bg-gray-100' : 'bg-white'),
+    cx(
+      'h-16 overflow-y-auto rounded border border-gray-200 p-1 dark:border-gray-700',
+      disabled
+        ? 'cursor-not-allowed bg-gray-100 dark:bg-gray-800'
+        : 'bg-white dark:bg-gray-950',
+    ),
   timeWheelOptionClassName: ({ selected }) =>
     cx(
-      'w-full rounded px-2 py-1 text-left text-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
-      selected ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-blue-50',
+      'w-full rounded px-2 py-1 text-left text-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400',
+      selected ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-blue-50 dark:text-gray-200 dark:hover:bg-blue-950/50',
     ),
-  timeBoundarySectionClassName: 'rounded-md border border-gray-200 bg-gray-50/70 p-2',
-  timeBoundaryHeaderClassName: 'mb-2 flex items-center gap-2 text-sm font-medium text-gray-700',
-  timeBoundaryIconWrapClassName: 'inline-flex h-4 w-4 items-center justify-center overflow-hidden text-gray-500',
+  timeBoundarySectionClassName: 'rounded-md border border-gray-200 bg-gray-50/70 p-2 dark:border-gray-700 dark:bg-gray-800/70',
+  timeBoundaryHeaderClassName: 'mb-2 flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200',
+  timeBoundaryIconWrapClassName: 'inline-flex h-4 w-4 items-center justify-center overflow-hidden text-gray-500 dark:text-gray-400',
   timeBoundaryGridClassName: 'flex gap-2',
-  timeSectionClassName: 'mt-2 border-t pt-3',
-  timeSectionTitleClassName: 'mb-2 text-sm font-semibold text-gray-800',
+  timeSectionClassName: 'mt-2 border-t border-gray-200 pt-3 dark:border-gray-700',
+  timeSectionTitleClassName: 'mb-2 text-sm font-semibold text-gray-800 dark:text-gray-100',
   presetsSectionClassName: '',
   presetsListClassName: 'flex flex-wrap gap-2',
   presetButtonClassName: active =>
     cx(
-      'rounded border px-2 py-1 text-xs transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:text-sm',
+      'rounded border px-2 py-1 text-xs transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400 sm:text-sm',
       active
         ? 'border-blue-600 bg-blue-600 text-white'
-        : 'border-gray-300 bg-white text-gray-700 hover:border-blue-400 hover:bg-blue-50',
+        : 'border-gray-300 bg-white text-gray-700 hover:border-blue-400 hover:bg-blue-50 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-200 dark:hover:border-blue-300 dark:hover:bg-blue-950/50',
     ),
   monthsViewportClassName: 'flex flex-col gap-4 sm:flex-row sm:gap-3',
-  monthPanelClassName: 'w-72 rounded-md border border-gray-200 bg-gray-50/50 p-2 sm:w-64',
-  monthPanelTitleClassName: 'mb-1 text-center text-sm font-medium text-gray-700',
-  weekdayRowClassName: 'mb-1 grid grid-cols-7 text-sm text-gray-600',
+  monthPanelClassName: 'w-72 rounded-md border border-gray-200 bg-gray-50/50 p-2 dark:border-gray-700 dark:bg-gray-800/60 sm:w-64',
+  monthPanelTitleClassName: 'mb-1 text-center text-sm font-medium text-gray-700 dark:text-gray-200',
+  weekdayRowClassName: 'mb-1 grid grid-cols-7 text-sm text-gray-600 dark:text-gray-400',
   weekdayCellClassName: 'text-center',
   weekRowsClassName: 'flex flex-col gap-1',
   weekRowClassName: 'grid grid-cols-7 gap-1',
   dayButtonClassName: ({ rangeEdge, inRange, faded }) =>
     cx(
-      'rounded border border-transparent p-1 text-gray-900 transition-colors duration-150 hover:border-blue-400 focus-visible:border-blue-500 focus-visible:outline-none',
-      rangeEdge ? 'bg-blue-600 text-white' : inRange ? 'bg-blue-100 text-blue-800' : '',
-      faded ? 'text-gray-300' : 'hover:bg-blue-100',
+      'rounded border border-transparent p-1 text-gray-900 transition-colors duration-150 hover:border-blue-400 focus-visible:border-blue-500 focus-visible:outline-none dark:text-gray-100 dark:hover:border-blue-300 dark:focus-visible:border-blue-300',
+      rangeEdge ? 'bg-blue-600 text-white' : inRange ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/70 dark:text-blue-100' : '',
+      faded ? 'text-gray-300 dark:text-gray-600' : 'hover:bg-blue-100 dark:hover:bg-blue-950/60',
     ),
-  actionsClassName: 'mt-3 flex justify-end gap-2 border-t pt-3',
+  actionsClassName: 'mt-3 flex justify-end gap-2 border-t border-gray-200 pt-3 dark:border-gray-700',
   cancelButtonClassName:
-    'rounded border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 transition-colors duration-150 hover:border-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
+    'rounded border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 transition-colors duration-150 hover:border-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-200 dark:hover:border-gray-500 dark:focus-visible:ring-blue-400',
   confirmButtonClassName:
-    'rounded border border-blue-600 bg-blue-600 px-3 py-1.5 text-sm text-white transition-colors duration-150 hover:border-blue-700 hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
+    'rounded border border-blue-600 bg-blue-600 px-3 py-1.5 text-sm text-white transition-colors duration-150 hover:border-blue-700 hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400',
 }
 
 const DateRangePickerThemeContext = createContext<DateRangePickerTheme>(defaultDateRangePickerTheme)
@@ -367,6 +382,8 @@ export type DateRangePickerProps = {
   portal?: boolean
   portalContainer?: HTMLElement | null
   mobile?: DateRangePickerMobileOptions
+  theme?: ThemeMode
+  skin?: DateRangePickerSkin
 }
 
 export type DateRangePickerMobileMode = 'auto' | 'always' | 'never'
@@ -559,6 +576,7 @@ function DateRangePickerRoot({
   portal = true,
   portalContainer = null,
   mobile,
+  theme: themeMode,
 }: DateRangePickerProps) {
   const theme = useDateRangePickerTheme()
   const resolvedI18n = useMemo(() => resolveCalendarI18n(i18n), [i18n])
@@ -985,13 +1003,18 @@ function DateRangePickerRoot({
     onConfirm,
     onCancel,
     onEscape,
+    themeMode,
   }
 
   return (
     <DateRangePickerContext.Provider value={contextValue}>
       <div
         ref={containerRef}
-        className={theme.rootClassName ?? defaultDateRangePickerTheme.rootClassName}
+        className={cx(
+          getThemeScopeClassName(themeMode),
+          theme.rootClassName ?? defaultDateRangePickerTheme.rootClassName,
+        )}
+        data-rdp-theme={themeMode}
         style={open ? { zIndex: 'var(--rdp-z-popover, 1000)' } : undefined}
       >
         {children ?? (
@@ -1180,6 +1203,7 @@ function DateRangePickerCalendar({
     isMobilePresentation,
     mobileGestures,
     onEscape,
+    themeMode,
   } = useDateRangePickerContext()
   const shouldPortal = isMobilePresentation || portal
   const shouldUseAnchorPosition = shouldPortal && !isMobilePresentation
@@ -1400,7 +1424,10 @@ function DateRangePickerCalendar({
   if (shouldUseAnchorPosition && !hasPosition) return null
 
   const content = isMobilePresentation ? (
-    <div className={cx(theme.mobilePopoverShellClassName, popoverClassName)}>
+    <div
+      className={cx(getThemeScopeClassName(themeMode), theme.mobilePopoverShellClassName, popoverClassName)}
+      data-rdp-theme={themeMode}
+    >
       <button
         type="button"
         aria-label="Close range calendar"
@@ -1444,9 +1471,11 @@ function DateRangePickerCalendar({
       ref={popoverRef}
       className={cx(
         shouldPortal ? 'absolute' : 'absolute left-0 top-full mt-2',
+        getThemeScopeClassName(themeMode),
         theme.desktopPopoverShellClassName,
         popoverClassName,
       )}
+      data-rdp-theme={themeMode}
       style={shouldPortal ? { left: position.left, top: position.top, zIndex: 'var(--rdp-z-popover, 1000)' } : { zIndex: 'var(--rdp-z-popover, 1000)' }}
       role="dialog"
       aria-label={resolvedI18n.labels.rangeCalendar}
@@ -2202,7 +2231,7 @@ function DefaultCalendarIcon() {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="h-4 w-4 text-gray-600"
+      className="h-4 w-4 text-gray-600 dark:text-gray-300"
       aria-hidden="true"
     >
       <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
@@ -2223,7 +2252,7 @@ function DefaultClockIcon() {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="h-4 w-4"
+      className="h-4 w-4 dark:text-gray-300"
     >
       <circle cx="12" cy="12" r="9" />
       <path d="M12 7v5l3 2" />
@@ -2238,12 +2267,16 @@ type DateRangePickerCompoundComponent = React.FC<DateRangePickerProps> & {
   CalendarGrid: typeof DateRangePickerCalendarGrid
 }
 
-export function createDateRangePicker(theme: DateRangePickerTheme = defaultDateRangePickerTheme) {
-  const ThemedDateRangePicker = ((props: DateRangePickerProps) => (
-    <DateRangePickerThemeContext.Provider value={theme}>
-      <DateRangePickerRoot {...props} />
-    </DateRangePickerThemeContext.Provider>
-  )) as DateRangePickerCompoundComponent
+export function createDateRangePicker(baseTheme: DateRangePickerTheme = defaultDateRangePickerTheme) {
+  const ThemedDateRangePicker = (({ skin, ...props }: DateRangePickerProps) => {
+    const resolvedTheme = useMemo(() => mergeThemeWithSkin(baseTheme, skin), [skin])
+
+    return (
+      <DateRangePickerThemeContext.Provider value={resolvedTheme}>
+        <DateRangePickerRoot {...props} />
+      </DateRangePickerThemeContext.Provider>
+    )
+  }) as DateRangePickerCompoundComponent
 
   ThemedDateRangePicker.Input = DateRangePickerInput
   ThemedDateRangePicker.Calendar = DateRangePickerCalendar

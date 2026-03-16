@@ -3,6 +3,12 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useCalendar } from '../../headless/useCalendar'
 import { addMonths, format } from 'date-fns'
 import { resolveCalendarI18n, type CalendarI18n } from '../../i18n'
+import {
+  getThemeScopeClassName,
+  mergeThemeWithSkin,
+  type ThemeMode,
+  type ThemeSkin,
+} from '../../theming'
 
 const cx = (...values: Array<string | false | null | undefined>) => values.filter(Boolean).join(' ')
 
@@ -11,6 +17,8 @@ export type CalendarProps = {
   selectDate?: (date: Date) => void
   onEscape?: () => void
   i18n?: CalendarI18n
+  theme?: ThemeMode
+  skin?: CalendarSkin
 }
 
 export type CalendarDaySlotState = {
@@ -37,21 +45,24 @@ export type CalendarTheme = {
   }
 }
 
+export type CalendarSkin = ThemeSkin<CalendarTheme>
+
 const defaultCalendarTheme: CalendarTheme = {
-  containerClassName: 'w-72 rounded-lg border bg-white p-4 text-gray-900 shadow',
+  containerClassName:
+    'w-72 rounded-lg border border-gray-200 bg-white p-4 text-gray-900 shadow dark:border-gray-700 dark:bg-gray-900 dark:text-gray-50',
   headerClassName: 'mb-2 flex justify-between',
   headerNavGroupClassName: 'flex gap-1',
   headerNavButtonClassName:
-    'inline-flex h-8 w-8 items-center justify-center rounded border border-transparent text-gray-700 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
-  monthLabelClassName: 'font-semibold text-gray-900',
-  weekdayRowClassName: 'mb-1 grid grid-cols-7 text-sm text-gray-600',
+    'inline-flex h-8 w-8 items-center justify-center rounded border border-transparent text-gray-700 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-gray-300 dark:hover:bg-gray-800 dark:focus-visible:ring-blue-400',
+  monthLabelClassName: 'font-semibold text-gray-900 dark:text-gray-50',
+  weekdayRowClassName: 'mb-1 grid grid-cols-7 text-sm text-gray-600 dark:text-gray-400',
   weekdayCellClassName: 'text-center',
   gridClassName: 'grid grid-cols-7 gap-1',
   dayButtonClassName: ({ active, faded }) =>
     cx(
-      'rounded border border-transparent p-1 text-gray-900 hover:border-blue-400 focus-visible:border-blue-500 focus-visible:outline-none',
+      'rounded border border-transparent p-1 text-gray-900 hover:border-blue-400 focus-visible:border-blue-500 focus-visible:outline-none dark:text-gray-100 dark:hover:border-blue-300 dark:focus-visible:border-blue-300',
       active ? 'bg-blue-600 text-white' : '',
-      faded ? 'text-gray-300' : 'hover:bg-blue-100',
+      faded ? 'text-gray-300 dark:text-gray-600' : 'hover:bg-blue-100 dark:hover:bg-blue-950/60',
     ),
 }
 
@@ -60,8 +71,9 @@ function CalendarRoot({
   selectDate: controlledSelectDate,
   onEscape,
   i18n,
+  theme: themeMode,
 }: CalendarProps) {
-  const theme = useCalendarTheme()
+  const calendarTheme = useCalendarTheme()
   const normalizedSelected =
     controlledSelectedDate instanceof Date && !Number.isNaN(controlledSelectedDate.getTime())
       ? controlledSelectedDate
@@ -178,75 +190,78 @@ function CalendarRoot({
   }
 
   return (
-    <div
-      className={theme.containerClassName}
-      role="grid"
-      tabIndex={0}
-      aria-labelledby={monthLabelId}
-      onKeyDown={handleKeyDown}
-      ref={gridRef}
-    >
-      <header className={theme.headerClassName}>
-        <div className={theme.headerNavGroupClassName}>
-          <button className={theme.headerNavButtonClassName} onClick={cal.prevYear} aria-label={resolvedI18n.labels.prevYear}>
-            {theme.icons?.prevYear ?? '«'}
-          </button>
-          <button className={theme.headerNavButtonClassName} onClick={cal.prev} aria-label={resolvedI18n.labels.prevMonth}>
-            {theme.icons?.prevMonth ?? '←'}
-          </button>
-        </div>
-        <div id={monthLabelId} className={theme.monthLabelClassName}>
-          {format(cal.currentMonth, resolvedI18n.format.monthLabel, formatOptions)}
-        </div>
-        <div className={theme.headerNavGroupClassName}>
-          <button className={theme.headerNavButtonClassName} onClick={cal.next} aria-label={resolvedI18n.labels.nextMonth}>
-            {theme.icons?.nextMonth ?? '→'}
-          </button>
-          <button className={theme.headerNavButtonClassName} onClick={cal.nextYear} aria-label={resolvedI18n.labels.nextYear}>
-            {theme.icons?.nextYear ?? '»'}
-          </button>
-        </div>
-      </header>
-
-      <div className={theme.weekdayRowClassName} aria-hidden="true">
-        {weekdayLabels.map((label, index) => (
-          <div key={index} className={theme.weekdayCellClassName}>
-            {label}
+    <div className={cx(getThemeScopeClassName(themeMode), 'inline-block')} data-rdp-theme={themeMode}>
+      <div
+        className={calendarTheme.containerClassName}
+        role="grid"
+        tabIndex={0}
+        aria-labelledby={monthLabelId}
+        data-rdp-theme={themeMode}
+        onKeyDown={handleKeyDown}
+        ref={gridRef}
+      >
+        <header className={calendarTheme.headerClassName}>
+          <div className={calendarTheme.headerNavGroupClassName}>
+            <button className={calendarTheme.headerNavButtonClassName} onClick={cal.prevYear} aria-label={resolvedI18n.labels.prevYear}>
+              {calendarTheme.icons?.prevYear ?? '«'}
+            </button>
+            <button className={calendarTheme.headerNavButtonClassName} onClick={cal.prev} aria-label={resolvedI18n.labels.prevMonth}>
+              {calendarTheme.icons?.prevMonth ?? '←'}
+            </button>
           </div>
-        ))}
-      </div>
+          <div id={monthLabelId} className={calendarTheme.monthLabelClassName}>
+            {format(cal.currentMonth, resolvedI18n.format.monthLabel, formatOptions)}
+          </div>
+          <div className={calendarTheme.headerNavGroupClassName}>
+            <button className={calendarTheme.headerNavButtonClassName} onClick={cal.next} aria-label={resolvedI18n.labels.nextMonth}>
+              {calendarTheme.icons?.nextMonth ?? '→'}
+            </button>
+            <button className={calendarTheme.headerNavButtonClassName} onClick={cal.nextYear} aria-label={resolvedI18n.labels.nextYear}>
+              {calendarTheme.icons?.nextYear ?? '»'}
+            </button>
+          </div>
+        </header>
 
-      <div className={theme.gridClassName}>
-        {cal.weeks.map((week, wi) =>
-          week.map((day, di) => {
-            const faded = !cal.isSameMonth(day, cal.currentMonth)
-            const isActive = selectedDate && cal.isSameDay(day, selectedDate)
-            const isFocused = cal.isSameDay(day, focusDate)
+        <div className={calendarTheme.weekdayRowClassName} aria-hidden="true">
+          {weekdayLabels.map((label, index) => (
+            <div key={index} className={calendarTheme.weekdayCellClassName}>
+              {label}
+            </div>
+          ))}
+        </div>
 
-            const handleClick = () => {
-              selectDate(day)
-            }
+        <div className={calendarTheme.gridClassName}>
+          {cal.weeks.map((week, wi) =>
+            week.map((day, di) => {
+              const faded = !cal.isSameMonth(day, cal.currentMonth)
+              const isActive = selectedDate && cal.isSameDay(day, selectedDate)
+              const isFocused = cal.isSameDay(day, focusDate)
 
-            return (
-              <button
-                key={wi + '-' + di}
-                role="gridcell"
-                aria-selected={!!isActive}
-                tabIndex={isFocused ? 0 : -1}
-                data-date={day.getTime()}
-                onClick={handleClick}
-                className={theme.dayButtonClassName?.({
-                  active: !!isActive,
-                  faded,
-                  focused: isFocused,
-                })}
-                aria-label={format(day, resolvedI18n.format.dayAriaLabel, formatOptions)}
-              >
-                {format(day, resolvedI18n.format.dayLabel, formatOptions)}
-              </button>
-            )
-          })
-        )}
+              const handleClick = () => {
+                selectDate(day)
+              }
+
+              return (
+                <button
+                  key={wi + '-' + di}
+                  role="gridcell"
+                  aria-selected={!!isActive}
+                  tabIndex={isFocused ? 0 : -1}
+                  data-date={day.getTime()}
+                  onClick={handleClick}
+                  className={calendarTheme.dayButtonClassName?.({
+                    active: !!isActive,
+                    faded,
+                    focused: isFocused,
+                  })}
+                  aria-label={format(day, resolvedI18n.format.dayAriaLabel, formatOptions)}
+                >
+                  {format(day, resolvedI18n.format.dayLabel, formatOptions)}
+                </button>
+              )
+            })
+          )}
+        </div>
       </div>
     </div>
   )
@@ -257,9 +272,14 @@ const CalendarThemeContext = React.createContext<CalendarTheme>(defaultCalendarT
 const useCalendarTheme = () => React.useContext(CalendarThemeContext)
 
 export function createCalendar(theme: CalendarTheme = defaultCalendarTheme) {
-  return function ThemedCalendar(props: CalendarProps) {
+  return function ThemedCalendar({
+    skin,
+    ...props
+  }: CalendarProps) {
+    const resolvedTheme = useMemo(() => mergeThemeWithSkin(theme, skin), [skin])
+
     return (
-      <CalendarThemeContext.Provider value={theme}>
+      <CalendarThemeContext.Provider value={resolvedTheme}>
         <CalendarRoot {...props} />
       </CalendarThemeContext.Provider>
     )

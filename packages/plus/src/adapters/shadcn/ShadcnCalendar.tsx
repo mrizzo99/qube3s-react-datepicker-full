@@ -1,6 +1,7 @@
+import React from 'react'
 import {
   createCalendar,
-  type CalendarProps as ShadcnCalendarProps,
+  type CalendarProps,
   type CalendarTheme,
 } from '@core/components/Calendar/Calendar'
 import {
@@ -36,7 +37,17 @@ const shadcnCalendarTheme: CalendarTheme = {
   },
 }
 
-const ShadcnCalendar = createCalendar(shadcnCalendarTheme)
+export type ShadcnCalendarProps = Omit<CalendarProps, 'theme' | 'skin'>
+
+const ShadcnCalendarBase = createCalendar(shadcnCalendarTheme)
+
+const ShadcnCalendar = (incomingProps: ShadcnCalendarProps) => {
+  const { theme: _theme, skin: _skin, ...props } = incomingProps as ShadcnCalendarProps & {
+    theme?: unknown
+    skin?: unknown
+  }
+
+  return <ShadcnCalendarBase {...props} />
+}
 
 export default ShadcnCalendar
-export type { ShadcnCalendarProps }
