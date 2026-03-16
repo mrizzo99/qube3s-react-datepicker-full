@@ -3,6 +3,7 @@ import { useState } from 'react'
 import DateRangePicker from './DateRangePicker'
 import { esI18n } from '@core/i18n-presets'
 import type { DateRange } from '../../headless/useRangeCalendar'
+import { fluentAnimationPack } from '../../presets/animationPack'
 
 const meta: Meta<typeof DateRangePicker> = {
   title: 'DateRangePicker',
@@ -89,6 +90,17 @@ export const MobileSheetGestures: Story = {
         mode: 'always',
         gestures: { swipeMonth: true, swipeToClose: true },
       }}
+    />
+  ),
+}
+
+export const FluentAnimationPack: Story = {
+  render: () => (
+    <DateRangePicker
+      numberOfMonths={2}
+      theme="material-light"
+      showPresets
+      skin={fluentAnimationPack.dateRangePicker}
     />
   ),
 }

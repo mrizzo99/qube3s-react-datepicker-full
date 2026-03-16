@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { useState } from 'react'
 import DatePicker from './DatePicker'
+import { fluentAnimationPack } from '../../presets/animationPack'
 
 const meta: Meta<typeof DatePicker> = {
   title: 'Plus/DatePicker',
@@ -51,6 +52,15 @@ export const AsyncValidationBlocking: Story = {
         }
         return { valid: true }
       }}
+    />
+  ),
+}
+
+export const FluentAnimationPack: Story = {
+  render: () => (
+    <DatePicker
+      theme="modern-minimal-light"
+      skin={fluentAnimationPack.datePicker}
     />
   ),
 }

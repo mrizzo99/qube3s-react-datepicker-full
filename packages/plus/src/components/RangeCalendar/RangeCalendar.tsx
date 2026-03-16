@@ -19,6 +19,7 @@ import {
   type ThemeMode,
   type ThemeSkin,
 } from '@core/theming'
+import { animateMonthSlide } from '@core/motion'
 import { useRangeCalendar, type DateRange } from '../../headless/useRangeCalendar'
 import { getDateRangePresets, type DateRangePreset } from '../../presets/dateRangePresets'
 
@@ -351,21 +352,9 @@ function RangeCalendarRoot({
     const next = cal.currentMonth
     const monthDelta = differenceInCalendarMonths(startOfMonth(next), startOfMonth(prev))
 
-    if (monthDelta === 0 || !monthAnimatorRef.current || typeof monthAnimatorRef.current.animate !== 'function') {
-      previousMonthRef.current = next
-      return
+    if (monthAnimatorRef.current) {
+      animateMonthSlide(monthAnimatorRef.current, monthDelta)
     }
-
-    monthAnimatorRef.current.animate(
-      [
-        { opacity: 0.88, transform: `translateX(${monthDelta > 0 ? '10px' : '-10px'})` },
-        { opacity: 1, transform: 'translateX(0)' },
-      ],
-      {
-        duration: 180,
-        easing: 'ease-out',
-      },
-    )
 
     previousMonthRef.current = next
   }, [cal.currentMonth])
