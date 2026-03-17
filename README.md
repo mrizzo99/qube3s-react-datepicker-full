@@ -335,16 +335,16 @@ Themes and skins
   - `booking-dark`
 - `skin` is a per-instance slot override object. It lets you patch classes or icons for one picker without creating a new adapter.
 - Adapters are a separate layer:
-  - adapter: chooses the design system defaults, like the stock components vs `shadcn`
+  - adapter: chooses the design system defaults, like the stock components vs `shadcn` or `mui`
   - theme: chooses the stock component preset and mode, such as `light`, `dark`, `material-light`, `material-dark`, `modern-minimal-light`, `modern-minimal-dark`, `booking-light`, or `booking-dark`
   - skin: overrides specific slots on one stock component instance
-- Adapters rely on the external system's theming model. For example, `shadcn.*` should be themed through your app's ShadCN/Tailwind tokens, not through our `theme` or `skin` props.
+- Adapters rely on the external system's theming model. For example, `shadcn.*` should be themed through your app's ShadCN/Tailwind tokens, and `mui.*` through your Material UI theme CSS variables, not through our `theme` or `skin` props.
 
 Examples:
 ```tsx
 import Calendar from '@qube3s/react-datepicker-plus/components/Calendar'
 import DateRangePicker from '@qube3s/react-datepicker-plus/components/DateRangePicker'
-import { shadcn } from '@qube3s/react-datepicker-plus/adapters'
+import { mui, shadcn } from '@qube3s/react-datepicker-plus/adapters'
 
 <Calendar theme="dark" />
 
@@ -360,6 +360,8 @@ import { shadcn } from '@qube3s/react-datepicker-plus/adapters'
 />
 
 <shadcn.DateRangePicker />
+
+<mui.DateRangePicker showPresets numberOfMonths={2} />
 ```
 
 Async validation (Plus `DatePicker` and `DateRangePicker` only)

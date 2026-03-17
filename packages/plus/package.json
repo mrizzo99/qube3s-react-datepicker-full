@@ -36,6 +36,10 @@
       "types": "./dist/adapters/shadcn/index.d.ts",
       "import": "./dist/adapters/shadcn/index.js"
     },
+    "./adapters/mui": {
+      "types": "./dist/adapters/mui/index.d.ts",
+      "import": "./dist/adapters/mui/index.js"
+    },
     "./components/Calendar": {
       "types": "./dist/components/Calendar/index.d.ts",
       "import": "./dist/components/Calendar/index.js"
