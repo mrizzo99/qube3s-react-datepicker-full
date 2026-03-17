@@ -146,10 +146,10 @@ Example: async validation
 - System adapters are premium integrations that map the existing picker behavior onto a target React UI system without duplicating date logic.
 - All adapters live under `packages/plus/src/adapters`, not `packages/core`, so they stay part of the Plus surface area.
 - Themes and skins sit below adapters:
-  - `adapter`: selects the target design system defaults, such as stock vs `shadcn`
+  - `adapter`: selects the target design system defaults, such as stock vs `shadcn` vs `mui`
   - `theme`: selects the stock preset and mode; current built-ins are `light`, `dark`, `material-light`, `material-dark`, `modern-minimal-light`, `modern-minimal-dark`, `booking-light`, and `booking-dark`
   - `skin`: applies per-instance slot overrides to stock components only
-- Adapters should rely on the external system's theming model instead of our stock theme contract. Example: ShadCN adapters should follow the host app's token setup and dark-mode strategy.
+- Adapters should rely on the external system's theming model instead of our stock theme contract. Example: ShadCN adapters should follow the host app's token setup and dark-mode strategy, and the MUI adapter should follow the host app's Material UI theme CSS variables.
 - The adapter pattern for single-date pickers is:
   - keep state, selection, portal, focus, keyboard, and async validation in `createDatePicker`
   - keep Plus-only rules such as `minDate`, `maxDate`, and `blockWeekends` in the shared Plus prop resolver
@@ -209,6 +209,40 @@ import { shadcn } from '@qube3s/react-datepicker-plus/adapters'
 <shadcn.DateRangePicker showPresets numberOfMonths={2} enableTime />
 
 <shadcn.RangeCalendar showPresets numberOfMonths={2} />
+```
+
+### MUI adapter
+- The MUI adapter now covers the same Plus surface:
+  - `mui.Calendar`
+  - `mui.DatePicker`
+  - `mui.DateRangePicker`
+  - `mui.RangeCalendar`
+- `mui.DatePicker` and `mui.DateRangePicker` keep the Plus behavior contract exactly as-is, including bounded dates, weekend blocking, async validation, presets, multi-month layouts, and date-time range mode.
+- The adapter styles our shared DOM to align with the Material UI token model instead of importing `@mui/material` primitives directly.
+- It is designed to follow the CSS variable output from a Material UI theme, especially the `--mui-*` palette, shape, and action tokens generated when your app enables CSS theme variables.
+- The classes intentionally mirror familiar Material UI slot names such as `MuiPaper-root`, `MuiIconButton-root`, `MuiInputBase-input`, `MuiChip-root`, and `MuiPickersDay-root` so the DOM reads like a Material UI surface while preserving the shared picker internals.
+
+Example:
+```tsx
+import { mui } from '@qube3s/react-datepicker-plus/adapters'
+
+<mui.Calendar />
+
+<mui.DatePicker
+  minDate={new Date(2024, 0, 5)}
+  maxDate={new Date(2024, 0, 20)}
+  blockWeekends
+>
+  <mui.DatePicker.Input />
+  <mui.DatePicker.Calendar>
+    <mui.DatePicker.CalendarHeader />
+    <mui.DatePicker.CalendarGrid />
+  </mui.DatePicker.Calendar>
+</mui.DatePicker>
+
+<mui.DateRangePicker showPresets numberOfMonths={2} enableTime />
+
+<mui.RangeCalendar showPresets numberOfMonths={2} />
 ```
 
 When to add a new adapter

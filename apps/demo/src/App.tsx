@@ -3,7 +3,7 @@ import { addDays, format, subDays } from 'date-fns'
 import Calendar from '@qube3s/react-datepicker-core/components/Calendar'
 import DatePicker from '@qube3s/react-datepicker-core/components/DatePicker'
 import { esI18n } from '@qube3s/react-datepicker-core/i18n-presets'
-import { shadcn } from '@qube3s/react-datepicker-plus/adapters'
+import { mui, shadcn } from '@qube3s/react-datepicker-plus/adapters'
 import CalendarPlus from '@qube3s/react-datepicker-plus/components/Calendar'
 import DatePickerPlus from '@qube3s/react-datepicker-plus/components/DatePicker'
 import DateRangePicker from '@qube3s/react-datepicker-plus/components/DateRangePicker'
@@ -18,6 +18,8 @@ const panelClass =
   'relative z-0 rounded-2xl border border-[var(--q3-border)] bg-[color:rgb(17_24_39_/_0.82)] p-5 shadow-[0_12px_32px_rgba(2,6,23,0.32)] backdrop-blur focus-within:z-20'
 const shadcnSurfaceClass =
   'rounded-2xl border border-slate-200 bg-slate-50 p-4 text-slate-900 shadow-[0_18px_48px_rgba(15,23,42,0.08)]'
+const muiSurfaceClass =
+  'mui-demo-scope rounded-[28px] border border-slate-200/90 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-5 text-slate-900 shadow-[0_20px_48px_rgba(15,23,42,0.12)]'
 const tabButtonClass =
   'inline-flex min-w-[10rem] items-center justify-center rounded-full border px-4 py-2 text-sm font-medium transition'
 const adapterButtonClass =
@@ -31,7 +33,7 @@ const controlButtonClass = (active: boolean) =>
   ].join(' ')
 
 type DemoTabId = 'core' | 'plus'
-type AdapterShowcaseId = 'shadcn'
+type AdapterShowcaseId = 'shadcn' | 'mui'
 type DemoRange = { start: Date | null; end: Date | null }
 type NavItem = { id: string; label: string; detail: string }
 type AdapterShowcase = {
@@ -76,6 +78,14 @@ const adapterShowcases: AdapterShowcase[] = [
     status: 'Available',
     description:
       'A complete adapter pass for the current surface area: base calendar, constrained single-date picker, inline range calendar, and range picker.',
+    highlights: ['Calendar', 'DatePicker', 'RangeCalendar', 'DateRangePicker']
+  },
+  {
+    id: 'mui',
+    label: 'MUI',
+    status: 'Available',
+    description:
+      'A Material UI styled adapter that keeps the shared picker behavior but maps the visual layer onto familiar MUI slots and theme variables.',
     highlights: ['Calendar', 'DatePicker', 'RangeCalendar', 'DateRangePicker']
   }
 ]
@@ -273,6 +283,10 @@ export default function App() {
   const [shadcnInlineDate, setShadcnInlineDate] = useState<Date | null>(null)
   const [shadcnRange, setShadcnRange] = useState<DemoRange>({ start: null, end: null })
   const [shadcnInlineRange, setShadcnInlineRange] = useState<DemoRange>({ start: null, end: null })
+  const [muiSelectedDate, setMuiSelectedDate] = useState<Date | null>(null)
+  const [muiInlineDate, setMuiInlineDate] = useState<Date | null>(null)
+  const [muiRange, setMuiRange] = useState<DemoRange>({ start: null, end: null })
+  const [muiInlineRange, setMuiInlineRange] = useState<DemoRange>({ start: null, end: null })
 
   const today = new Date()
   const activeCalendarSkin = calendarSkinPresets[skinPreset]
@@ -1330,6 +1344,98 @@ export default function App() {
                               : 'Start: —'}{' '}
                             {shadcnRange.end
                               ? `End: ${format(shadcnRange.end, 'PPP hh:mm a')}`
+                              : 'End: —'}
+                          </p>
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {activeAdapterShowcase === 'mui' ? (
+                      <div
+                        id="mui-adapter-panel"
+                        role="tabpanel"
+                        aria-labelledby="mui-adapter-tab"
+                        className="space-y-4"
+                      >
+                        <div className={muiSurfaceClass}>
+                          <h3 className="text-base font-semibold">Inline calendar</h3>
+                          <p className="mb-3 mt-1 text-sm text-slate-500">
+                            `mui.Calendar` with a demo-local MUI token scope.
+                          </p>
+                          <mui.Calendar
+                            selectedDate={muiInlineDate}
+                            selectDate={setMuiInlineDate}
+                          />
+                          <p className="mt-3 text-sm text-slate-500">
+                            {muiInlineDate
+                              ? `Selected: ${format(muiInlineDate, 'PPP')}`
+                              : 'Choose a date'}
+                          </p>
+                        </div>
+
+                        <div className={muiSurfaceClass}>
+                          <h3 className="text-base font-semibold">Single date picker</h3>
+                          <p className="mb-3 mt-1 text-sm text-slate-500">
+                            `mui.DatePicker` with the same Plus business-day constraints.
+                          </p>
+                          <mui.DatePicker
+                            value={muiSelectedDate}
+                            onChange={setMuiSelectedDate}
+                            minDate={plusMinDate}
+                            maxDate={plusMaxDate}
+                            blockWeekends
+                          />
+                          <p className="mt-3 text-sm text-slate-500">
+                            {muiSelectedDate
+                              ? `Selected: ${format(muiSelectedDate, 'PPP')}`
+                              : 'Choose an allowed business day'}
+                          </p>
+                        </div>
+
+                        <div className={muiSurfaceClass}>
+                          <h3 className="text-base font-semibold">Inline range calendar</h3>
+                          <p className="mb-3 mt-1 text-sm text-slate-500">
+                            `mui.RangeCalendar` with presets and two visible months.
+                          </p>
+                          <div className="overflow-x-auto pb-1">
+                            <mui.RangeCalendar
+                              selectedRange={muiInlineRange}
+                              selectRange={setMuiInlineRange}
+                              numberOfMonths={2}
+                              showPresets
+                            />
+                          </div>
+                          <p className="mt-3 text-sm text-slate-500">
+                            {muiInlineRange.start
+                              ? `Start: ${format(muiInlineRange.start, 'PPP')}`
+                              : 'Start: —'}{' '}
+                            {muiInlineRange.end
+                              ? `End: ${format(muiInlineRange.end, 'PPP')}`
+                              : 'End: —'}
+                          </p>
+                        </div>
+
+                        <div className={muiSurfaceClass}>
+                          <h3 className="text-base font-semibold">Range picker</h3>
+                          <p className="mb-3 mt-1 text-sm text-slate-500">
+                            `mui.DateRangePicker` with presets, time wheels, and two months.
+                          </p>
+                          <mui.DateRangePicker
+                            value={muiRange}
+                            onChange={setMuiRange}
+                            showPresets
+                            enableTime
+                            numberOfMonths={2}
+                            timeFormat="12h"
+                            defaultStartTime="09:00 AM"
+                            defaultEndTime="05:00 PM"
+                          />
+                          <p className="mt-3 text-sm text-slate-500">
+                            {muiRange.start
+                              ? `Start: ${format(muiRange.start, 'PPP hh:mm a')}`
+                              : 'Start: —'}{' '}
+                            {muiRange.end
+                              ? `End: ${format(muiRange.end, 'PPP hh:mm a')}`
                               : 'End: —'}
                           </p>
                         </div>
