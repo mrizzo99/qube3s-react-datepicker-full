@@ -1,0 +1,73 @@
+{
+  "name": "@qube3s/react-datepicker-plus",
+  "version": "1.0.0",
+  "type": "module",
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json"
+  },
+  "peerDependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "dependencies": {
+    "@qube3s/react-datepicker-core": "1.0.0",
+    "date-fns": "^3.6.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./adapters": {
+      "types": "./dist/adapters/index.d.ts",
+      "import": "./dist/adapters/index.js"
+    },
+    "./adapters/shadcn": {
+      "types": "./dist/adapters/shadcn/index.d.ts",
+      "import": "./dist/adapters/shadcn/index.js"
+    },
+    "./components/Calendar": {
+      "types": "./dist/components/Calendar/index.d.ts",
+      "import": "./dist/components/Calendar/index.js"
+    },
+    "./components/DatePicker": {
+      "types": "./dist/components/DatePicker/index.d.ts",
+      "import": "./dist/components/DatePicker/index.js"
+    },
+    "./components/DateRangePicker": {
+      "types": "./dist/components/DateRangePicker/index.d.ts",
+      "import": "./dist/components/DateRangePicker/index.js"
+    },
+    "./components/RangeCalendar": {
+      "types": "./dist/components/RangeCalendar/index.d.ts",
+      "import": "./dist/components/RangeCalendar/index.js"
+    },
+    "./headless/useRangeCalendar": {
+      "types": "./dist/headless/useRangeCalendar.d.ts",
+      "import": "./dist/headless/useRangeCalendar.js"
+    },
+    "./presets/animationPack": {
+      "types": "./dist/presets/animationPack.d.ts",
+      "import": "./dist/presets/animationPack.js"
+    },
+    "./presets/dateRangePresets": {
+      "types": "./dist/presets/dateRangePresets.d.ts",
+      "import": "./dist/presets/dateRangePresets.js"
+    },
+    "./theming": {
+      "types": "./dist/theming.d.ts",
+      "import": "./dist/theming.js"
+    },
+    "./package.json": "./package.json"
+  }
+}

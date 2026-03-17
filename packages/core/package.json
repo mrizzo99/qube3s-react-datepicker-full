@@ -1,0 +1,81 @@
+{
+  "name": "@qube3s/react-datepicker-core",
+  "version": "1.0.0",
+  "type": "module",
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json"
+  },
+  "peerDependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "dependencies": {
+    "@floating-ui/react": "^0.27.19",
+    "date-fns": "^3.6.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./asyncValidation": {
+      "types": "./dist/asyncValidation.d.ts",
+      "import": "./dist/asyncValidation.js"
+    },
+    "./components/Calendar": {
+      "types": "./dist/components/Calendar/index.d.ts",
+      "import": "./dist/components/Calendar/index.js"
+    },
+    "./components/Calendar/Calendar": {
+      "types": "./dist/components/Calendar/Calendar.d.ts",
+      "import": "./dist/components/Calendar/Calendar.js"
+    },
+    "./components/DatePicker": {
+      "types": "./dist/components/DatePicker/index.d.ts",
+      "import": "./dist/components/DatePicker/index.js"
+    },
+    "./components/DatePicker/createDatePicker": {
+      "types": "./dist/components/DatePicker/createDatePicker.d.ts",
+      "import": "./dist/components/DatePicker/createDatePicker.js"
+    },
+    "./floating": {
+      "types": "./dist/floating.d.ts",
+      "import": "./dist/floating.js"
+    },
+    "./headless/useCalendar": {
+      "types": "./dist/headless/useCalendar.d.ts",
+      "import": "./dist/headless/useCalendar.js"
+    },
+    "./i18n": {
+      "types": "./dist/i18n.d.ts",
+      "import": "./dist/i18n.js"
+    },
+    "./i18n-presets": {
+      "types": "./dist/i18n-presets.d.ts",
+      "import": "./dist/i18n-presets.js"
+    },
+    "./motion": {
+      "types": "./dist/motion.d.ts",
+      "import": "./dist/motion.js"
+    },
+    "./styling": {
+      "types": "./dist/styling.d.ts",
+      "import": "./dist/styling.js"
+    },
+    "./theming": {
+      "types": "./dist/theming.d.ts",
+      "import": "./dist/theming.js"
+    },
+    "./package.json": "./package.json"
+  }
+}

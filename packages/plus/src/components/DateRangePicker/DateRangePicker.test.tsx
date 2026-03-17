@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { format } from 'date-fns'
-import type { AsyncValidationResult } from '@core/asyncValidation'
+import type { AsyncValidationResult } from '@qube3s/react-datepicker-core/asyncValidation'
 import DateRangePicker from './DateRangePicker'
 import { fluentAnimationPack } from '../../presets/animationPack'
 

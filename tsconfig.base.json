@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "jsx": "react-jsx",
+    "moduleResolution": "Bundler",
+    "baseUrl": ".",
+    "paths": {
+      "@qube3s/react-datepicker-core": ["packages/core/src/index.ts"],
+      "@qube3s/react-datepicker-core/*": ["packages/core/src/*"],
+      "@qube3s/react-datepicker-plus": ["packages/plus/src/index.ts"],
+      "@qube3s/react-datepicker-plus/*": ["packages/plus/src/*"]
+    },
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  }
+}

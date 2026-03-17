@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useCalendar, type UseCalendarOptions } from '@core/headless/useCalendar'
+import { useCalendar, type UseCalendarOptions } from '@qube3s/react-datepicker-core/headless/useCalendar'
 import { isSameDay } from 'date-fns'
 
 export type DateRange = {

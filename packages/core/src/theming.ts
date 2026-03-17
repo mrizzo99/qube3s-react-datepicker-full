@@ -8,7 +8,7 @@ export type ThemeMode =
   | 'booking-light'
   | 'booking-dark'
 
-type ThemeWithIcons = {
+type ThemeWithIcons = Record<string, unknown> & {
   icons?: Record<string, unknown>
 }
 

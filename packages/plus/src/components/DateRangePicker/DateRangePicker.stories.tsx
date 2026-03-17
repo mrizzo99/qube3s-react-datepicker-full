@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { useState } from 'react'
 import DateRangePicker from './DateRangePicker'
-import { esI18n } from '@core/i18n-presets'
+import { esI18n } from '@qube3s/react-datepicker-core/i18n-presets'
 import type { DateRange } from '../../headless/useRangeCalendar'
 import { fluentAnimationPack } from '../../presets/animationPack'
 

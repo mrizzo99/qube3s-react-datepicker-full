@@ -1,4 +1,4 @@
-export * from '@core/asyncValidation'
+export * from '@qube3s/react-datepicker-core/asyncValidation'
 export * from './theming'
 export { default as Calendar } from './components/Calendar'
 export * from './components/Calendar'

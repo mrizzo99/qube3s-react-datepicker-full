@@ -114,7 +114,7 @@ Note: you can also pass `icon={<img src="/calendar.png" ... />}` for assets in `
 
 Example:
 ```tsx
-import DatePicker from '@plus/components/DatePicker'
+import DatePicker from '@qube3s/react-datepicker-plus/components/DatePicker'
 
 <DatePicker
   minDate={new Date(2024, 0, 5)}
@@ -190,7 +190,7 @@ Recommended adapter shape
 
 Example:
 ```tsx
-import { shadcn } from '@plus/adapters'
+import { shadcn } from '@qube3s/react-datepicker-plus/adapters'
 
 <shadcn.Calendar />
 
@@ -505,10 +505,10 @@ Routine regression enforcement
 
 Example: shared i18n object
 ```tsx
-import { frI18n } from '@core/i18n-presets'
-import Calendar from '@core/components/Calendar'
-import DatePicker from '@core/components/DatePicker'
-import DateRangePicker from '@plus/components/DateRangePicker'
+import { frI18n } from '@qube3s/react-datepicker-core/i18n-presets'
+import Calendar from '@qube3s/react-datepicker-core/components/Calendar'
+import DatePicker from '@qube3s/react-datepicker-core/components/DatePicker'
+import DateRangePicker from '@qube3s/react-datepicker-plus/components/DateRangePicker'
 
 const i18n = frI18n
 
@@ -520,7 +520,7 @@ Presets are exported from `packages/core/src/i18n-presets.ts` (`enUSI18n`, `frI1
 
 Extend a preset
 ```tsx
-import { frI18n } from '@core/i18n-presets'
+import { frI18n } from '@qube3s/react-datepicker-core/i18n-presets'
 
 const i18n = {
   ...frI18n,

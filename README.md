@@ -106,8 +106,8 @@ npm run preview
 
 Core usage (single date):
 ```tsx
-import Calendar from '@core/components/Calendar'
-import DatePicker from '@core/components/DatePicker'
+import Calendar from '@qube3s/react-datepicker-core/components/Calendar'
+import DatePicker from '@qube3s/react-datepicker-core/components/DatePicker'
 
 // Popover - single date selection
 <DatePicker>
@@ -148,8 +148,8 @@ Core appearance
 
 ```tsx
 import type { CSSProperties } from 'react'
-import Calendar from '@core/components/Calendar'
-import DatePicker from '@core/components/DatePicker'
+import Calendar from '@qube3s/react-datepicker-core/components/Calendar'
+import DatePicker from '@qube3s/react-datepicker-core/components/DatePicker'
 
 <Calendar appearance="dark" />
 
@@ -169,7 +169,7 @@ import DatePicker from '@core/components/DatePicker'
 
 Plus usage (single date constraints):
 ```tsx
-import DatePicker from '@plus/components/DatePicker'
+import DatePicker from '@qube3s/react-datepicker-plus/components/DatePicker'
 
 // Restrict selection to a bounded window
 <DatePicker minDate={new Date(2024, 0, 5)} maxDate={new Date(2024, 0, 20)} />
@@ -203,8 +203,8 @@ import DatePicker from '@plus/components/DatePicker'
 
 Plus usage (range):
 ```tsx
-import DateRangePicker from '@plus/components/DateRangePicker'
-import RangeCalendar from '@plus/components/RangeCalendar'
+import DateRangePicker from '@qube3s/react-datepicker-plus/components/DateRangePicker'
+import RangeCalendar from '@qube3s/react-datepicker-plus/components/RangeCalendar'
 
 // Popover - date range selection
 <DateRangePicker>
@@ -266,7 +266,7 @@ import RangeCalendar from '@plus/components/RangeCalendar'
 
 Plus usage (date + time range):
 ```tsx
-import DateRangePicker from '@plus/components/DateRangePicker'
+import DateRangePicker from '@qube3s/react-datepicker-plus/components/DateRangePicker'
 import ClockIcon from './ClockIcon'
 
 // 12-hour mode with AM/PM wheel and custom clock icon
@@ -296,10 +296,10 @@ Animation pack
 - The pack composes with stock themes and adapter skins instead of replacing them.
 
 ```tsx
-import Calendar from '@plus/components/Calendar'
-import DatePicker from '@plus/components/DatePicker'
-import DateRangePicker from '@plus/components/DateRangePicker'
-import RangeCalendar from '@plus/components/RangeCalendar'
+import Calendar from '@qube3s/react-datepicker-plus/components/Calendar'
+import DatePicker from '@qube3s/react-datepicker-plus/components/DatePicker'
+import DateRangePicker from '@qube3s/react-datepicker-plus/components/DateRangePicker'
+import RangeCalendar from '@qube3s/react-datepicker-plus/components/RangeCalendar'
 import { fluentAnimationPack } from '@plus'
 
 <Calendar skin={fluentAnimationPack.calendar} />
@@ -342,9 +342,9 @@ Themes and skins
 
 Examples:
 ```tsx
-import Calendar from '@plus/components/Calendar'
-import DateRangePicker from '@plus/components/DateRangePicker'
-import { shadcn } from '@plus/adapters'
+import Calendar from '@qube3s/react-datepicker-plus/components/Calendar'
+import DateRangePicker from '@qube3s/react-datepicker-plus/components/DateRangePicker'
+import { shadcn } from '@qube3s/react-datepicker-plus/adapters'
 
 <Calendar theme="dark" />
 
@@ -477,10 +477,10 @@ Multi-month range views
 
 Internationalization (i18n)
 ```tsx
-import { frI18n } from '@core/i18n-presets'
-import Calendar from '@core/components/Calendar'
-import DatePicker from '@core/components/DatePicker'
-import DateRangePicker from '@plus/components/DateRangePicker'
+import { frI18n } from '@qube3s/react-datepicker-core/i18n-presets'
+import Calendar from '@qube3s/react-datepicker-core/components/Calendar'
+import DatePicker from '@qube3s/react-datepicker-core/components/DatePicker'
+import DateRangePicker from '@qube3s/react-datepicker-plus/components/DateRangePicker'
 
 const i18n = frI18n
 
@@ -488,12 +488,12 @@ const i18n = frI18n
 <DatePicker i18n={i18n} />
 <DateRangePicker i18n={i18n} />
 ```
-Presets are available from `@core/i18n-presets` (`enUSI18n`, `frI18n`, `esI18n`), or pass a custom `i18n` object to override defaults.
+Presets are available from `@qube3s/react-datepicker-core/i18n-presets` (`enUSI18n`, `frI18n`, `esI18n`), or pass a custom `i18n` object to override defaults.
 Placeholders and the format hint text use `i18n.labels` when you don't supply explicit props.
 
 Extend a preset
 ```tsx
-import { frI18n } from '@core/i18n-presets'
+import { frI18n } from '@qube3s/react-datepicker-core/i18n-presets'
 
 const i18n = {
   ...frI18n,
@@ -563,8 +563,8 @@ Layering / popovers
 ```
 - Example usage with custom portal container:
 ```tsx
-import DatePicker from '@core/components/DatePicker'
-import DateRangePicker from '@plus/components/DateRangePicker'
+import DatePicker from '@qube3s/react-datepicker-core/components/DatePicker'
+import DateRangePicker from '@qube3s/react-datepicker-plus/components/DateRangePicker'
 
 export function BookingModalBody() {
   const portalRoot = document.getElementById('modal-popovers')

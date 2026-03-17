@@ -9,7 +9,7 @@ import {
   startOfMonth,
   startOfWeek,
 } from 'date-fns'
-import { resolveCalendarI18n, type CalendarI18n } from '@core/i18n'
+import { resolveCalendarI18n, type CalendarI18n } from '@qube3s/react-datepicker-core/i18n'
 import {
   getThemeScopeClassName,
   isBookingTheme,
@@ -19,7 +19,7 @@ import {
   type ThemeMode,
   type ThemeSkin,
 } from '../../theming'
-import { animateMonthSlide } from '@core/motion'
+import { animateMonthSlide } from '@qube3s/react-datepicker-core/motion'
 import { useRangeCalendar, type DateRange } from '../../headless/useRangeCalendar'
 import { getDateRangePresets, type DateRangePreset } from '../../presets/dateRangePresets'
 

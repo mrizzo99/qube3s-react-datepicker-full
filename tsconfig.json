@@ -1,18 +1,8 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
-    "jsx": "react-jsx",
-    "moduleResolution": "Bundler",
-    "baseUrl": ".",
-    "paths": {
-      "@core/*": ["packages/core/src/*"],
-      "@plus/*": ["packages/plus/src/*"]
-    },
-    "types": ["vite/client", "vitest/globals", "@testing-library/jest-dom"],
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true
+    "noEmit": true,
+    "types": ["vite/client", "vitest/globals", "@testing-library/jest-dom"]
   },
   "include": [
     "packages",

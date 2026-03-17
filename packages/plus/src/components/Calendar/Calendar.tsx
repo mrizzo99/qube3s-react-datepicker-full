@@ -5,7 +5,7 @@ import {
   type CalendarSkin,
   type CalendarStylingProps,
   type CalendarTheme,
-} from '@core/components/Calendar/Calendar'
+} from '@qube3s/react-datepicker-core/components/Calendar/Calendar'
 
 export type CalendarProps = CoreCalendarProps & CalendarStylingProps
 

@@ -4,7 +4,7 @@ import {
   type DatePickerAdapterTheme,
   type DatePickerCalendarProps,
   type DatePickerInputProps,
-} from '@core/components/DatePicker/createDatePicker'
+} from '@qube3s/react-datepicker-core/components/DatePicker/createDatePicker'
 import {
   type PlusDatePickerProps,
   useResolvedPlusDatePickerProps,
