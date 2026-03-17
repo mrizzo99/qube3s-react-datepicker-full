@@ -5,8 +5,8 @@ export {
   isMaterialTheme,
   isModernMinimalTheme,
   mergeThemeWithSkin,
-} from '@core/theming'
+} from '@qube3s/react-datepicker-core/theming'
 
-export type { ThemeMode, ThemeSkin } from '@core/theming'
+export type { ThemeMode, ThemeSkin } from '@qube3s/react-datepicker-core/theming'
 
-export type PlusThemeMode = import('@core/theming').ThemeMode
+export type PlusThemeMode = import('@qube3s/react-datepicker-core/theming').ThemeMode

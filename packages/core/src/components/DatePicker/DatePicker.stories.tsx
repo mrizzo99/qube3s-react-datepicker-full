@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { useState } from 'react'
 import DatePicker from './DatePicker'
-import { esI18n } from '@core/i18n-presets'
+import { esI18n } from '@qube3s/react-datepicker-core/i18n-presets'
 
 const meta: Meta<typeof DatePicker> = {
   title: 'Core/DatePicker',

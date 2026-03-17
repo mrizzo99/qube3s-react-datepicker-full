@@ -26,8 +26,8 @@ const config: StorybookConfig = {
     config.resolve = config.resolve || {}
     config.resolve.alias = {
       ...(config.resolve.alias || {}),
-      '@core': resolve(repoRoot, 'packages/core/src'),
-      '@plus': resolve(repoRoot, 'packages/plus/src'),
+      '@qube3s/react-datepicker-core': resolve(repoRoot, 'packages/core/src'),
+      '@qube3s/react-datepicker-plus': resolve(repoRoot, 'packages/plus/src'),
     }
     return config
   }

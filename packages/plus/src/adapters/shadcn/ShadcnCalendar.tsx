@@ -3,7 +3,7 @@ import {
   createCalendar,
   type CalendarProps,
   type CalendarTheme,
-} from '@core/components/Calendar/Calendar'
+} from '@qube3s/react-datepicker-core/components/Calendar/Calendar'
 import {
   shadcnChevronLeftIcon,
   shadcnChevronRightIcon,

@@ -1,10 +1,15 @@
 {
-  "name": "react-datepicker-full",
+  "name": "react-datepicker-workspace",
   "version": "1.0.0",
   "private": true,
+  "workspaces": [
+    "packages/core",
+    "packages/plus"
+  ],
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "npm run build:packages && vite build",
+    "build:packages": "tsc -b packages/core/tsconfig.build.json packages/plus/tsconfig.build.json",
     "preview": "vite preview",
     "storybook": "storybook dev -p 6006 -c apps/storybook/.storybook",
     "build-storybook": "storybook build -c apps/storybook/.storybook",

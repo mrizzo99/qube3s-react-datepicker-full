@@ -1,4 +1,4 @@
-import type { AsyncValidationResult } from '@core/asyncValidation'
+import type { AsyncValidationResult } from '@qube3s/react-datepicker-core/asyncValidation'
 import type { DateRange } from '../headless/useRangeCalendar'
 
 export type ServerValidationResponse = {

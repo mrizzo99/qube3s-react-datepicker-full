@@ -24,8 +24,8 @@ import type {
   AsyncValidationResult,
   AsyncValidationState,
   AsyncValidationStateChange,
-} from '@core/asyncValidation'
-import { resolveCalendarI18n, type CalendarI18n } from '@core/i18n'
+} from '@qube3s/react-datepicker-core/asyncValidation'
+import { resolveCalendarI18n, type CalendarI18n } from '@qube3s/react-datepicker-core/i18n'
 import {
   getThemeScopeClassName,
   isBookingTheme,
@@ -35,8 +35,8 @@ import {
   type ThemeMode,
   type ThemeSkin,
 } from '../../theming'
-import { useFloatingPopoverPosition } from '@core/floating'
-import { animateMonthSlide, FLUENT_UI_DURATION_MS, usePresenceTransition } from '@core/motion'
+import { useFloatingPopoverPosition } from '@qube3s/react-datepicker-core/floating'
+import { animateMonthSlide, FLUENT_UI_DURATION_MS, usePresenceTransition } from '@qube3s/react-datepicker-core/motion'
 import { useRangeCalendar, type DateRange } from '../../headless/useRangeCalendar'
 import { getDateRangePresets, type DateRangePreset } from '../../presets/dateRangePresets'
 
@@ -114,6 +114,7 @@ const visuallyHidden = {
 } satisfies React.CSSProperties
 
 const DEFAULT_MOBILE_BREAKPOINT = 768
+const POPOVER_VIEWPORT_PADDING = 16
 const SWIPE_MONTH_THRESHOLD = 48
 const SWIPE_CLOSE_THRESHOLD = 56
 const SHEET_CLOSE_RATIO_THRESHOLD = 0.22

@@ -6,7 +6,7 @@ import type {
   DatePickerResolvedProps,
   DatePickerSkin,
   DatePickerStylingProps,
-} from '@core/components/DatePicker/createDatePicker'
+} from '@qube3s/react-datepicker-core/components/DatePicker/createDatePicker'
 
 const normalizeDate = (value: unknown): Date | null => {
   if (value instanceof Date && !Number.isNaN(value.getTime())) return value

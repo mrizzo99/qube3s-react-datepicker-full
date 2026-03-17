@@ -19,8 +19,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@core': path.resolve(__dirname, 'packages/core/src'),
-      '@plus': path.resolve(__dirname, 'packages/plus/src'),
+      '@qube3s/react-datepicker-core': path.resolve(__dirname, 'packages/core/src'),
+      '@qube3s/react-datepicker-plus': path.resolve(__dirname, 'packages/plus/src'),
     },
   },
 })

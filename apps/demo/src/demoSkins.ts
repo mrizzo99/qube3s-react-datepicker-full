@@ -1,4 +1,4 @@
-import type { CalendarDaySlotState, CalendarSkin } from '@plus/components/Calendar'
+import type { CalendarDaySlotState, CalendarSkin } from '@qube3s/react-datepicker-plus/components/Calendar'
 
 export type SkinPresetKey = 'default' | 'sunrise' | 'midnight'
 

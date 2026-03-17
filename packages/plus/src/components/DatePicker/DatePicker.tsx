@@ -4,7 +4,7 @@ import {
   type DatePickerDaySlotState,
   type DatePickerInputProps,
   type DatePickerSkin,
-} from '@core/components/DatePicker/createDatePicker'
+} from '@qube3s/react-datepicker-core/components/DatePicker/createDatePicker'
 import {
   type PlusDatePickerProps as DatePickerProps,
   useResolvedPlusDatePickerProps,
