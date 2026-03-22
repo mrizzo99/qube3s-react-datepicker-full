@@ -1,6 +1,7 @@
 {
   "name": "@qube3s/react-datepicker-plus",
   "version": "1.0.0",
+  "license": "SEE LICENSE IN LICENSE-COMMERCIAL",
   "type": "module",
   "sideEffects": false,
   "publishConfig": {
@@ -10,7 +11,8 @@
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "LICENSE-COMMERCIAL"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json"

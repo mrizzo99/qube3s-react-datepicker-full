@@ -56,13 +56,13 @@ Allow integration with:
 
 Shadcn UI - DONE
 
-MUI
+MUI -DONE
 
-Chakra
+Chakra - DEFERRED
 
-Tailwind UI
+Tailwind UI - DEFERRED
 
-Radix primitives
+Radix primitives - DEFERRED
 
 6. Build and publish the package
 
