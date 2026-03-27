@@ -36,6 +36,22 @@ Plus:
 
 Qube3s Plus is distributed through a private Cloudsmith registry. See [docs/INSTALL_PLUS.md](docs/INSTALL_PLUS.md) for the customer install flow.
 
+## Support Matrix
+
+| Area | Supported | Notes |
+| --- | --- | --- |
+| React | 18.2.x | Required peer dependency |
+| React DOM | 18.2.x | Required peer dependency |
+| Package format | ESM | Published as `type: module` with package `exports` |
+| Bundlers | Modern bundlers with package exports support | Vite is the primary dev and test setup |
+| Node.js | 18+ recommended, 20 LTS preferred | Needed for install, build, docs, and release workflows |
+| TypeScript | 5.x recommended | Packages ship `.d.ts` files |
+| Browsers | Evergreen browsers | Automated browser coverage is currently Chromium-focused |
+| SSR frameworks | Supported in modern React SSR apps | Validate in-app if you rely on custom SSR behavior |
+| Distribution | Core: public npm, Plus: private Cloudsmith | Plus depends on the matching Core version |
+
+React 19, legacy CommonJS environments, and non-evergreen browsers are not part of the current support matrix.
+
 ## Quick Start
 
 ### Core `DatePicker`

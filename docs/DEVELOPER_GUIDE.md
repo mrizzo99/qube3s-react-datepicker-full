@@ -689,6 +689,12 @@ const i18n = { ...frI18n, format: { ...frI18n.format, inputValue: 'Pp' } }
 - `npm run storybook` – Storybook dev server at `http://localhost:6006` (uses `apps/storybook/.storybook`).
 - `npm run build-storybook` – Static Storybook build.
 
+## Docs deploy
+- GitHub Pages deploy is handled by `.github/workflows/docs-pages.yml`.
+- The published site serves the demo at the Pages root, Storybook at `/storybook/`, and TypeDoc at `/api/`.
+- For project Pages repositories, the workflow computes the correct Vite `base` path from the repository name before building the demo.
+- First-time GitHub setup is still required in the repository Pages settings: enable Pages and set the source to `GitHub Actions`.
+
 ## Extension ideas (for maintainers)
 - These are optional backlog ideas for project contributors; they are not shipped features and not instructions for consumers.
 - **Min/max or disabled dates**: Add constraints to block selection and visually indicate out-of-range days.
