@@ -238,6 +238,9 @@ function SummaryCard({
 }
 
 export default function App() {
+  const pagesBaseUrl = import.meta.env.BASE_URL
+  const docsHref = `${pagesBaseUrl}api/`
+  const storybookHref = `${pagesBaseUrl}storybook/`
   const [activeTab, setActiveTab] = useState<DemoTabId>('core')
   const [activeAdapterShowcase, setActiveAdapterShowcase] =
     useState<AdapterShowcaseId>('shadcn')
@@ -343,9 +346,18 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-2">
-            <button className="rounded-md border border-[var(--q3-border)] px-3 py-1.5 text-sm text-[var(--q3-text-primary)] hover:border-[var(--q3-primary-soft)]">
+            <a
+              href={docsHref}
+              className="rounded-md border border-[var(--q3-border)] px-3 py-1.5 text-sm text-[var(--q3-text-primary)] hover:border-[var(--q3-primary-soft)]"
+            >
               Docs
-            </button>
+            </a>
+            <a
+              href={storybookHref}
+              className="rounded-md border border-[var(--q3-border)] px-3 py-1.5 text-sm text-[var(--q3-text-primary)] hover:border-cyan-400/70"
+            >
+              Storybook
+            </a>
             <button className="rounded-md bg-[var(--q3-primary)] px-3 py-1.5 text-sm font-medium text-white hover:bg-[var(--q3-primary-hover)]">
               Try Components
             </button>

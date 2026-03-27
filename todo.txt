@@ -7,7 +7,7 @@ B. TypeDoc added to be able to generate JSDoc API documentation - DONE
    use npm run docs to generate documentation in /docs/api
 
 1. Look into installing react devtools for better experience with Chrome Developer Tools. - DONE 
-1b. Add Real UI Polish
+1b. Add Real UI Polish - DONE
 1c. Need to test out on actual mobile device.
 
 Tailwind-styled buttons - DONE
@@ -76,7 +76,7 @@ README with installation & usage - DONE
 
 Example sandbox
 
-GitHub Actions CI pipeline
+GitHub Actions CI pipeline - DONE
 
 7. Automatically generate comprehensive documentation
 
@@ -92,6 +92,6 @@ Props lists
 
 8. Create a demo site - DEMO
 
-Publish Storybook to GitHub Pages
+Publish Storybook to GitHub Pages - DONE Published demo, api amd stroybook.
 
-Or build a standalone landing page
+Or build a standalone landing page - NOT NEEDED
