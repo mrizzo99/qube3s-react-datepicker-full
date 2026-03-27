@@ -6,5 +6,5 @@ docs/api/
 docs/FREETIER_PROTIER.docx
 node_modules/
 storybook-static/
-
+*.tsbuildinfo
 

@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "vite",
     "build": "npm run build:packages && vite build",
-    "build:packages": "tsc -b packages/core/tsconfig.build.json packages/plus/tsconfig.build.json",
+    "build:packages": "tsc -b --force packages/core/tsconfig.build.json packages/plus/tsconfig.build.json",
     "preview": "vite preview",
     "storybook": "storybook dev -p 6006 -c apps/storybook/.storybook",
     "build-storybook": "storybook build -c apps/storybook/.storybook",

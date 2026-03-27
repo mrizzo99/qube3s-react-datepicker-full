@@ -15,13 +15,13 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: npm
@@ -39,6 +39,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Clean TypeScript incremental metadata
+        run: rm -rf packages/core/dist packages/plus/dist packages/core/tsconfig.build.tsbuildinfo packages/plus/tsconfig.build.tsbuildinfo
 
       - name: Build demo
         run: npm run build -- --base "${{ steps.pages_base.outputs.base_path }}"
