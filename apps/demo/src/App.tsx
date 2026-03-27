@@ -358,9 +358,6 @@ export default function App() {
             >
               Storybook
             </a>
-            <button className="rounded-md bg-[var(--q3-primary)] px-3 py-1.5 text-sm font-medium text-white hover:bg-[var(--q3-primary-hover)]">
-              Try Components
-            </button>
           </div>
         </div>
       </header>
