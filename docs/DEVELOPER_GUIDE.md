@@ -691,6 +691,7 @@ const i18n = { ...frI18n, format: { ...frI18n.format, inputValue: 'Pp' } }
 
 ## Docs deploy
 - GitHub Pages deploy is handled by `.github/workflows/docs-pages.yml`.
+- The workflow is manual-only and is run from the GitHub Actions UI with `workflow_dispatch`.
 - The published site serves the demo at the Pages root, Storybook at `/storybook/`, and TypeDoc at `/api/`.
 - For project Pages repositories, the workflow computes the correct Vite `base` path from the repository name before building the demo.
 - First-time GitHub setup is still required in the repository Pages settings: enable Pages and set the source to `GitHub Actions`.

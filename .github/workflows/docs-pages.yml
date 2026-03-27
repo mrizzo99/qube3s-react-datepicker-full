@@ -1,21 +1,6 @@
 name: Deploy Docs Site
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - .github/workflows/docs-pages.yml
-      - apps/**
-      - packages/**
-      - package.json
-      - package-lock.json
-      - postcss.config.js
-      - tailwind.config.js
-      - tsconfig.json
-      - tsconfig.base.json
-      - typedoc.json
-      - vite.config.ts
   workflow_dispatch:
 
 concurrency:
@@ -81,7 +66,6 @@ jobs:
 
   deploy:
     needs: build
-    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       pages: write
