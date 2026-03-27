@@ -1,0 +1,73 @@
+Qube3s React Datepicker Plus Commercial License
+
+Copyright (c) 2026 Qube3s. All rights reserved.
+
+1. Grant of License
+
+Subject to payment of applicable fees and compliance with this license, Qube3s
+grants the licensee a non-exclusive, non-transferable, non-sublicensable
+license to use, reproduce, and distribute the software contained in the
+@qube3s/react-datepicker-plus package as part of the licensee's own products
+or internal systems.
+
+2. Restrictions
+
+The licensee may not:
+
+- redistribute, resell, rent, lease, sublicense, or otherwise make the
+  software available on a standalone basis;
+- use the software in a way that competes with Qube3s or exposes the software
+  as a developer toolkit, component library, SaaS feature set, or service for
+  third parties;
+- remove, alter, or obscure any copyright, trademark, or proprietary notices;
+- claim ownership of the software or any derivative based on the software
+  except for the licensee's own applications and integrations.
+
+3. Ownership
+
+The software is licensed, not sold. Qube3s and its licensors retain all right,
+title, and interest in and to the software, including all intellectual
+property rights.
+
+4. Support and Updates
+
+Unless separately agreed in writing, this license does not require Qube3s to
+provide maintenance, support, updates, upgrades, patches, or enhancements.
+
+5. Termination
+
+This license terminates automatically if the licensee breaches any term of
+this license. Upon termination, the licensee must stop using and distributing
+the software and must destroy all copies under its control, except to the
+extent the software is embedded in shipped products as permitted by a separate
+written agreement.
+
+6. Disclaimer of Warranties
+
+THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE, TITLE, AND NON-INFRINGEMENT.
+
+7. Limitation of Liability
+
+TO THE MAXIMUM EXTENT PERMITTED BY LAW, IN NO EVENT WILL QUBE3S BE LIABLE FOR
+ANY INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES, OR ANY
+LOSS OF USE, DATA, REVENUE, PROFITS, OR BUSINESS INTERRUPTION, ARISING OUT OF
+OR RELATED TO THE SOFTWARE OR THIS LICENSE, EVEN IF ADVISED OF THE POSSIBILITY
+OF SUCH DAMAGES. QUBE3S'S TOTAL LIABILITY FOR ANY CLAIM ARISING OUT OF OR
+RELATING TO THE SOFTWARE OR THIS LICENSE WILL NOT EXCEED THE AMOUNT PAID FOR
+THE SOFTWARE LICENSE GIVING RISE TO THE CLAIM.
+
+8. Commercial Terms
+
+If the licensee and Qube3s enter into a separate commercial agreement,
+purchase order, order form, or master services agreement covering the
+software, that agreement will control to the extent it conflicts with this
+license.
+
+9. Governing Law
+
+This license is governed by the laws of the jurisdiction specified in the
+applicable commercial agreement with Qube3s, or if no such agreement exists,
+the jurisdiction in which Qube3s is organized, excluding conflict of law
+rules.

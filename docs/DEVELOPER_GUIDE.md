@@ -2,6 +2,102 @@
 
 This core repo is a headless-first datepicker built with Vite, React, TypeScript, TailwindCSS, and date-fns. It includes composable picker components and headless calendar hooks. A Storybook setup in the plus package allows previewing components from both Core and Plus packages.
 
+## Local development
+
+Install dependencies from the repo root:
+
+```bash
+npm install
+```
+
+This repository intentionally commits `package-lock.json` for reproducible local installs and CI runs.
+
+Run the demo app:
+
+```bash
+npm run dev
+```
+
+The demo app lives in `apps/demo` and is served by Vite at `http://localhost:5173`.
+
+Run Storybook:
+
+```bash
+npm run storybook
+```
+
+Storybook reads stories from Core, Plus, and the Plus adapters. The default dev URL is `http://localhost:6006`.
+
+Build the workspace demo output:
+
+```bash
+npm run build
+```
+
+Preview the Vite production build locally:
+
+```bash
+npm run preview
+```
+
+Generate API documentation:
+
+```bash
+npm run docs
+```
+
+TypeDoc output is written to `docs/api`.
+
+## Test and verification commands
+
+Run the main jsdom Vitest suite:
+
+```bash
+npm run test
+```
+
+Run browser-only tests:
+
+```bash
+npm run test:browser
+```
+
+Browser tests require a Playwright browser install the first time:
+
+```bash
+npm run test:browser:install
+```
+
+Run only the async validation contract and component tests:
+
+```bash
+npm run test:async-validation
+```
+
+Run only the browser async validation tests:
+
+```bash
+npm run test:async-validation:browser
+```
+
+Run the verification suite used by CI:
+
+```bash
+npm run verify
+```
+
+`npm run verify` currently runs:
+
+- `vitest run`
+- `npm run test:async-validation:browser`
+- `vite build`
+
+Why browser mode currently runs only a small subset:
+
+- `npm run test` uses `vitest.config.ts` and excludes `*.browser.test.*`
+- `npm run test:browser` uses `vitest.browser.config.ts` and includes only `*.browser.test.*`
+- the current browser suite is intentionally limited to cases that benefit from a real browser runtime
+
 ## Project layout
 - `apps/demo` – Vite demo shell that renders core/plus components.
 - `apps/storybook/.storybook` – Storybook 10 config (React + Vite, Docs addon).
@@ -592,6 +688,13 @@ const i18n = { ...frI18n, format: { ...frI18n.format, inputValue: 'Pp' } }
 - `npm run preview` – Preview the production build locally.
 - `npm run storybook` – Storybook dev server at `http://localhost:6006` (uses `apps/storybook/.storybook`).
 - `npm run build-storybook` – Static Storybook build.
+
+## Docs deploy
+- GitHub Pages deploy is handled by `.github/workflows/docs-pages.yml`.
+- The workflow is manual-only and is run from the GitHub Actions UI with `workflow_dispatch`.
+- The published site serves the demo at the Pages root, Storybook at `/storybook/`, and TypeDoc at `/api/`.
+- For project Pages repositories, the workflow computes the correct Vite `base` path from the repository name before building the demo.
+- First-time GitHub setup is still required in the repository Pages settings: enable Pages and set the source to `GitHub Actions`.
 
 ## Extension ideas (for maintainers)
 - These are optional backlog ideas for project contributors; they are not shipped features and not instructions for consumers.

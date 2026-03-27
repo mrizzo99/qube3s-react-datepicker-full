@@ -1,0 +1,177 @@
+name: Publish Packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish_mode:
+        description: Which packages to publish
+        required: true
+        default: core-only
+        type: choice
+        options:
+          - core-only
+          - core-plus-cloudsmith
+      npm_tag:
+        description: npm dist-tag for Core
+        required: true
+        default: latest
+        type: string
+      provenance:
+        description: Publish npm provenance for Core
+        required: true
+        default: true
+        type: boolean
+
+concurrency:
+  group: publish-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      CLOUDSMITH_OWNER: ${{ vars.CLOUDSMITH_OWNER }}
+      CLOUDSMITH_REPOSITORY: ${{ vars.CLOUDSMITH_REPOSITORY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npm run test:browser:install -- --with-deps
+
+      - name: Verify workspace
+        run: npm run verify
+
+      - name: Build API docs
+        run: npm run docs
+
+      - name: Build Storybook
+        run: npm run build-storybook
+
+      - name: Validate package versions are aligned
+        run: |
+          node <<'EOF'
+          const fs = require('fs')
+          const core = JSON.parse(fs.readFileSync('packages/core/package.json', 'utf8'))
+          const plus = JSON.parse(fs.readFileSync('packages/plus/package.json', 'utf8'))
+
+          if (core.version !== plus.version) {
+            console.error(`Version mismatch: core=${core.version}, plus=${plus.version}`)
+            process.exit(1)
+          }
+
+          if (plus.dependencies['@qube3s/react-datepicker-core'] !== core.version) {
+            console.error(
+              `Plus dependency mismatch: expected ${core.version}, got ${plus.dependencies['@qube3s/react-datepicker-core']}`
+            )
+            process.exit(1)
+          }
+
+          console.log(`Validated aligned package versions: ${core.version}`)
+          EOF
+
+      - name: Validate publish configuration
+        run: |
+          if [ -z "${{ secrets.NPM_TOKEN }}" ]; then
+            echo "Missing required secret: NPM_TOKEN" >&2
+            exit 1
+          fi
+
+          if [ "${{ inputs.publish_mode }}" = "core-plus-cloudsmith" ]; then
+            if [ -z "${{ secrets.CLOUDSMITH_API_KEY }}" ]; then
+              echo "Missing required secret: CLOUDSMITH_API_KEY" >&2
+              exit 1
+            fi
+
+            if [ -z "${CLOUDSMITH_OWNER}" ]; then
+              echo "Missing required repository variable: CLOUDSMITH_OWNER" >&2
+              exit 1
+            fi
+
+            if [ -z "${CLOUDSMITH_REPOSITORY}" ]; then
+              echo "Missing required repository variable: CLOUDSMITH_REPOSITORY" >&2
+              exit 1
+            fi
+          fi
+
+      - name: Setup npm registry auth
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+
+      - name: Publish Core to npm
+        working-directory: packages/core
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          args=(publish --access public --tag "${{ inputs.npm_tag }}")
+
+          if [ "${{ inputs.provenance }}" = "true" ]; then
+            args+=(--provenance)
+          fi
+
+          npm "${args[@]}"
+
+      - name: Verify Core on npm
+        run: |
+          expected_version=$(node -p "require('./packages/core/package.json').version")
+
+          for attempt in 1 2 3 4 5; do
+            published_version=$(npm view @qube3s/react-datepicker-core version 2>/dev/null || true)
+
+            if [ "${published_version}" = "${expected_version}" ]; then
+              echo "Core ${expected_version} is visible on npm."
+              exit 0
+            fi
+
+            echo "Core version not visible yet on attempt ${attempt}; waiting 15 seconds..."
+            sleep 15
+          done
+
+          echo "Core ${expected_version} did not become visible on npm in time." >&2
+          exit 1
+
+      - name: Setup Cloudsmith registry auth
+        if: inputs.publish_mode == 'core-plus-cloudsmith'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://npm.cloudsmith.io/${{ env.CLOUDSMITH_OWNER }}/${{ env.CLOUDSMITH_REPOSITORY }}/
+
+      - name: Publish Plus to Cloudsmith
+        if: inputs.publish_mode == 'core-plus-cloudsmith'
+        working-directory: packages/plus
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.CLOUDSMITH_API_KEY }}
+        run: npm publish --registry=https://npm.cloudsmith.io/${CLOUDSMITH_OWNER}/${CLOUDSMITH_REPOSITORY}/
+
+      - name: Write workflow summary
+        run: |
+          core_version=$(node -p "require('./packages/core/package.json').version")
+          {
+            echo "## Publish Summary"
+            echo
+            echo "- Mode: \`${{ inputs.publish_mode }}\`"
+            echo "- Core version: \`${core_version}\`"
+            echo "- npm dist-tag: \`${{ inputs.npm_tag }}\`"
+            if [ "${{ inputs.publish_mode }}" = "core-plus-cloudsmith" ]; then
+              echo "- Plus published to Cloudsmith: \`yes\`"
+              echo "- Cloudsmith repo: \`${CLOUDSMITH_OWNER}/${CLOUDSMITH_REPOSITORY}\`"
+            else
+              echo "- Plus published to Cloudsmith: \`no\`"
+            fi
+          } >> "${GITHUB_STEP_SUMMARY}"
